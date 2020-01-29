@@ -1,0 +1,14 @@
+#Rterm.exe --vanilla
+# source("https://raw.githubusercontent.com/johnbwaldron/genes/master/convertGenomicRangeToGeneName")
+# look here for ideas: https://support.bioconductor.org/p/67118/
+
+library("reutils")
+library(Homo.sapiens)
+
+
+# note: in the GATK output, the following is very important: 
+#  "GT of 0 indicates normal ploidy, 1 indicates deletion and 2 denotes duplication. 
+# The CN annotation indicates the copy number state."
+
+df <- read.delim(file="C:/Users/jwaldr/OneDrive - LSUHSC/prostateCancerGATKResults/cnvWithSymbol.csv", colClasses = "character", sep=",")
+
