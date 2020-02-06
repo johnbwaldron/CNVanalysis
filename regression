@@ -12,3 +12,20 @@ library(Homo.sapiens)
 
 df <- read.delim(file="C:/Users/jwaldr/OneDrive - LSUHSC/prostateCancerGATKResults/cnvWithSymbol.csv", colClasses = "character", sep=",")
 
+#remove the extraneous characters surrounding the sample name in the GATK output. i.e. "./LSU100110KIreorder" -> "LSU100110KIreorder" ->  "LSU100110KI"
+df$sample <- sapply(strsplit(df$sample, split='/', fixed=TRUE), function(x) (x[2]))
+df$sample <- sapply(strsplit(df$sample, split='reorder', fixed=TRUE), function(x) (x[1]))
+
+
+# create reference data.frame to provide the summary data for each subject
+
+phenoCode <- read.delim(file="C:/Users/jwaldr/OneDrive - LSUHSC/prostateCancerGATKResults/decodingAAfamilies.csv", colClasses = "character", sep=",")
+#Subset GATk output to only AAs
+AAdf <- df[df$sample %in% phenoCode$Sample.ID..Georgetown.,]
+
+
+
+
+phenoCode$Sample.ID..Georgetown
+head(df$sample)
+
