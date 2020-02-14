@@ -18,8 +18,58 @@ df <- df[-which(df$SAMPLE == "" | df$SAMPLE == "SAMPLE"),]
 #create new dataframe with the following columns for each sample: sample, chr, start, end, del_1.dup_2, copyNum
 loc <- strsplit(df[,"ID"], "_")
 mut <- strsplit(df[,"X"], ":")
+cnv <- data.frame("sample"= as.character(df$SAMPLE), "chr"= sapply(loc, "[", 2), "start" = as.numeric(sapply(loc, "[", 3)), "end" = as.numeric(sapply(loc, "[", 4)), "del_1.dup_2" = sapply(mut, "[", 1), "copyNum" = sapply(mut, "[", 2))
 
-cnv <- data.frame("sample"= df$SAMPLE, "chr"= sapply(loc, "[", 2), "start" = as.numeric(sapply(loc, "[", 3)), "end" = as.numeric(sapply(loc, "[", 4)), "del_1.dup_2" = sapply(mut, "[", 1), "copyNum" = sapply(mut, "[", 2))
+#remove the extraneous characters surrounding the sample name in the GATK output. i.e. "./LSU100110KIreorder" -> "LSU100110KIreorder" ->  "LSU100110KI"
+cnv$sample <- as.character(cnv$sample)
+cnv$sample <- sapply(strsplit(cnv$sample, split='/', fixed=TRUE), function(x) (x[2]))
+cnv$sample <- sapply(strsplit(cnv$sample, split='reorder', fixed=TRUE), function(x) (x[1]))
+GATKcnv <- cnv
+
+# load and format XHMM results
+df <- read.csv(file="C:/Users/jwaldr/OneDrive - LSUHSC/prostateCancerGATKResults/XHMMresults/LAHPC_WES_203_SAMPLES_XHMM.csv", colClasses = "character")
+
+#remove empty rows
+df <- df[-which(df$SAMPLE == ""),]
+
+#create new dataframe with the following columns for each sample: sample, chr, start, end, del_1.dup_2, copyNum
+loc <- strsplit(df[,"INTERVAL"], "[:-]")
+
+#if "DUP" -> 2, if "DEL" -> 1 for del_1.dup_2"
+df$CNV[which(df$CNV == "DUP")] <- 2 
+df$CNV[which(df$CNV == "DEL")] <- 1 
+
+XHMMcnv <- data.frame("sample"= as.character(df$SAMPLE), "chr"= sapply(loc, "[", 1), "start" = as.numeric(sapply(loc, "[", 2)), "end" = as.numeric(sapply(loc, "[", 3)), "del_1.dup_2" = df$CNV, "copyNum" = "NA")
+
+#remove the extraneous characters surrounding the sample name in the GATK output. i.e. "./LSU100110KIreorder" -> "LSU100110KIreorder" ->  "LSU100110KI"
+XHMMcnv$sample <- as.character(XHMMcnv$sample)
+XHMMcnv$sample <- sapply(strsplit(XHMMcnv$sample, split='/', fixed=TRUE), function(x) (x[2]))
+XHMMcnv$sample <- sapply(strsplit(XHMMcnv$sample, split='_reorder', fixed=TRUE), function(x) (x[1]))
+
+
+################################################################################################################
+A <- makeGRangesFromDataFrame(GATKcnv)
+B <- makeGRangesFromDataFrame(XHMMcnv, keep.extra.columns=TRUE)
+olaps <- findOverlaps(A, B)
+
+#olaps is a two-column matrix, indicating which element(s) of A overlap the corresponding elements of B. In the invocation above A and B enter symmetrically, but could be re-ordered if there were restrictions on the type of overlap (argument type, e.g., all of B strictly within A). To find the extent of overlap, I looked at the parallel (element wise) intersection of each overlap
+
+isect <- pintersect(A[queryHits(olaps)], B[subjectHits(olaps)])
+isect
+
+# create a data.frame with whatever information needed
+
+data.frame(query=queryHits(olaps), subject=subjectHits(olaps),
+           olap_width=width(isect), 
+           query_width=width(A)[queryHits(olaps)],
+           variantaccession=B$variantaccession[subjectHits(olaps)])
+This will be fast for millions of records in A and B.
+
+makeGRangesFromDataFrame is available in the current release version of the package, installed by default when using R-3.1. It's easy to make a GRanges 'by hand', e.g.,
+
+A <- with(a, GRanges(Chromosome, IRanges(Start, End)))
+B <- with(b, GRanges(chr, IRanges(start, end), variantaccession=variantaccession))
+################################################################################################################
 
 cnvGranges <- makeGRangesFromDataFrame(cnv, keep.extra.columns=TRUE, seqnames.field = "chr")
 
@@ -61,6 +111,7 @@ for(i in 1:nrow(cnv)){
 cat("cnv #", i, " covers ", paste(symInCnv[[i]], collapse=", "), "\n")
 cnv$gene[i] <- paste(symInCnv[[i]], collapse=", ")
 }
+
 
 write.table(cnv, file="C:/Users/jwaldr/OneDrive - LSUHSC/prostateCancerGATKResults/cnvWithSymbol.csv", row.names=FALSE, sep=",") #quote=c(1:3)???
 
