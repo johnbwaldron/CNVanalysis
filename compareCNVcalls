@@ -57,6 +57,8 @@ olaps <- findOverlaps(A, B)
 isect <- pintersect(A[queryHits(olaps)], B[subjectHits(olaps)])
 isect
 
+# save(isect, olaps, XHMMcnv, GATKcnv, file = "C:/Users/jwaldr/OneDrive - LSUHSC/prostateCancerGATKResults/olaps2.14.2020.RData")
+
 # create a data.frame with whatever information needed
 
 data.frame(query=queryHits(olaps), subject=subjectHits(olaps),
