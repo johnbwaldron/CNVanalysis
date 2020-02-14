@@ -34,5 +34,5 @@ pc <- data.frame("sample" = phenoCode[,"Sample.ID..Georgetown."],
 "Gscore" = phenoCode$Gleason.Score,
 "PSA" = phenoCode$PSA)
 
-head(df$sample)
+#write.table(pc, file="C:/Users/jwaldr/OneDrive - LSUHSC/prostateCancerGATKResults/162AAsubjectInfo.csv", row.names=FALSE, sep=",")
 
