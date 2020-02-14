@@ -1,0 +1,37 @@
+#Rterm.exe --vanilla
+# source("https://raw.githubusercontent.com/johnbwaldron/genes/master/[change it to this path]")
+# look here for ideas: https://support.bioconductor.org/p/67118/
+
+library("reutils")
+library(Homo.sapiens)
+
+
+# note: in the GATK output, the following is very important: 
+#  "GT of 0 indicates normal ploidy, 1 indicates deletion and 2 denotes duplication. 
+# The CN annotation indicates the copy number state."
+
+df <- read.delim(file="C:/Users/jwaldr/OneDrive - LSUHSC/prostateCancerGATKResults/cnvWithSymbol.csv", colClasses = "character", sep=",")
+
+#remove the extraneous characters surrounding the sample name in the GATK output. i.e. "./LSU100110KIreorder" -> "LSU100110KIreorder" ->  "LSU100110KI"
+df$sample <- sapply(strsplit(df$sample, split='/', fixed=TRUE), function(x) (x[2]))
+df$sample <- sapply(strsplit(df$sample, split='reorder', fixed=TRUE), function(x) (x[1]))
+
+
+# create reference data.frame to provide the summary data for each subject
+
+phenoCode <- read.delim(file="C:/Users/jwaldr/OneDrive - LSUHSC/prostateCancerGATKResults/decodingAAfamilies.csv", colClasses = "character", sep=",")
+#Subset GATK output to only AAs
+AAdf <- df[df$sample %in% phenoCode$Sample.ID..Georgetown.,]
+
+#Subset phenoCode table to include sample, sex, ethnicity, affected, age at diagnosis, Gscore, PSA
+phenoCode <- phenoCode[phenoCode$Sample.ID..Georgetown. %in% AAdf$sample,]
+
+pc <- data.frame("sample" = phenoCode[,"Sample.ID..Georgetown."], 
+"sex" = phenoCode$Gender,
+"ethnicity" = phenoCode$Race,
+"affected.1-yes.2-no.0-DK" = phenoCode$Affected,
+"ageAtDx" = phenoCode$Age.at.Diagnosis,
+"Gscore" = phenoCode$Gleason.Score,
+"PSA" = phenoCode$PSA)
+
+head(df$sample)
