@@ -10,44 +10,69 @@ library(Homo.sapiens)
 #  "GT of 0 indicates normal ploidy, 1 indicates deletion and 2 denotes duplication. 
 # The CN annotation indicates the copy number state."
 # information on GATK output: https://gatk.broadinstitute.org/hc/en-us/articles/360035531152--How-to-Call-common-and-rare-germline-copy-number-variants#5
-df <- read.delim(file="C:/Users/jwaldr/OneDrive - LSUHSC/prostateCancerGATKResults/GATK_Results_203_LA_HPC_Samples.txt", colClasses = "character")
 
-try <- read.delim(file="C:\Users\jwaldr\OneDrive - LSUHSC\Literature\genotyped/GATK_Results_203_LA_HPC_Samples.txt", colClasses = "character")
 
-#remove empty rows and NA
-df <- df[-which(df$SAMPLE == "" | df$SAMPLE == "SAMPLE"),]
+library(vcfR)
+#############################load GATK output for each sample to populate the dataframe##########################################################
+files = list.files(path = "C:/Users/jwaldr/OneDrive - LSUHSC/Literature/genotyped/unzipped/", pattern = "^.*(.vcf)$")
+
+# make dataframe with columns = "sample", "chr", "start", "end", "del_1.dup_2", "copyNum"
+GATKresults <- data.frame(sample="0", chr="0", ID="0", X ="0")[-1,]
+
+
+for(i in 1:202){
+           # note sample 0 only shows CNVs in chr 1, something is likely wrong with this
+           df <- read.delim(file= paste("C:/Users/jwaldr/OneDrive - LSUHSC/Literature/genotyped/unzipped/genotyped-segments-cohort203-sample.", i, ".vcf", sep = ""), 
+           colClasses = "character", skip = 11)
+           tableBySample <- data.frame(sample="0", chr=df$X.CHROM, ID=df$ID, X=df[,10])
+           tableBySample[c(1:nrow(df)),1] <- gsub("[.]", "-", colnames(df)[10]) ########paste(strsplit(colnames(df)[10], "[.]")[[1]][1], strsplit(colnames(df)[10], "[.]")[[1]][2], strsplit(colnames(df)[10], "[.]")[[1]][3], sep="-")
+            
+           GATKresults <- rbind(GATKresults, tableBySample)
+           }
+# write.table(GATKresults, file="C:/Users/jwaldr/OneDrive - LSUHSC/Literature/genotyped/GATKfor202samplesInOneTable", row.names=FALSE, sep=",")
+#######################################################################################
+#above completed 7/1/2020
+#######################################################################################
+kirsten <- read.delim(file="C:/Users/jwaldr/OneDrive - LSUHSC/prostateCancerGATKResults/GATK_Results_203_LA_HPC_Samples.txt", colClasses = "character")
+#remove empty rows and NA # df <- GATKresults # df <- df[-which(df$SAMPLE == "" | df$SAMPLE == "SAMPLE"),]
+
+
 
 #create new dataframe with the following columns for each sample: sample, chr, start, end, del_1.dup_2, copyNum
-loc <- strsplit(df[,"ID"], "_")
-mut <- strsplit(df[,"X"], ":")
-cnv <- data.frame("sample"= as.character(df$SAMPLE), "chr"= sapply(loc, "[", 2), "start" = as.numeric(sapply(loc, "[", 3)), "end" = as.numeric(sapply(loc, "[", 4)), "del_1.dup_2" = sapply(mut, "[", 1), "copyNum" = sapply(mut, "[", 2))
+loc <- strsplit(GATKresults[,"ID"], "_")
+mut <- strsplit(GATKresults[,"X"], ":")
+cnv <- data.frame("sample"= as.character(GATKresults$sample), "chr"= sapply(loc, "[", 2), "start" = as.numeric(sapply(loc, "[", 3)), "end" = as.numeric(sapply(loc, "[", 4)), "del_1.dup_2" = sapply(mut, "[", 1), "copyNum" = sapply(mut, "[", 2))
 
 #remove the extraneous characters surrounding the sample name in the GATK output. i.e. "./LSU100110KIreorder" -> "LSU100110KIreorder" ->  "LSU100110KI"
-cnv$sample <- as.character(cnv$sample)
-cnv$sample <- sapply(strsplit(cnv$sample, split='/', fixed=TRUE), function(x) (x[2]))
-cnv$sample <- sapply(strsplit(cnv$sample, split='reorder', fixed=TRUE), function(x) (x[1]))
+#cnv$sample <- as.character(cnv$sample)
+#cnv$sample <- sapply(strsplit(cnv$sample, split='/', fixed=TRUE), function(x) (x[2]))
+#cnv$sample <- sapply(strsplit(cnv$sample, split='reorder', fixed=TRUE), function(x) (x[1]))
 GATKcnv <- cnv
 
+# write.table(GATKcnv, file="C:/Users/jwaldr/OneDrive - LSUHSC/Literature/genotyped/GATKcnv_sample_chr_start_end_del1.dup2_copyNum", row.names=FALSE, sep=",")
+################################################################################################################
+# formatting XHMM
+################################################################################################################
 # load and format XHMM results
-df <- read.csv(file="C:/Users/jwaldr/OneDrive - LSUHSC/prostateCancerGATKResults/XHMMresults/LAHPC_WES_203_SAMPLES_XHMM.csv", colClasses = "character")
+# df <- read.csv(file="C:/Users/jwaldr/OneDrive - LSUHSC/prostateCancerGATKResults/XHMMresults/LAHPC_WES_203_SAMPLES_XHMM.csv", colClasses = "character")
 
 #remove empty rows
-df <- df[-which(df$SAMPLE == ""),]
+# df <- df[-which(df$SAMPLE == ""),]
 
 #create new dataframe with the following columns for each sample: sample, chr, start, end, del_1.dup_2, copyNum
-loc <- strsplit(df[,"INTERVAL"], "[:-]")
+# loc <- strsplit(df[,"INTERVAL"], "[:-]")
 
 #if "DUP" -> 2, if "DEL" -> 1 for del_1.dup_2"
-df$CNV[which(df$CNV == "DUP")] <- 2 
-df$CNV[which(df$CNV == "DEL")] <- 1 
+# df$CNV[which(df$CNV == "DUP")] <- 2 
+# df$CNV[which(df$CNV == "DEL")] <- 1 
 
-XHMMcnv <- data.frame("sample"= as.character(df$SAMPLE), "chr"= sapply(loc, "[", 1), "start" = as.numeric(sapply(loc, "[", 2)), "end" = as.numeric(sapply(loc, "[", 3)), "del_1.dup_2" = df$CNV, "copyNum" = "NA")
+# XHMMcnv <- data.frame("sample"= as.character(df$SAMPLE), "chr"= sapply(loc, "[", 1), "start" = as.numeric(sapply(loc, "[", 2)), "end" = as.numeric(sapply(loc, "[", 3)), "del_1.dup_2" = df$CNV, "copyNum" = "NA")
 
 #remove the extraneous characters surrounding the sample name in the GATK output. i.e. "./LSU100110KIreorder" -> "LSU100110KIreorder" ->  "LSU100110KI"
-XHMMcnv$sample <- as.character(XHMMcnv$sample)
-XHMMcnv$sample <- sapply(strsplit(XHMMcnv$sample, split='/', fixed=TRUE), function(x) (x[2]))
-XHMMcnv$sample <- sapply(strsplit(XHMMcnv$sample, split='_reorder', fixed=TRUE), function(x) (x[1]))
-
+# XHMMcnv$sample <- as.character(XHMMcnv$sample)
+# XHMMcnv$sample <- sapply(strsplit(XHMMcnv$sample, split='/', fixed=TRUE), function(x) (x[2]))
+# XHMMcnv$sample <- sapply(strsplit(XHMMcnv$sample, split='_reorder', fixed=TRUE), function(x) (x[1]))
+################################################################################################################
 
 ################################################################################################################
 A <- makeGRangesFromDataFrame(GATKcnv)
