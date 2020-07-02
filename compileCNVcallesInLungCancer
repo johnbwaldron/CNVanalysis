@@ -30,11 +30,15 @@ for(i in 1:202){
            GATKresults <- rbind(GATKresults, tableBySample)
            }
 # write.table(GATKresults, file="C:/Users/jwaldr/OneDrive - LSUHSC/Literature/genotyped/GATKfor202samplesInOneTable", row.names=FALSE, sep=",")
+# GATKresults <- read.delim(file="C:/Users/jwaldr/OneDrive - LSUHSC/Literature/genotyped/GATKfor202samplesInOneTable", colClasses = "character", sep=",")
 #######################################################################################
 #above completed 7/1/2020
 #######################################################################################
-kirsten <- read.delim(file="C:/Users/jwaldr/OneDrive - LSUHSC/prostateCancerGATKResults/GATK_Results_203_LA_HPC_Samples.txt", colClasses = "character")
-#remove empty rows and NA # df <- GATKresults # df <- df[-which(df$SAMPLE == "" | df$SAMPLE == "SAMPLE"),]
+# kirsten <- read.delim(file="C:/Users/jwaldr/OneDrive - LSUHSC/prostateCancerGATKResults/GATK_Results_203_LA_HPC_Samples.txt", colClasses = "character")
+#remove empty rows and NA # 
+
+GATKresults <- GATKresults[-which(GATKresults$SAMPLE == "" | GATKresults$SAMPLE == "SAMPLE"),] # removes none
+GATKresults <- GATKresults[-which(GATKresults$ID == "" | GATKresults$ID == "NA"),] # removes 3157, 80448
 
 
 
@@ -49,7 +53,10 @@ cnv <- data.frame("sample"= as.character(GATKresults$sample), "chr"= sapply(loc,
 #cnv$sample <- sapply(strsplit(cnv$sample, split='reorder', fixed=TRUE), function(x) (x[1]))
 GATKcnv <- cnv
 
-# write.table(GATKcnv, file="C:/Users/jwaldr/OneDrive - LSUHSC/Literature/genotyped/GATKcnv_sample_chr_start_end_del1.dup2_copyNum", row.names=FALSE, sep=",")
+# write.table(GATKcnv, file="C:/Users/jwaldr/OneDrive - LSUHSC/Literature/genotyped/GATKcnv_sample_chr_start_end_del1.dup2_copyNum.txt", row.names=FALSE, sep=",")
+
+# GATKcnv <- read.delim(file="C:/Users/jwaldr/OneDrive - LSUHSC/Literature/genotyped/GATKcnv_sample_chr_start_end_del1.dup2_copyNum", sep=",")
+
 ################################################################################################################
 # formatting XHMM
 ################################################################################################################
@@ -75,7 +82,7 @@ GATKcnv <- cnv
 ################################################################################################################
 
 ################################################################################################################
-A <- makeGRangesFromDataFrame(GATKcnv)
+A <- makeGRangesFromDataFrame(GATKcnv) # B <- makeGRangesFromDataFrame(GATKcnv)
 B <- makeGRangesFromDataFrame(XHMMcnv, keep.extra.columns=TRUE)
 olaps <- findOverlaps(A, B)
 
@@ -92,7 +99,7 @@ data.frame(query=queryHits(olaps), subject=subjectHits(olaps),
            olap_width=width(isect), 
            query_width=width(A)[queryHits(olaps)],
            variantaccession=B$variantaccession[subjectHits(olaps)])
-This will be fast for millions of records in A and B.
+# This will be fast for millions of records in A and B.
 
 makeGRangesFromDataFrame is available in the current release version of the package, installed by default when using R-3.1. It's easy to make a GRanges 'by hand', e.g.,
 
