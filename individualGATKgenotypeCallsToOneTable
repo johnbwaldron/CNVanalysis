@@ -51,4 +51,4 @@ GATKcnv <- cnv
 
 # write.table(GATKcnv, file="C:/Users/jwaldr/OneDrive - LSUHSC/Literature/genotyped/GATKcnv_sample_chr_start_end_del1.dup2_copyNum.txt", row.names=FALSE, sep=",")
 
-# GATKcnv <- read.delim(file="C:/Users/jwaldr/OneDrive - LSUHSC/Literature/genotyped/GATKcnv_sample_chr_start_end_del1.dup2_copyNum", sep=",")
+# GATKcnv <- read.delim(file="C:/Users/jwaldr/OneDrive - LSUHSC/Literature/genotyped/GATKcnv_sample_chr_start_end_del1.dup2_copyNum.txt", sep=",")
