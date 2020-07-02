@@ -4,7 +4,7 @@
 
 library("reutils")
 library(Homo.sapiens)
-
+library(GenomicRanges)
 
 # note: in the GATK output, the following is very important: 
 #  "GT of 0 indicates normal ploidy, 1 indicates deletion and 2 denotes duplication. 
