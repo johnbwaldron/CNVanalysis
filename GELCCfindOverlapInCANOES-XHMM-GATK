@@ -117,30 +117,7 @@ GATKcnv$gene[i] <- paste(symInCnv[[i]], collapse=", ")
 # write.table(XHMMcnv, file="C:/Users/jwaldr/OneDrive - LSUHSC/GELCC/XHMM/XHMMcnv_sample_chr_start_end_del1.dup2_copyNum_gene.txt", row.names=FALSE, sep=",") #quote=c(1:3)???
 
 ######################################################################################
-# add GO category?
 
-splitByOverlap <-
-    function(query, subject, column="ENTREZID", ...)
-{
-    olaps <- findOverlaps(query, subject, ...)
-    f1 <- factor(subjectHits(olaps),
-                 levels=seq_len(subjectLength(olaps)))
-    splitAsList(mcols(query)[[column]][queryHits(olaps)], f1)
-}
-
-
-gns = geneRanges(Homo.sapiens, column="GO")
-GOinCNVs = splitByOverlap(gns, GATKcnvGranges, "GO")
-
-GATKcnv$GO <- NA
-
-for(i in 1:nrow(GATKcnv)){
-cat("GATKcnv #", i, " covers ", paste(GOinCNVs[[i]], collapse=", "), "\n")
-GATKcnv$GO[i] <- paste(GOinCNVs[[i]], collapse=", ")
-}
-
-# GOFuncR could be a helpful tool. See link immediately below.
-##### https://www.bioconductor.org/packages/release/bioc/vignettes/GOfuncR/inst/doc/GOfuncR.html
 
 # use these gene and GO categories to find genes and GO categories that are enriched in the CNVs but then look below
 ###########################I think a it would be more telling to identify the overlaps between CNV calls within and between families
