@@ -1,0 +1,10 @@
+#Rterm.exe --vanilla
+# source("https://raw.githubusercontent.com/johnbwaldron/genes/master/creatingEnvironmentForAllCNVcallsAndPhenotype")
+
+library("reutils")
+library(Homo.sapiens)
+library(GenomicRanges)
+#library(vcfR)
+library(GOFuncR)
+
+
