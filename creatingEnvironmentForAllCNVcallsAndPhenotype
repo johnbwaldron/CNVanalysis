@@ -7,4 +7,35 @@ library(GenomicRanges)
 #library(vcfR)
 library(GOFuncR)
 
+pheno <- read.delim(file="C:/Users/jwaldr/OneDrive - LSUHSC/GELCC/DecodingGELCC-MatchAllInfoToSamples.csv", sep=",")
 
+pheno <- pheno[,-9]
+
+# load CANOES
+CANOEScnv <- read.delim(file = "C:/Users/jwaldr/OneDrive - LSUHSC/GELCC/CANOES/CANOEScnv_sample_chr_start_end_del1.dup2_copyNum_gene.txt", sep=",")
+
+# load XHMM
+XHMMcnv <- read.delim(file = "C:/Users/jwaldr/OneDrive - LSUHSC/GELCC/XHMM/XHMMcnv_sample_chr_start_end_del1.dup2_copyNum_gene.txt", sep=",")
+
+# load GATK
+GATKcnv <- read.delim(file="C:/Users/jwaldr/OneDrive - LSUHSC/Literature/genotyped/GATKcnv_sample_chr_start_end_del1.dup2_copyNum_gene.csv", sep=",")
+# Consider Including GATK calls without those calls that are neither del nor dup 
+# length(which(GATKcnv$del_1.dup_2==0)) = 41,003
+# nrow(GATKcnv[-which(GATKcnv$del_1.dup_2==0),]) = 48,051
+GATKcnv <- GATKcnv[-which(GATKcnv$del_1.dup_2==0),]
+
+# saving all 4 tables into one object
+save(XHMMcnv, CANOEScnv, GATKcnv, pheno, file = "C:/Users/jwaldr/OneDrive - LSUHSC/GELCC/CNVsFrom3AlgsAndPheno.7.3.2020.rda")
+
+# attach is a safety wrapper for load
+# load(file = "C:/Users/jwaldr/OneDrive - LSUHSC/GELCC/CNVsFrom3AlgsAndPheno.7.3.2020.rda")
+
+
+# from data dict:
+#pack years: "-" -> never smoker; "-1" -> unknown
+# sex: "1" -> male; "2" -> female
+
+## samples below are twins - worth looking into the similarity of CNVs
+## participant_id	Unique CID-CIND	CID	CIND	CF	CM	SEX	ADPT	TWIN
+## H_NK-33GELCC30-33030	33030	33	030	87	23	1	0	1
+## H_NK-33GELCC31-33031	33031	33	031	87	23	1	0	1
