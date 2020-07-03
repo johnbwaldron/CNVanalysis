@@ -42,8 +42,26 @@ XHMMcnv$chr <- paste("chr", XHMMcnv$chr, sep="")
 ################################################################################################################
 # formatting CANOES
 ################################################################################################################
-# load and format XHMM results
-# df <- read.delim(file="C:/Users/jwaldr/OneDrive - LSUHSC/GELCC/XHMM/DATA.xcnv") # , colClasses = , sep=",""character"
+# load and format CANOES results
+
+df <- read.delim(file="C:/Users/jwaldr/OneDrive - LSUHSC/GELCC/CANOES/afterQCXcnv.csv", sep=",") # , colClasses = , sep=",""character"
+colnames(df)[1] <- "SAMPLE"
+
+# simplify sample name to just code
+name <- strsplit(df[,"SAMPLE"], "[.]")
+df$SAMPLE <- sapply(name, "[", 2)
+
+# read in decoded file where coded bam file name is paired with GELCC family & individual name
+decoded <- read.delim(file="C:/Users/jwaldr/OneDrive - LSUHSC/GELCC/CANOES/GELLC_Decoded-AllSamples.csv", sep=",") # , colClasses = "character"
+
+# remove .bam from file name to simplify matching
+name <- strsplit(decoded[,"file.path"], "[.]")
+decoded$file.path <- sapply(name, "[", 1)
+
+# match & replace file code in CANOES results with individual sample name used in XHMM & GATK
+for(i in 1:nrow(decoded)){
+           df$SAMPLE[which(df$SAMPLE == decoded$file.path[i])] <- decoded$sam[i]
+           }
 
 #remove empty rows
 # df <- df[-which(df$SAMPLE == ""),]
@@ -55,11 +73,11 @@ loc <- strsplit(df[,"INTERVAL"], "[:-]")
 df$CNV[which(df$CNV == "DUP")] <- 2 
 df$CNV[which(df$CNV == "DEL")] <- 1 
 
-XHMMcnv <- data.frame("sample"= as.character(df$SAMPLE), "chr"= sapply(loc, "[", 1), "start" = as.numeric(sapply(loc, "[", 2)), "end" = as.numeric(sapply(loc, "[", 3)), "del_1.dup_2" = df$CNV, "copyNum" = "NA")
+CANOEScnv <- data.frame("sample"= as.character(df$SAMPLE), "chr"= sapply(loc, "[", 1), "start" = as.numeric(sapply(loc, "[", 2)), "end" = as.numeric(sapply(loc, "[", 3)), "del_1.dup_2" = df$CNV, "copyNum" = "NA")
 # chromosome format with "chr#"
-XHMMcnv$chr <- paste("chr", XHMMcnv$chr, sep="")
+CANOEScnv$chr <- paste("chr", CANOEScnv$chr, sep="")
 
-#write.table(XHMMcnv, file="C:/Users/jwaldr/OneDrive - LSUHSC/GELCC/XHMM/XHMMcnv_sample_chr_start_end_del1.dup2_copyNum.txt", row.names=FALSE, sep=",")
+#write.table(CANOEScnv, file="C:/Users/jwaldr/OneDrive - LSUHSC/GELCC/CANOES/CANOEScnv_sample_chr_start_end_del1.dup2_copyNum.txt", row.names=FALSE, sep=",")
 
 # XHMMcnv$sample <- as.character(XHMMcnv$sample)
 # XHMMcnv$sample <- sapply(strsplit(XHMMcnv$sample, split='/', fixed=TRUE), function(x) (x[2]))
@@ -72,6 +90,7 @@ XHMMcnv$chr <- paste("chr", XHMMcnv$chr, sep="")
 ################################################################################################################
 A <- makeGRangesFromDataFrame(GATKcnv) 
 B <- makeGRangesFromDataFrame(XHMMcnv, keep.extra.columns=TRUE)
+C <- makeGRangesFromDataFrame(CANOEScnv, keep.extra.columns=TRUE)
 olaps <- findOverlaps(A, B)
 
 #olaps is a two-column matrix, indicating which element(s) of A overlap the corresponding elements of B. In the invocation above A and B enter symmetrically, but could be re-ordered if there were restrictions on the type of overlap (argument type, e.g., all of B strictly within A). To find the extent of overlap, I looked at the parallel (element wise) intersection of each overlap
