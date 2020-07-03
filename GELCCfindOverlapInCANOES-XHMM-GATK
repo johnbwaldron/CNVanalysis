@@ -38,6 +38,35 @@ XHMMcnv$chr <- paste("chr", XHMMcnv$chr, sep="")
 # XHMMcnv$sample <- as.character(XHMMcnv$sample)
 # XHMMcnv$sample <- sapply(strsplit(XHMMcnv$sample, split='/', fixed=TRUE), function(x) (x[2]))
 # XHMMcnv$sample <- sapply(strsplit(XHMMcnv$sample, split='_reorder', fixed=TRUE), function(x) (x[1]))
+
+################################################################################################################
+# formatting CANOES
+################################################################################################################
+# load and format XHMM results
+# df <- read.delim(file="C:/Users/jwaldr/OneDrive - LSUHSC/GELCC/XHMM/DATA.xcnv") # , colClasses = , sep=",""character"
+
+#remove empty rows
+# df <- df[-which(df$SAMPLE == ""),]
+
+#create new dataframe with the following columns for each sample: sample, chr, start, end, del_1.dup_2, copyNum
+loc <- strsplit(df[,"INTERVAL"], "[:-]")
+
+#if "DUP" -> 2, if "DEL" -> 1 for del_1.dup_2"
+df$CNV[which(df$CNV == "DUP")] <- 2 
+df$CNV[which(df$CNV == "DEL")] <- 1 
+
+XHMMcnv <- data.frame("sample"= as.character(df$SAMPLE), "chr"= sapply(loc, "[", 1), "start" = as.numeric(sapply(loc, "[", 2)), "end" = as.numeric(sapply(loc, "[", 3)), "del_1.dup_2" = df$CNV, "copyNum" = "NA")
+# chromosome format with "chr#"
+XHMMcnv$chr <- paste("chr", XHMMcnv$chr, sep="")
+
+#write.table(XHMMcnv, file="C:/Users/jwaldr/OneDrive - LSUHSC/GELCC/XHMM/XHMMcnv_sample_chr_start_end_del1.dup2_copyNum.txt", row.names=FALSE, sep=",")
+
+# XHMMcnv$sample <- as.character(XHMMcnv$sample)
+# XHMMcnv$sample <- sapply(strsplit(XHMMcnv$sample, split='/', fixed=TRUE), function(x) (x[2]))
+# XHMMcnv$sample <- sapply(strsplit(XHMMcnv$sample, split='_reorder', fixed=TRUE), function(x) (x[1]))
+
+
+
 ################################################################################################################
 #compare CNV calls
 ################################################################################################################
