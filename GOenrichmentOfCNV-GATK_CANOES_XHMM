@@ -1,0 +1,64 @@
+#Rterm.exe --vanilla
+
+library("reutils")
+library(Homo.sapiens)
+library(GenomicRanges)
+#library(vcfR)
+
+
+read these:
+GATKcnv <- read.delim(file="C:/Users/jwaldr/OneDrive - LSUHSC/Literature/genotyped/GATKcnv_sample_chr_start_end_del1.dup2_copyNum_gene.csv", sep=",") #quote=c(1:3)???
+??
+XHMMcnv <- read.delim(file="C:/Users/jwaldr/OneDrive - LSUHSC/GELCC/XHMM/XHMMcnv_sample_chr_start_end_del1.dup2_copyNum_gene.txt", sep=",") #quote=c(1:3)???
+
+#remove intervals that are neither deletions nor duplications, i.e. del.1_dup.2 = 0 or copyNum = 2 (for autosomes)
+############################################################
+
+
+
+XHMMcnvGranges <- makeGRangesFromDataFrame(XHMMcnv, keep.extra.columns=TRUE, seqnames.field = "chr")
+
+GATKcnvGranges <- makeGRangesFromDataFrame(GATKcnv, keep.extra.columns=TRUE, seqnames.field = "chr")
+
+
+geneRanges <- 
+    function(db, column="ENTREZID")
+{
+    g <- genes(db, columns=column) # , single.strand.genes.only=TRUE
+    col <- mcols(g)[[column]]
+    genes <- granges(g)[rep(seq_along(g), elementNROWS(col))]
+    mcols(genes)[[column]] <- as.character(unlist(col))
+    genes
+}
+
+gns = geneRanges(Homo.sapiens, column="SYMBOL")
+
+
+######################################################################################
+# add GO category?
+
+splitByOverlap <-
+    function(query, subject, column="ENTREZID", ...)
+{
+    olaps <- findOverlaps(query, subject, ...)
+    f1 <- factor(subjectHits(olaps),
+                 levels=seq_len(subjectLength(olaps)))
+    splitAsList(mcols(query)[[column]][queryHits(olaps)], f1)
+}
+
+
+gns = geneRanges(Homo.sapiens, column="GO")
+GOinCNVs = splitByOverlap(gns, GATKcnvGranges, "GO")
+
+GATKcnv$GO <- NA
+
+for(i in 1:nrow(GATKcnv)){
+cat("GATKcnv #", i, " covers ", paste(GOinCNVs[[i]], collapse=", "), "\n")
+GATKcnv$GO[i] <- paste(GOinCNVs[[i]], collapse=", ")
+}
+
+# write.table(GATKcnv, file="C:/Users/jwaldr/OneDrive - LSUHSC/Literature/genotyped/GATKcnv_sample_chr_start_end_del1.dup2_copyNum_gene_GO.csv", row.names=FALSE, sep=",")
+
+# GOFuncR could be a helpful tool. See link immediately below.
+##### https://www.bioconductor.org/packages/release/bioc/vignettes/GOfuncR/inst/doc/GOfuncR.html
+
