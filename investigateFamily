@@ -16,6 +16,7 @@ library("plyr")
 
 # attach is a safety wrapper for load
 # load(file = "C:/Users/jwaldr/OneDrive - LSUHSC/GELCC/CNVsFrom3AlgsAndPheno.7.3.2020.rda")
+# load(file = "C:/Users/jwaldr/OneDrive - LSUHSC/GELCC/CNVsFrom3AlgsAndPhenoAndPhenoFam.2.17.2021.rda")
 
 
 # from data dict:
@@ -26,6 +27,84 @@ library("plyr")
 ## participant_id	Unique CID-CIND	CID	CIND	CF	CM	SEX	ADPT	TWIN
 ## H_NK-33GELCC30-33030	33030	33	030	87	23	1	0	1
 ## H_NK-33GELCC31-33031	33031	33	031	87	23	1	0	1
+##!!!!!!!!!!!!!! these twins are not included in the WES sequences that were used for CNV analysis
+
+fam <- read.csv(file = "C:/Users/jwaldr/OneDrive - LSUHSC/GELCC/WESdataFromWASHU-FamilyInfo.csv")
+
+fam203 <- fam[which(fam$Unique.CID.CIND %in% pheno$Unique.CID.CIND),c("Unique.CID.CIND", "CF", "CM", "SEX", "ADPT", "TWIN", "BY_E", "BY_A", "AFF_ANY_M", "AFF_LT_M1", "AFF_LT_M2", "ICD_C1", "ICD_C2", "ICD_C3",
+"AO1", "AO2", "AO3", "AO_ANY", "AO_LT", "CURS", "FORS", "NEVS", "YRSM", "PPD", "PY", "SMHX_EST", "CPYR_M", "CC1", "CC2", "CC3")]
+
+# fam203[,2] with CF, CM, ADPT, TWIN
+
+#collect the following data:
+# CF, father CIDR format - 3 digit number
+# CM, mother CIDR format - 3 digit number
+# sex, just for the sake of checking for continuity
+# ADPT, 1 = yes, person is an adopted, 0 = not adopted, person is a biological family member, 2 0r -1 = person is “married-in” to the family, 3 = bilineal, DK = don’t know
+# TWIN, person is a twin 1 = yes, 0 = no, person is not a twin
+# BY_E Exact year of birth in four digits only, 0 = exact year unknown
+# BY_A Approximate year of birth, 0 = don’t know
+# AFF-any,	2 = yes, person has a known cancer diagnosis (Affected – any cancers)	1 = no, person is known to be cancer-free
+# ICD-C1, ICD-C2, ICD-C3, ICD-9 code for C1, Dash (-) = unaffected or affected status is unknown
+# AO1, AO2, AO3 - age at onset of 1st, 2nd, or 3rd primary cancer
+# AO-LT - age at onset of first lung/throat cancer
+# CURS, 1 = yes, person currently smokes (Current Smoker)	0 = no, person does not currently smoke, -1 = unknown
+# FORS	1 = yes, person formerly but does not  currently smoke (Former Smoker)	0 = no, person never smoked or is a  current smoker,	-1 = unknown
+# NEVS	1 = yes, person never smoked (Never Smoked)	0 = no, person is a current or former  smoker -1 = unknown
+# YRSM	Varied, numeric value (Years Smoking)	-1 = unknown	Dash (-) = not applicable, never a smoker
+# PPD	Varied, numeric value (Packs per day)	-1 = unknown Dash (-) = not applicable, never a smoker 
+# EXSM	Varied, numeric value, (Years Ex-smoker)	-1 = unknown, Dash (-) = not applicable, never a smoker,  or still smoking
+# PY	Varied, numeric value (Pack Years)	-1 = unknown, Dash (-) = not applicable, never a smoker
+# SMHX-EST	(Smoking Levels Estimated) L = Light, less than 5 pack years, M = Moderate, > 5 pack years but ≤ 10  pack years, H = Heavy, > 10 pack years but < 25  pack years, VH = Very Heavy, ≥ 25 pack years,	N = Never Smoked, 0 pack years, * = no primary source information provided but PY, PPD, or YRSM are estimated by family member.
+# CPYR	(Pack year combined) Varied, numeric value	WHAT'S THE DIFFERENCERCE BETWEEN "CYPR" AND "CYPR_M" SEE ORIGINAL SPREADSHEET (https://docs.google.com/spreadsheets/d/1rZEEAdU79Sb20L2yytMmvuAPFDoPk6V1gQItw7HvJTA/edit?usp=sharing)
+# (CON'T) I AM GOING TO USE "CYPR_M" BECAUSE IT APPEARS TO HAVE MORE INFORMATION INCLUDED.
+
+# CC1, CC2, CC3 - 1st, 2nd, 3rd cancer code: 
+# BA  --  Brain
+# BL  --  Bladder
+# BN  --  Bone
+# BR --  Breast
+# C   --  Colorectal
+# CR  --  Cervix
+# ES  --  Esophageal
+# KR  --  Kidney/Renal
+# L   --  Lung
+# LK  --  Leukemia
+# LP  --  Lip Cancer
+# LV  --  Liver
+# LY  --  Lymphoma
+# LX  --  Larynx
+# OT  --  Other Cancer, not listed above, do  not include non-melanoma skin  cancer
+# OV  --  Ovary
+# PH  --  Pharynx
+# PR  --  Prostate
+# PC  --  Pancreas
+# SM  --  Skin, Melanoma
+# ST  --  Stomach
+# TR  --  Throat
+# UK  --  Unknown Cancer
+# UT  --  Uterine
+# 0 = no, person is known to be cancer-free
+# -1 = unknown, person’s affected status is  unknown
+# Dash (-) = no 2nd primary cancer, unaffected, or affected status is unknown OR no 3rd primary cancer, unaffected, or affected status is unknown
+
+##### make phenoFam#######
+phenoFam <- pheno
+
+for(i in pheno$Unique.CID.CIND){
+   #i =pheno$Unique.CID.CIND[1]
+   phenoFam[which(pheno$Unique.CID.CIND==i),colnames(fam203)[-1]] <- fam203[which(fam203$Unique.CID.CIND==i), colnames(fam203)[-1]]
+   }
+   
+phenoFam[c(1:4),c(13, 39)]
+# saving all 5 tables into one object
+save(XHMMcnv, CANOEScnv, GATKcnv, pheno, phenoFam, file = "C:/Users/jwaldr/OneDrive - LSUHSC/GELCC/CNVsFrom3AlgsAndPhenoAndPhenoFam.2.17.2021.rda")
+
+# SIMILARITIES AMONG TWINS
+phenoFam[which(phenoFam$TWIN == 1),1]
+phenoFam[which(phenoFam$Unique.CID.CIND == 33030),]
+# NONE to be found
 
 
- read.table(file = "C:/Users/jwaldr/OneDrive - LSUHSC/GELCC/WESdataFromWASHU-FamilyInfo", sep=",")
+
+
