@@ -37,3 +37,6 @@ save(XHMMcnv, CANOEScnv, GATKcnv, pheno, file = "C:/Users/jwaldr/OneDrive - LSUH
 ## participant_id	Unique CID-CIND	CID	CIND	CF	CM	SEX	ADPT	TWIN
 ## H_NK-33GELCC30-33030	33030	33	030	87	23	1	0	1
 ## H_NK-33GELCC31-33031	33031	33	031	87	23	1	0	1
+
+
+ file = "C:/Users/jwaldr/OneDrive - LSUHSC/GELCC/WESdataFromWASHU-FamilyInfo"
