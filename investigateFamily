@@ -1,0 +1,31 @@
+#Rterm.exe --vanilla
+
+#source("https://bioconductor.org/biocLite.R")
+#install.packages("stringi")
+#biocLite("GenomicRanges")
+#biocLite('genomation')
+#biocLite('AnnotationHub')
+library(AnnotationHub)
+library("GenomicRanges")
+library("genomation")
+
+library("nnls")
+library("Hmisc")
+library("mgcv")
+library("plyr")
+
+# attach is a safety wrapper for load
+# load(file = "C:/Users/jwaldr/OneDrive - LSUHSC/GELCC/CNVsFrom3AlgsAndPheno.7.3.2020.rda")
+
+
+# from data dict:
+#pack years: "-" -> never smoker; "-1" -> unknown
+# sex: "1" -> male; "2" -> female
+
+## samples below are twins - worth looking into the similarity of CNVs
+## participant_id	Unique CID-CIND	CID	CIND	CF	CM	SEX	ADPT	TWIN
+## H_NK-33GELCC30-33030	33030	33	030	87	23	1	0	1
+## H_NK-33GELCC31-33031	33031	33	031	87	23	1	0	1
+
+
+ read.table(file = "C:/Users/jwaldr/OneDrive - LSUHSC/GELCC/WESdataFromWASHU-FamilyInfo", sep=",")
