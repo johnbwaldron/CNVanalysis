@@ -5,6 +5,12 @@
 #biocLite("GenomicRanges")
 #biocLite('genomation')
 #biocLite('AnnotationHub')
+
+library(ggplot2)
+library(dplyr)
+library(broom)
+library(ggpubr)
+
 library("reutils")
 library(Homo.sapiens)
 library(AnnotationHub)
@@ -29,12 +35,27 @@ library("plyr")
 
 
 v = vector()
-
+l = list()
 for(i in c(1:length(GATKcnv$gene))){
   v <- c(v, strsplit(GATKcnv$gene[i], split=", ")[[1]])
+  l <- c(l, strsplit(GATKcnv$gene[i], split=", "))
   }
 
-AOsmGT <- data.frame()
+####### code below creates a list of sample names which each includes a vector of all the genes affected by a CNV in that sample
+names(l) <- GATKcnv$sample
+genesBySample <- vector("list", length(unique(names(l))))
+names(genesBySample) <- unique(names(l))
+
+for(i in 1:length(unique(names(l)))){
+genesBySample[[i]] <- unlist(subset(l, names(l)== unique(names(l))[i]), use.names = FALSE)
+copyNumGenesBySample
+cat(i, "\n")
+  }
+
+hist(as.numeric(phenoFam$Age.at.Onset.1o.cancer))
+plot(as.numeric(Age.at.Onset.1o.cancer) ~ pack.years, data = phenoFam) 
+
+AOsmGT <- data.frame(row.names = unique(GATKcnv$sample)) 
 colnames(AOsmGT) <- c("sample", "AO_LT", "CPYR_M", unique(v))
 # populate each gene col with ploidy and affected (yes/no; 1/0; T/F)
 
