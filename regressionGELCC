@@ -22,7 +22,7 @@ library("Hmisc")
 library("mgcv")
 library("plyr")
 
-# load(file = "C:/Users/jwaldr/OneDrive - LSUHSC/GELCC/CNVsFrom3AlgsAndPhenoAndPhenoFam.2.17.2021.rda")
+# load(file = "C:/Users/jwaldr/OneDrive - LSUHSC/GELCC/CNVsFrom3AlgsAndPhenoAndPhenoFam.2.19.2021.rda")
 
 # note: in the GATK output, the following is very important: 
 #  "GT of 0 indicates normal ploidy, 1 indicates deletion and 2 denotes duplication. 
@@ -63,7 +63,4 @@ model <- lm(AO ~ Age, data = AOsmGT)
 
 
 
-#examine families together
-family <- phenoFam[,c(1,8,9,10,12,14,15,17,18,39)]
-# date.frame limited to included: [1] "submitted.sample.id" [8] "Unique.CID.CIND" [9] "BY" [10] "Age.at.Onset.1o.cancer" [12] "sex" [14] "CF" [15] "CM" [17] "ADPT" [18] "TWIN" [39] "CPYR_M"
 
