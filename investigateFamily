@@ -31,7 +31,7 @@ library("plyr")
 
 fam <- read.csv(file = "C:/Users/jwaldr/OneDrive - LSUHSC/GELCC/WESdataFromWASHU-FamilyInfo.csv")
 
-fam203 <- fam[which(fam$Unique.CID.CIND %in% pheno$Unique.CID.CIND),c("Unique.CID.CIND", "CF", "CM", "SEX", "ADPT", "TWIN", "BY_E", "BY_A", "AFF_ANY_M", "AFF_LT_M1", "AFF_LT_M2", "ICD_C1", "ICD_C2", "ICD_C3",
+fam203 <- fam[which(fam$Unique.CID.CIND %in% pheno$Unique.CID.CIND),c("Unique.CID.CIND", "CID", "CIND", "CF", "CM", "SEX", "ADPT", "TWIN", "BY_E", "BY_A", "AFF_ANY_M", "AFF_LT_M1", "AFF_LT_M2", "ICD_C1", "ICD_C2", "ICD_C3",
 "AO1", "AO2", "AO3", "AO_ANY", "AO_LT", "CURS", "FORS", "NEVS", "YRSM", "PPD", "PY", "SMHX_EST", "CPYR_M", "CC1", "CC2", "CC3")]
 
 # fam203[,2] with CF, CM, ADPT, TWIN
@@ -98,7 +98,10 @@ for(i in pheno$Unique.CID.CIND){
    
 phenoFam[c(1:4),c(13, 39)]
 # saving all 5 tables into one object
-save(XHMMcnv, CANOEScnv, GATKcnv, pheno, phenoFam, file = "C:/Users/jwaldr/OneDrive - LSUHSC/GELCC/CNVsFrom3AlgsAndPhenoAndPhenoFam.2.17.2021.rda")
+# save(XHMMcnv, CANOEScnv, GATKcnv, pheno, phenoFam, file = "C:/Users/jwaldr/OneDrive - LSUHSC/GELCC/CNVsFrom3AlgsAndPhenoAndPhenoFam.2.17.2021.rda")
+
+# new data.frame created 2/19/21 to include CID and CIND in "phenoFam"
+save(XHMMcnv, CANOEScnv, GATKcnv, pheno, phenoFam, file = "C:/Users/jwaldr/OneDrive - LSUHSC/GELCC/CNVsFrom3AlgsAndPhenoAndPhenoFam.2.19.2021.rda")
 
 # SIMILARITIES AMONG TWINS
 phenoFam[which(phenoFam$TWIN == 1),1]
