@@ -108,6 +108,39 @@ phenoFam[which(phenoFam$TWIN == 1),1]
 phenoFam[which(phenoFam$Unique.CID.CIND == 33030),]
 # NONE to be found
 
+#examine families together
+family <- phenoFam[,c(1,8,9,10,12,14,15,17,18,39)]
+# date.frame limited to included: [1] "submitted.sample.id" [8] "Unique.CID.CIND" [9] "BY" [10] "Age.at.Onset.1o.cancer" [12] "sex" [14] "CF" [15] "CM" [17] "ADPT" [18] "TWIN" [39] "CPYR_M"
+# split CID.CIND into tw separate columns
 
+# create a list of trios
 
+trios <- vector("list", length(which(phenoFam$CF %in% phenoFam$CIND)))
+# length(which(phenoFam$CF %in% phenoFam$CIND)) # the number of fathers that are listed as individuals in this dataset, NOT the number of individuals that are listed as fathers (one father can have multiple children, but every child has one father) length(which(phenoFam$CIND %in% phenoFam$CF)); length(which(phenoFam$CM!=0)) == length(which(phenoFam$CF!=0)) == 179
+
+# one list element per offspring. to include offspring, mother, father (in that order)
+j <- 0
+
+for(i in which(phenoFam$CF %in% phenoFam$CIND)){
+   j <- j+1
+   kid <- GATKcnv[which(GATKcnv$sample == phenoFam$submitted.sample.id[i]),]
+   #subset to those individuals in the same CID/family
+   
+   familyMembers <- subset(phenoFam, phenoFam$CID == phenoFam$CID[i])
+   
+   if (phenoFam$CM[i] %in% familyMembers$CIND) {
+   j=j+1
+      motherlocation <- which(phenoFam$CIND == phenoFam$CM[i])
+      mother <- GATKcnv[which(GATKcnv$sample == phenoFam$submitted.sample.id[motherlocation]),]
+      trios[j] <- rbind(kid, mother, father)
+      } else {
+      trios[j] <- rbind(kid, father)
+      }
+      if (phenoFam$CF[i] %in% familyMembers$CIND) {
+      
+
+  
+  length(which(phenoFam$CF %in% phenoFam$CIND)) # the number of fathers that are listed as individuals in this dataset, NOT the number of individuals that are listed as fathers (one father can have multiple children, but every child has one father) length(which(phenoFam$CIND %in% phenoFam$CF))
+  
+   trios[j] <- data.frame
 
