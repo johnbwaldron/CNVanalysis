@@ -59,7 +59,11 @@ AOsmGT <- data.frame(row.names = unique(GATKcnv$sample))
 colnames(AOsmGT) <- c("sample", "AO_LT", "CPYR_M", unique(v))
 # populate each gene col with ploidy and affected (yes/no; 1/0; T/F)
 
-
-
 model <- lm(AO ~ Age, data = AOsmGT)
+
+
+
+#examine families together
+family <- phenoFam[,c(1,8,9,10,12,14,15,17,18,39)]
+# date.frame limited to included: [1] "submitted.sample.id" [8] "Unique.CID.CIND" [9] "BY" [10] "Age.at.Onset.1o.cancer" [12] "sex" [14] "CF" [15] "CM" [17] "ADPT" [18] "TWIN" [39] "CPYR_M"
 
