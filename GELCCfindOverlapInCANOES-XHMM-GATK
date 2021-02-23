@@ -85,44 +85,6 @@ CANOEScnv$chr <- paste("chr", CANOEScnv$chr, sep="")
 
 
 
-################################################################################################################
-#compare CNV calls
-################################################################################################################
-
-##### plan: to create a data.fram comparing the overlap in calls within an individual/sample
-
-for(i in unique(GATKcnv$sample)){                      #i = GATKcnv$sample[1]
-A <- makeGRangesFromDataFrame(subset(GATKcnv, GATKcnv$sample == i)) 
-B <- makeGRangesFromDataFrame(subset(XHMMcnv, XHMMcnv$sample == i), keep.extra.columns=TRUE)
-C <- makeGRangesFromDataFrame(subset(CANOEScnv, CANOEScnv$sample == i), keep.extra.columns=TRUE)
-ABlaps <- findOverlaps(A, B)
-AClaps <- findOverlaps(A, C)
-BClaps <- findOverlaps(B, C)
-
-#olaps is a two-column matrix, indicating which element(s) of A overlap the corresponding elements of B. In the invocation above A and B enter symmetrically, but could be re-ordered if there were restrictions on the type of overlap (argument type, e.g., all of B strictly within A). To find the extent of overlap, I looked at the parallel (element wise) intersection of each overlap
-
-ABsect <- pintersect(A[queryHits(ABlaps)], B[subjectHits(ABlaps)])
-ACsect <- pintersect(A[queryHits(AClaps)], C[subjectHits(AClaps)])
-BCsect <- pintersect(C[queryHits(BClaps)], C[subjectHits(BClaps)])
-
-##########HOW should I organize this information??????####################
-
-# save(isect, olaps, XHMMcnv, GATKcnv, file = "C:/Users/jwaldr/OneDrive - LSUHSC/GELCC/olaps7.2.2020.RData")
-
-# create a data.frame with whatever information needed
-#### make data.frame of overlapping CNV calls between XHMM and GATK
-CNV.GATKvsXHMM <- data.frame(query=queryHits(olaps), subject=subjectHits(olaps),
-           olap_width=width(isect), 
-           query_width=width(A)[queryHits(olaps)],
-           variantaccession=B$gene[subjectHits(olaps)])
-
-##################################### NOT USING THIS, NEED TO SIMPLIFY CALLS TO SUBSET BY SAMPLE/INDIVIDUAL#####################################
-GATKvsXHMM <- data.frame(query=queryHits(olaps), subject=subjectHits(olaps),
-           olap_width=width(isect), 
-           query_width=width(A)[queryHits(olaps)],
-           variantaccession=B$gene[subjectHits(olaps)])
-# This will be fast for millions of records in A and B.
-####################################################################################################################################################
 
 
 # makeGRangesFromDataFrame is available in the current release version of the package, installed by default when using R-3.1. It's easy to make a GRanges 'by hand', e.g.,
@@ -221,3 +183,52 @@ if (!requireNamespace("BiocManager", quietly=TRUE))
 BiocManager::install("annotatr")
 
 library("annotatr")
+
+
+################################################################################################################
+#compare CNV calls
+################################################################################################################
+
+##### plan: to create a data.fram comparing the overlap in calls within an individual/sample
+
+for(i in unique(GATKcnv$sample)){                      #i = GATKcnv$sample[1]
+A <- makeGRangesFromDataFrame(subset(GATKcnv, GATKcnv$sample == i)) 
+B <- makeGRangesFromDataFrame(subset(XHMMcnv, XHMMcnv$sample == i), keep.extra.columns=TRUE)
+C <- makeGRangesFromDataFrame(subset(CANOEScnv, CANOEScnv$sample == i), keep.extra.columns=TRUE)
+ABlaps <- findOverlaps(A, B)
+AClaps <- findOverlaps(A, C)
+BClaps <- findOverlaps(B, C)
+
+#olaps is a two-column matrix, indicating which element(s) of A overlap the corresponding elements of B. In the invocation above A and B enter symmetrically, but could be re-ordered if there were restrictions on the type of overlap (argument type, e.g., all of B strictly within A). To find the extent of overlap, I looked at the parallel (element wise) intersection of each overlap
+
+ABsect <- pintersect(A[queryHits(ABlaps)], B[subjectHits(ABlaps)])
+ACsect <- pintersect(A[queryHits(AClaps)], C[subjectHits(AClaps)])
+BCsect <- pintersect(C[queryHits(BClaps)], C[subjectHits(BClaps)])
+
+##########HOW should I organize this information??????####################
+
+# save(isect, olaps, XHMMcnv, GATKcnv, file = "C:/Users/jwaldr/OneDrive - LSUHSC/GELCC/olaps7.2.2020.RData")
+<- data.frame(query=queryHits(olaps), subject=subjectHits(olaps),
+           olap_width=width(isect), 
+           query_width=width(A)[queryHits(olaps)],
+           variantaccession=B$gene[subjectHits(olaps)])
+           
+           
+# create a data.frame with whatever information needed
+#### make data.frame of overlapping CNV calls between XHMM and GATK
+CNV.GATKvsXHMM <- data.frame(query=queryHits(olaps), subject=subjectHits(olaps),
+           olap_width=width(isect), 
+           query_width=width(A)[queryHits(olaps)],
+           variantaccession=B$gene[subjectHits(olaps)])
+####################################
+pheno$Unique.CID.CIND[which(pheno$LA)]
+
+
+##################################### NOT USING THIS, NEED TO SIMPLIFY CALLS TO SUBSET BY SAMPLE/INDIVIDUAL#####################################
+GATKvsXHMM <- data.frame(query=queryHits(olaps), subject=subjectHits(olaps),
+           olap_width=width(isect), 
+           query_width=width(A)[queryHits(olaps)],
+           variantaccession=B$gene[subjectHits(olaps)])
+# This will be fast for millions of records in A and B.
+####################################################################################################################################################
+
