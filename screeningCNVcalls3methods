@@ -1,0 +1,73 @@
+#Rterm.exe --vanilla
+# source("https://raw.githubusercontent.com/johnbwaldron/genes/master/convertGenomicRangeToGeneName")
+# look here for ideas: https://support.bioconductor.org/p/67118/
+
+library("reutils") # does not exist, do i need it?? (2/23/21)
+library(Homo.sapiens)
+library(GenomicRanges)
+
+load(file = "C:/Users/jwaldr/OneDrive - LSUHSC/GELCC/CNVsFrom3AlgsAndPhenoAndPhenoFam.2.19.2021.rda")
+
+######################################################################################
+
+
+# use these gene and GO categories to find genes and GO categories that are enriched in the CNVs but then look below
+###########################I think a it would be more telling to identify the overlaps between CNV calls within and between families
+###########################quantify the degree of overlap within vs among families 
+###########################then classify the genes that show up across families
+
+
+#maybe use annotatr instead
+if (!requireNamespace("BiocManager", quietly=TRUE))
+    install.packages("BiocManager")
+BiocManager::install("annotatr")
+
+library("annotatr")
+
+
+################################################################################################################
+#compare CNV calls
+################################################################################################################
+
+##### plan: to create a data.fram comparing the overlap in calls within an individual/sample
+
+for(i in unique(GATKcnv$sample)){                      #i = GATKcnv$sample[1]
+A <- makeGRangesFromDataFrame(subset(GATKcnv, GATKcnv$sample == i)) 
+B <- makeGRangesFromDataFrame(subset(XHMMcnv, XHMMcnv$sample == i), keep.extra.columns=TRUE)
+C <- makeGRangesFromDataFrame(subset(CANOEScnv, CANOEScnv$sample == i), keep.extra.columns=TRUE)
+ABlaps <- findOverlaps(A, B)
+AClaps <- findOverlaps(A, C)
+BClaps <- findOverlaps(B, C)
+
+#olaps is a two-column matrix, indicating which element(s) of A overlap the corresponding elements of B. In the invocation above A and B enter symmetrically, but could be re-ordered if there were restrictions on the type of overlap (argument type, e.g., all of B strictly within A). To find the extent of overlap, I looked at the parallel (element wise) intersection of each overlap
+
+ABsect <- pintersect(A[queryHits(ABlaps)], B[subjectHits(ABlaps)])
+ACsect <- pintersect(A[queryHits(AClaps)], C[subjectHits(AClaps)])
+BCsect <- pintersect(C[queryHits(BClaps)], C[subjectHits(BClaps)])
+
+##########HOW should I organize this information??????####################
+
+# save(isect, olaps, XHMMcnv, GATKcnv, file = "C:/Users/jwaldr/OneDrive - LSUHSC/GELCC/olaps7.2.2020.RData")
+<- data.frame(query=queryHits(olaps), subject=subjectHits(olaps),
+           olap_width=width(isect), 
+           query_width=width(A)[queryHits(olaps)],
+           variantaccession=B$gene[subjectHits(olaps)])
+           
+           
+# create a data.frame with whatever information needed
+#### make data.frame of overlapping CNV calls between XHMM and GATK
+CNV.GATKvsXHMM <- data.frame(query=queryHits(olaps), subject=subjectHits(olaps),
+           olap_width=width(isect), 
+           query_width=width(A)[queryHits(olaps)],
+           variantaccession=B$gene[subjectHits(olaps)])
+####################################
+pheno$Unique.CID.CIND[which(pheno$LA)]
+
+
+##################################### NOT USING THIS, NEED TO SIMPLIFY CALLS TO SUBSET BY SAMPLE/INDIVIDUAL#####################################
+GATKvsXHMM <- data.frame(query=queryHits(olaps), subject=subjectHits(olaps),
+           olap_width=width(isect), 
+           query_width=width(A)[queryHits(olaps)],
+           variantaccession=B$gene[subjectHits(olaps)])
+# This will be fast for millions of records in A and B.
+####################################################################################################################################################
