@@ -29,21 +29,29 @@ library("annotatr")
 #compare CNV calls
 ################################################################################################################
 
-##### plan: to create a data.fram comparing the overlap in calls within an individual/sample
+##### plan: to create a data.frame comparing the overlap in calls within an individual/sample
 
 for(i in unique(GATKcnv$sample)){                      #i = GATKcnv$sample[1]
-A <- makeGRangesFromDataFrame(subset(GATKcnv, GATKcnv$sample == i)) 
+A <- makeGRangesFromDataFrame(subset(GATKcnv, GATKcnv$sample == i), keep.extra.columns=TRUE) 
 B <- makeGRangesFromDataFrame(subset(XHMMcnv, XHMMcnv$sample == i), keep.extra.columns=TRUE)
 C <- makeGRangesFromDataFrame(subset(CANOEScnv, CANOEScnv$sample == i), keep.extra.columns=TRUE)
 ABlaps <- findOverlaps(A, B)
 AClaps <- findOverlaps(A, C)
 BClaps <- findOverlaps(B, C)
 
+# frame <- mergeByOverlaps(A, B) # creates a data frame including only those segments present in both query and subject
+
 #olaps is a two-column matrix, indicating which element(s) of A overlap the corresponding elements of B. In the invocation above A and B enter symmetrically, but could be re-ordered if there were restrictions on the type of overlap (argument type, e.g., all of B strictly within A). To find the extent of overlap, I looked at the parallel (element wise) intersection of each overlap
 
-ABsect <- pintersect(A[queryHits(ABlaps)], B[subjectHits(ABlaps)])
+ABsect <- pintersect(A[queryHits(ABlaps)], B[subjectHits(ABlaps)]) #"subjectHits" gives the index values in query where the subject range overlaps with query range for each range in 
 ACsect <- pintersect(A[queryHits(AClaps)], C[subjectHits(AClaps)])
 BCsect <- pintersect(C[queryHits(BClaps)], C[subjectHits(BClaps)])
+
+ABdiff<- psetdiff(A[queryHits(ABlaps)], B[subjectHits(ABlaps)])
+plot(coverage(A)$chr1, ty="l", main="Coverage of Reads of Chr1", xlab="Coordinates along Chr1", ylab="Coverage")
+
+#A[queryHits(ABlaps)[9]]
+#B[subjectHits(ABlaps)[9]]
 
 ##########HOW should I organize this information??????####################
 
