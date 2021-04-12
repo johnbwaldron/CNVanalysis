@@ -23,6 +23,8 @@ for (i in unique(CANOEScnv$sample)){
 included <- included[order(included$CID), ]   
 includedCANOES <- included
 included <- data.frame("CID" = character(0), "CIND" = character(0))
+length(unique(includedCANOES$CID))
+length(includedCANOES$CIND)
 
 # XHMM
 for (i in unique(XHMMcnv$sample)){
@@ -31,6 +33,8 @@ for (i in unique(XHMMcnv$sample)){
 included <- included[order(included$CID), ] 
 includedXHMM <- included
 included <- data.frame("CID" = character(0), "CIND" = character(0))
+length(unique(includedXHMM$CID))
+length(includedXHMM$CIND)
 
 #GATK
 for (i in unique(GATKcnv$sample)){
@@ -38,5 +42,6 @@ for (i in unique(GATKcnv$sample)){
 }
 included <- included[order(included$CID), ] 
 includedGATK <- included
-
+length(unique(includedGATK$CID))
+order(unique(includedGATK$CID))
 
