@@ -1,0 +1,42 @@
+#Rterm.exe --vanilla
+# source("***")
+
+
+library("reutils") # does not exist, do i need it?? (2/23/21)
+library(Homo.sapiens) # Homo.sapiens loads library(GenomicRanges)
+
+
+load(file = "C:/Users/jwaldr/OneDrive - LSUHSC/GELCC/CNVsFrom3AlgsAndPhenoAndPhenoFam.2.19.2021.rda")
+
+######################################################################################
+
+#for each sample listed in CNV calling alroghithm results
+# yes, "New" is a CID ## phenoFam[which(phenoFam$CID=="New"),]
+
+#for each unique CID, the CINDs, affected, at what age ######### i = unique(CANOEScnv$sample)[1]
+included <- data.frame("CID" = character(0), "CIND" = character(0))
+
+# CANOES
+for (i in unique(CANOEScnv$sample)){
+  included <- rbind(included, data.frame("CID"=phenoFam$CID[which(phenoFam$submitted.sample.id==i)], "CIND"=phenoFam$CIND[which(phenoFam$submitted.sample.id==i)]))
+}
+included <- included[order(included$CID), ]   
+includedCANOES <- included
+included <- data.frame("CID" = character(0), "CIND" = character(0))
+
+# XHMM
+for (i in unique(XHMMcnv$sample)){
+  included <- rbind(included, data.frame("CID"=phenoFam$CID[which(phenoFam$submitted.sample.id==i)], "CIND"=phenoFam$CIND[which(phenoFam$submitted.sample.id==i)]))
+}
+included <- included[order(included$CID), ] 
+includedXHMM <- included
+included <- data.frame("CID" = character(0), "CIND" = character(0))
+
+#GATK
+for (i in unique(GATKcnv$sample)){
+  included <- rbind(included, data.frame("CID"=phenoFam$CID[which(phenoFam$submitted.sample.id==i)], "CIND"=phenoFam$CIND[which(phenoFam$submitted.sample.id==i)]))
+}
+included <- included[order(included$CID), ] 
+includedGATK <- included
+
+
