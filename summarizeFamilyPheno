@@ -1,0 +1,192 @@
+#Rterm.exe --vanilla
+library(Homo.sapiens)
+
+load(file = "C:/Users/jwaldr/OneDrive - LSUHSC/GELCC/CNVsFrom3AlgsAndPhenoAndPhenoFam.2.19.2021.rda")
+
+######################################################################################
+
+
+# use these gene and GO categories to find genes and GO categories that are enriched in the CNVs but then look below
+###########################I think a it would be more telling to identify the overlaps between CNV calls within and between families
+###########################quantify the degree of overlap within vs among families 
+###########################then classify the genes that show up across families
+
+
+#maybe use annotatr instead
+if (!requireNamespace("BiocManager", quietly=TRUE))
+    install.packages("BiocManager")
+BiocManager::install("annotatr")
+
+library("annotatr")
+
+
+##################summarize phenoData################################
+summary <- matrix(nrow=0, ncol=4)
+summary <- as.data.frame(summary)
+colnames(summary) <- c("FAMILY/CID", "# of lung, throat, larynx/pharynx Ca cases with WES included", "# of unknown/unaffected with WES included", "total samples included")
+for(i in unique(phenoFam$CID)){                      #i = unique(phenoFam$CID)[1]
+  family <- subset(phenoFam, phenoFam$CID == i)
+
+  summary[nrow(summary) + 1, ] <- c(i, 
+                                    sum(family$diagnosis.of.lung.throat.pharynx.larynx.cancer, na.rm = TRUE),
+                                    length(which(family$diagnosis.of.lung.throat.pharynx.larynx.cancer==FALSE)),
+                                    length(family$diagnosis.of.lung.throat.pharynx.larynx.cancer)) 
+  }
+
+write.table(summary, file=paste("C:/Users/jwaldr/OneDrive - LSUHSC/GELCC/comparingAlgorithms/summarizedFamiliesIncluded.csv", sep=""), row.names=FALSE, sep=",")
+
+################################################################################################################
+#compare CNVs across family member
+################################################################################################################
+
+##### plan: to create a data.frame comparing the overlap in calls within an individual/sample
+summary <- matrix(nrow=0, ncol=4)
+summary <- as.data.frame(summary)
+colnames(summary) <- c("sample", "GATKvsXHMM", "GATKvsCANOES", "XHMMvsCANOES")
+
+for(i in unique(GATKcnv$sample)){                      #i = GATKcnv$sample[1]
+A <- makeGRangesFromDataFrame(subset(GATKcnv, GATKcnv$sample == i), keep.extra.columns=TRUE) 
+B <- makeGRangesFromDataFrame(subset(XHMMcnv, XHMMcnv$sample == i), keep.extra.columns=TRUE)
+if(any(CANOEScnv$sample == i)) C <- makeGRangesFromDataFrame(subset(CANOEScnv, CANOEScnv$sample == i), keep.extra.columns=TRUE)
+ABlaps <- findOverlaps(A, B)
+AClaps <- findOverlaps(A, C)
+BClaps <- findOverlaps(B, C)
+
+# frame <- mergeByOverlaps(A, B) # creates a data frame including only those segments present in both query and subject
+
+#olaps is a two-column matrix, indicating which element(s) of A overlap the corresponding elements of B. In the invocation above A and B enter symmetrically, but could be re-ordered if there were restrictions on the type of overlap (argument type, e.g., all of B strictly within A). To find the extent of overlap, I looked at the parallel (element wise) intersection of each overlap
+
+ABsect <- pintersect(A[queryHits(ABlaps)], B[subjectHits(ABlaps)]) #"subjectHits" gives the index values in query where the subject range overlaps with query range for each range in 
+ACsect <- pintersect(A[queryHits(AClaps)], C[subjectHits(AClaps)])
+BCsect <- pintersect(B[queryHits(BClaps)], C[subjectHits(BClaps)])
+
+#ABdiff<- psetdiff(A[queryHits(ABlaps)], B[subjectHits(ABlaps)])
+#plot(coverage(A)$chr1, ty="l", main="Coverage of Reads of Chr1", xlab="Coordinates along Chr1", ylab="Coverage")
+
+#A[queryHits(ABlaps)[9]]
+#B[subjectHits(ABlaps)[9]]
+
+##################################### GATK vs. XHMM CALLS TO SUBSET BY SAMPLE/INDIVIDUAL#####################################
+GATKvsXHMM <- data.frame(query=queryHits(ABlaps), subject=subjectHits(ABlaps),
+           olap_width=width(ABsect), 
+           query_width=width(A)[queryHits(ABlaps)],
+           variantaccession=B$gene[subjectHits(ABlaps)])
+# This will be fast for millions of records in A and B.
+write.table(GATKvsXHMM, file=paste("C:/Users/jwaldr/OneDrive - LSUHSC/GELCC/comparingAlgorithms/GATKvsXHMM.", i, ".csv", sep=""), row.names=FALSE, sep=",") #quote=c(1:3)???
+
+##################################### GATK vs. CANOES CALLS TO SUBSET BY SAMPLE/INDIVIDUAL#####################################
+GATKvsCANOES <- data.frame(query=queryHits(AClaps), subject=subjectHits(AClaps),
+           olap_width=width(ACsect), 
+           query_width=width(A)[queryHits(AClaps)],
+           variantaccession=C$gene[subjectHits(AClaps)])
+
+write.table(GATKvsCANOES, file=paste("C:/Users/jwaldr/OneDrive - LSUHSC/GELCC/comparingAlgorithms/GATKvsCANOES.", i, ".csv", sep=""), row.names=FALSE, sep=",")
+
+
+##################################### XHMM vs. CANOES CALLS TO SUBSET BY SAMPLE/INDIVIDUAL#####################################
+XHMMvsCANOES <- data.frame(query=queryHits(BClaps), subject=subjectHits(BClaps),
+           olap_width=width(BCsect), 
+           query_width=width(B)[queryHits(BClaps)],
+           variantaccession=B$gene[subjectHits(BClaps)])
+
+write.table(XHMMvsCANOES, file=paste("C:/Users/jwaldr/OneDrive - LSUHSC/GELCC/comparingAlgorithms/XHMMvsCANOES.", i, ".csv", sep=""), row.names=FALSE, sep=",")
+
+##################################### summary calls #####################################
+
+summary[nrow(summary) + 1, ] <- c(i, nrow(GATKvsXHMM), nrow(XHMMvsCANOES), nrow(GATKvsCANOES)) 
+
+####################################################################################################################################################
+    } # end of loop
+
+
+
+
+
+
+
+
+
+
+
+
+##########HOW should I organize this information??????####################
+
+# save(isect, olaps, XHMMcnv, GATKcnv, file = "C:/Users/jwaldr/OneDrive - LSUHSC/GELCC/olaps7.2.2020.RData")
+<- data.frame(query=queryHits(olaps), subject=subjectHits(olaps),
+           olap_width=width(isect), 
+           query_width=width(A)[queryHits(olaps)],
+           variantaccession=B$gene[subjectHits(olaps)])
+           
+           
+# create a data.frame with whatever information needed
+#### make data.frame of overlapping CNV calls between XHMM and GATK
+CNV.GATKvsXHMM <- data.frame(query=queryHits(olaps), subject=subjectHits(olaps),
+           olap_width=width(isect), 
+           query_width=width(A)[queryHits(olaps)],
+           variantaccession=B$gene[subjectHits(olaps)])
+####################################
+pheno$Unique.CID.CIND[which(pheno$LA)]
+
+
+##################################### NOT USING THIS, NEED TO SIMPLIFY CALLS TO SUBSET BY SAMPLE/INDIVIDUAL#####################################
+GATKvsXHMM <- data.frame(query=queryHits(olaps), subject=subjectHits(olaps),
+           olap_width=width(isect), 
+           query_width=width(A)[queryHits(olaps)],
+           variantaccession=B$gene[subjectHits(olaps)])
+# This will be fast for millions of records in A and B.
+####################################################################################################################################################
+
+
+
+
+
+
+
+########################IS WHAT YOU SEE BELOW HELPFUL?##################################
+
+################################################################################################################
+
+cnvGranges <- makeGRangesFromDataFrame(cnv, keep.extra.columns=TRUE, seqnames.field = "chr")
+
+geneRanges <- 
+    function(db, column="ENTREZID")
+{
+    g <- genes(db, columns=column)
+    col <- mcols(g)[[column]]
+    genes <- granges(g)[rep(seq_along(g), elementNROWS(col))]
+    mcols(genes)[[column]] <- as.character(unlist(col))
+    genes
+}
+
+gns = geneRanges(Homo.sapiens, column="SYMBOL")
+
+
+####################################################################################################
+#Find overlap
+
+splitByOverlap <-
+    function(query, subject, column="ENTREZID", ...)
+{
+    olaps <- findOverlaps(query, subject, ...)
+    f1 <- factor(subjectHits(olaps),
+                 levels=seq_len(subjectLength(olaps)))
+    splitAsList(mcols(query)[[column]][queryHits(olaps)], f1)
+}
+
+symInCnv = splitByOverlap(gns, cnvGranges, "SYMBOL")
+
+#?g <- genes(Homo.sapiens, column="ENTREZID")
+#laps <- findOverlaps(g, cnvGranges)
+#fa <- factor(subjectHits(laps), levels=seq_len(subjectLength(laps)))
+#answer <- splitAsList(mcols(g)[["SYMBOL"]][queryHits(laps)], fa)
+
+cnv$gene <- NA
+
+for(i in 1:nrow(cnv)){
+cat("cnv #", i, " covers ", paste(symInCnv[[i]], collapse=", "), "\n")
+cnv$gene[i] <- paste(symInCnv[[i]], collapse=", ")
+}
+
+
+write.table(cnv, file="C:/Users/jwaldr/OneDrive - LSUHSC/prostateCancerGATKResults/cnvWithSymbol.csv", row.names=FALSE, sep=",") #quote=c(1:3)???
+
