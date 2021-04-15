@@ -11,15 +11,6 @@ load(file = "C:/Users/jwaldr/OneDrive - LSUHSC/GELCC/CNVsFrom3AlgsAndPhenoAndPhe
 ###########################quantify the degree of overlap within vs among families 
 ###########################then classify the genes that show up across families
 
-
-#maybe use annotatr instead
-if (!requireNamespace("BiocManager", quietly=TRUE))
-    install.packages("BiocManager")
-BiocManager::install("annotatr")
-
-library("annotatr")
-
-
 ##################summarize phenoData################################
 summary <- matrix(nrow=0, ncol=4)
 summary <- as.data.frame(summary)
@@ -36,17 +27,34 @@ for(i in unique(phenoFam$CID)){                      #i = unique(phenoFam$CID)[1
 write.table(summary, file=paste("C:/Users/jwaldr/OneDrive - LSUHSC/GELCC/comparingAlgorithms/summarizedFamiliesIncluded.csv", sep=""), row.names=FALSE, sep=",")
 
 ################################################################################################################
-#compare CNVs across family member
+#compare CNVs across family members
 ################################################################################################################
 
-##### plan: to create a data.frame comparing the overlap in calls within an individual/sample
+##### plan: to create a data.frame comparing the overlap in calls within families
 summary <- matrix(nrow=0, ncol=4)
 summary <- as.data.frame(summary)
 colnames(summary) <- c("sample", "GATKvsXHMM", "GATKvsCANOES", "XHMMvsCANOES")
 
-for(i in unique(GATKcnv$sample)){                      #i = GATKcnv$sample[1]
-A <- makeGRangesFromDataFrame(subset(GATKcnv, GATKcnv$sample == i), keep.extra.columns=TRUE) 
-B <- makeGRangesFromDataFrame(subset(XHMMcnv, XHMMcnv$sample == i), keep.extra.columns=TRUE)
+# for now, change the CIND numbers to compare different family members
+familyMemberA <- phenoFam$submitted.sample.id[which(phenoFam$CID==12 & phenoFam$CIND==1)]
+familyMemberB <- phenoFam$submitted.sample.id[which(phenoFam$CID==12 & phenoFam$CIND==9)]
+
+A <- makeGRangesFromDataFrame(subset(GATKcnv, GATKcnv$sample == familyMemberA), keep.extra.columns=TRUE) 
+B <- makeGRangesFromDataFrame(subset(GATKcnv, GATKcnv$sample == familyMemberB), keep.extra.columns=TRUE)
+ABlaps <- findOverlaps(A, B)
+ABsect <- pintersect(A[queryHits(ABlaps)], B[subjectHits(ABlaps)])
+
+familyMemberAvsfamilyMemberB <- data.frame(query=queryHits(ABlaps), subject=subjectHits(ABlaps),
+           olap_width=width(ABsect), 
+           query_width=width(A)[queryHits(ABlaps)],
+           variantaccession=B$gene[subjectHits(ABlaps)])
+# This will be fast for millions of records in A and B.
+write.table(familyMemberAvsfamilyMemberB, file=paste("C:/Users/jwaldr/OneDrive - LSUHSC/GELCC/comparingFamilyMembers/", familyMemberA, "vs", familyMemberB, ".csv", sep=""), row.names=FALSE, sep=",") #quote=c(1:3)???
+nrow(familyMemberAvsfamilyMemberB)
+A
+B
+avgPercentOverlap <- (nrow(familyMemberAvsfamilyMemberB)/length(A) + nrow(familyMemberAvsfamilyMemberB)/length(B))/2
+
 if(any(CANOEScnv$sample == i)) C <- makeGRangesFromDataFrame(subset(CANOEScnv, CANOEScnv$sample == i), keep.extra.columns=TRUE)
 ABlaps <- findOverlaps(A, B)
 AClaps <- findOverlaps(A, C)
