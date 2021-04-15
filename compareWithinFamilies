@@ -1,0 +1,24 @@
+#Rterm.exe --vanilla
+library(Homo.sapiens)
+load(file = "C:/Users/jwaldr/OneDrive - LSUHSC/GELCC/CNVsFrom3AlgsAndPhenoAndPhenoFam.2.19.2021.rda")
+######################################################################################
+
+# for now, change the CIND numbers to compare different family members
+familyMemberA <- phenoFam$submitted.sample.id[which(phenoFam$CID==12 & phenoFam$CIND==1)]
+familyMemberB <- phenoFam$submitted.sample.id[which(phenoFam$CID==12 & phenoFam$CIND==9)]
+
+A <- makeGRangesFromDataFrame(subset(GATKcnv, GATKcnv$sample == familyMemberA), keep.extra.columns=TRUE) 
+B <- makeGRangesFromDataFrame(subset(GATKcnv, GATKcnv$sample == familyMemberB), keep.extra.columns=TRUE)
+ABlaps <- findOverlaps(A, B)
+ABsect <- pintersect(A[queryHits(ABlaps)], B[subjectHits(ABlaps)])
+
+familyMemberAvsfamilyMemberB <- data.frame(query=queryHits(ABlaps), subject=subjectHits(ABlaps),
+           olap_width=width(ABsect), 
+           query_width=width(A)[queryHits(ABlaps)],
+           variantaccession=B$gene[subjectHits(ABlaps)])
+# This will be fast for millions of records in A and B.
+write.table(familyMemberAvsfamilyMemberB, file=paste("C:/Users/jwaldr/OneDrive - LSUHSC/GELCC/comparingFamilyMembers/", familyMemberA, "vs", familyMemberB, ".csv", sep=""), row.names=FALSE, sep=",") #quote=c(1:3)???
+nrow(familyMemberAvsfamilyMemberB)
+A
+B
+avgPercentOverlap <- (nrow(familyMemberAvsfamilyMemberB)/length(A) + nrow(familyMemberAvsfamilyMemberB)/length(B))/2
