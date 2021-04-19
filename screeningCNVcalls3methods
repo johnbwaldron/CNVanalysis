@@ -35,6 +35,10 @@ summary <- as.data.frame(summary)
 colnames(summary) <- c("sample", "GATKvsXHMM", "GATKvsCANOES", "XHMMvsCANOES")
 
 for(i in unique(GATKcnv$sample)){                      #i = GATKcnv$sample[1]
+A <- FALSE
+B <- FALSE
+C <- FALSE
+
 A <- makeGRangesFromDataFrame(subset(GATKcnv, GATKcnv$sample == i), keep.extra.columns=TRUE) 
 if(any(XHMMcnv$sample == i))B <- makeGRangesFromDataFrame(subset(XHMMcnv, XHMMcnv$sample == i), keep.extra.columns=TRUE)
 if(any(CANOEScnv$sample == i)) C <- makeGRangesFromDataFrame(subset(CANOEScnv, CANOEScnv$sample == i), keep.extra.columns=TRUE)
