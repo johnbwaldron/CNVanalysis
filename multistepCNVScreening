@@ -1,0 +1,56 @@
+#Rterm.exe --vanilla
+# source("https://raw.githubusercontent.com/johnbwaldron/genes/master/convertGenomicRangeToGeneName")
+# look here for ideas: https://support.bioconductor.org/p/67118/
+
+library(Homo.sapiens)
+
+for(i in unique(GATKcnv$sample)){                      #i = GATKcnv$sample[1]
+  GATKvsXHMM <- read.csv(file = paste("C:/Users/jwaldr/OneDrive - LSUHSC/GELCC/comparingAlgorithms/GATKvsXHMM.", i, ".csv", sep=""))
+  subset(GATKcnv, GATKcnv$sample == i)[5, ] #  chr1 16,950,072 -  16,979,166
+  subset(XHMMcnv, XHMMcnv$sample == i)[2, ] #  chr1 16,969,285 -  16,976,851
+  
+  A <- makeGRangesFromDataFrame(subset(GATKcnv, GATKcnv$sample == i), keep.extra.columns=TRUE) 
+if(any(XHMMcnv$sample == i)){
+    B <- makeGRangesFromDataFrame(subset(XHMMcnv, XHMMcnv$sample == i), keep.extra.columns=TRUE)
+
+    ABlaps <- findOverlaps(A, B)
+  
+  
+  t <- as.table(GATK
+  }
+  
+summary <- matrix(nrow=0, ncol=4)
+summary <- as.data.frame(summary)
+colnames(summary) <- c("sample", "GATKvsXHMM",  )
+
+for(i in unique(GATKcnv$sample)){                      #i = GATKcnv$sample[1]
+A <- FALSE
+B <- FALSE
+C <- FALSE
+
+A <- makeGRangesFromDataFrame(subset(GATKcnv, GATKcnv$sample == i), keep.extra.columns=TRUE) 
+if(any(XHMMcnv$sample == i)){
+    B <- makeGRangesFromDataFrame(subset(XHMMcnv, XHMMcnv$sample == i), keep.extra.columns=TRUE)
+
+    ABlaps <- findOverlaps(A, B)
+    ABsect <- pintersect(A[queryHits(ABlaps)], B[subjectHits(ABlaps)])
+   
+   ##################################### GATK vs. XHMM CALLS TO SUBSET BY SAMPLE/INDIVIDUAL#####################################
+    GATKvsXHMM <- data.frame(query=queryHits(ABlaps), subject=subjectHits(ABlaps),
+                olap_width=width(ABsect), 
+                query_width=width(A)[queryHits(ABlaps)],
+                variantaccession=B$gene[subjectHits(ABlaps)])
+                # This will be fast for millions of records in A and B.
+    write.table(GATKvsXHMM, file=paste("C:/Users/jwaldr/OneDrive - LSUHSC/GELCC/comparingAlgorithms/GATKvsXHMM.", i, ".csv", sep=""), row.names=FALSE, sep=",") #quote=c(1:3)???
+    }
+    
+
+##################################### summary calls #####################################
+
+summary[nrow(summary) + 1, ] <- c(i, nrow(GATKvsXHMM), nrow(XHMMvsCANOES), nrow(GATKvsCANOES)) 
+write.table(summary, file=paste("C:/Users/jwaldr/OneDrive - LSUHSC/GELCC/comparingAlgorithms/summaryComparingAlgorithms", ".csv", sep=""), row.names=FALSE, sep=",")
+
+####################################################################################################################################################
+    } # end of loop
+
+
