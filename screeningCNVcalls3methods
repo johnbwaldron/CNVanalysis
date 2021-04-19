@@ -40,50 +40,45 @@ B <- FALSE
 C <- FALSE
 
 A <- makeGRangesFromDataFrame(subset(GATKcnv, GATKcnv$sample == i), keep.extra.columns=TRUE) 
-if(any(XHMMcnv$sample == i))B <- makeGRangesFromDataFrame(subset(XHMMcnv, XHMMcnv$sample == i), keep.extra.columns=TRUE)
-if(any(CANOEScnv$sample == i)) C <- makeGRangesFromDataFrame(subset(CANOEScnv, CANOEScnv$sample == i), keep.extra.columns=TRUE)
-ABlaps <- findOverlaps(A, B)
-AClaps <- findOverlaps(A, C)
-BClaps <- findOverlaps(B, C)
+if(any(XHMMcnv$sample == i)){
+    B <- makeGRangesFromDataFrame(subset(XHMMcnv, XHMMcnv$sample == i), keep.extra.columns=TRUE)
 
-# frame <- mergeByOverlaps(A, B) # creates a data frame including only those segments present in both query and subject
-
-#olaps is a two-column matrix, indicating which element(s) of A overlap the corresponding elements of B. In the invocation above A and B enter symmetrically, but could be re-ordered if there were restrictions on the type of overlap (argument type, e.g., all of B strictly within A). To find the extent of overlap, I looked at the parallel (element wise) intersection of each overlap
-
-ABsect <- pintersect(A[queryHits(ABlaps)], B[subjectHits(ABlaps)]) #"subjectHits" gives the index values in query where the subject range overlaps with query range for each range in 
-ACsect <- pintersect(A[queryHits(AClaps)], C[subjectHits(AClaps)])
-BCsect <- pintersect(B[queryHits(BClaps)], C[subjectHits(BClaps)])
-
-#ABdiff<- psetdiff(A[queryHits(ABlaps)], B[subjectHits(ABlaps)])
-#plot(coverage(A)$chr1, ty="l", main="Coverage of Reads of Chr1", xlab="Coordinates along Chr1", ylab="Coverage")
-
-#A[queryHits(ABlaps)[9]]
-#B[subjectHits(ABlaps)[9]]
-
-##################################### GATK vs. XHMM CALLS TO SUBSET BY SAMPLE/INDIVIDUAL#####################################
-GATKvsXHMM <- data.frame(query=queryHits(ABlaps), subject=subjectHits(ABlaps),
-           olap_width=width(ABsect), 
-           query_width=width(A)[queryHits(ABlaps)],
-           variantaccession=B$gene[subjectHits(ABlaps)])
-# This will be fast for millions of records in A and B.
-write.table(GATKvsXHMM, file=paste("C:/Users/jwaldr/OneDrive - LSUHSC/GELCC/comparingAlgorithms/GATKvsXHMM.", i, ".csv", sep=""), row.names=FALSE, sep=",") #quote=c(1:3)???
-
-##################################### GATK vs. CANOES CALLS TO SUBSET BY SAMPLE/INDIVIDUAL#####################################
-GATKvsCANOES <- data.frame(query=queryHits(AClaps), subject=subjectHits(AClaps),
+    ABlaps <- findOverlaps(A, B)
+    ABsect <- pintersect(A[queryHits(ABlaps)], B[subjectHits(ABlaps)])
+    ##################################### GATK vs. XHMM CALLS TO SUBSET BY SAMPLE/INDIVIDUAL#####################################
+    GATKvsXHMM <- data.frame(query=queryHits(ABlaps), subject=subjectHits(ABlaps),
+                olap_width=width(ABsect), 
+                query_width=width(A)[queryHits(ABlaps)],
+                variantaccession=B$gene[subjectHits(ABlaps)])
+                # This will be fast for millions of records in A and B.
+    write.table(GATKvsXHMM, file=paste("C:/Users/jwaldr/OneDrive - LSUHSC/GELCC/comparingAlgorithms/GATKvsXHMM.", i, ".csv", sep=""), row.names=FALSE, sep=",") #quote=c(1:3)???
+    }
+    
+if(any(CANOEScnv$sample == i)) {
+    C <- makeGRangesFromDataFrame(subset(CANOEScnv, CANOEScnv$sample == i), keep.extra.columns=TRUE)
+    AClaps <- findOverlaps(A, C)
+    if(any(XHMMcnv$sample == i)) BClaps <- findOverlaps(B, C)
+    ACsect <- pintersect(A[queryHits(AClaps)], C[subjectHits(AClaps)])
+    if(any(XHMMcnv$sample == i))BCsect <- pintersect(B[queryHits(BClaps)], C[subjectHits(BClaps)])
+    
+    ##################################### GATK vs. CANOES CALLS TO SUBSET BY SAMPLE/INDIVIDUAL#####################################
+    GATKvsCANOES <- data.frame(query=queryHits(AClaps), subject=subjectHits(AClaps),
            olap_width=width(ACsect), 
            query_width=width(A)[queryHits(AClaps)],
            variantaccession=C$gene[subjectHits(AClaps)])
 
-write.table(GATKvsCANOES, file=paste("C:/Users/jwaldr/OneDrive - LSUHSC/GELCC/comparingAlgorithms/GATKvsCANOES.", i, ".csv", sep=""), row.names=FALSE, sep=",")
+    write.table(GATKvsCANOES, file=paste("C:/Users/jwaldr/OneDrive - LSUHSC/GELCC/comparingAlgorithms/GATKvsCANOES.", i, ".csv", sep=""), row.names=FALSE, sep=",")
 
-
-##################################### XHMM vs. CANOES CALLS TO SUBSET BY SAMPLE/INDIVIDUAL#####################################
-XHMMvsCANOES <- data.frame(query=queryHits(BClaps), subject=subjectHits(BClaps),
+    ##################################### XHMM vs. CANOES CALLS TO SUBSET BY SAMPLE/INDIVIDUAL#####################################
+   if(any(XHMMcnv$sample == i)) XHMMvsCANOES <- data.frame(query=queryHits(BClaps), subject=subjectHits(BClaps),
            olap_width=width(BCsect), 
            query_width=width(B)[queryHits(BClaps)],
            variantaccession=B$gene[subjectHits(BClaps)])
 
-write.table(XHMMvsCANOES, file=paste("C:/Users/jwaldr/OneDrive - LSUHSC/GELCC/comparingAlgorithms/XHMMvsCANOES.", i, ".csv", sep=""), row.names=FALSE, sep=",")
+   if(any(XHMMcnv$sample == i)) write.table(XHMMvsCANOES, file=paste("C:/Users/jwaldr/OneDrive - LSUHSC/GELCC/comparingAlgorithms/XHMMvsCANOES.", i, ".csv", sep=""), row.names=FALSE, sep=",")
+    }
+
+
 
 ##################################### summary calls #####################################
 
@@ -100,9 +95,17 @@ write.table(summary, file=paste("C:/Users/jwaldr/OneDrive - LSUHSC/GELCC/compari
 
 
 
+# frame <- mergeByOverlaps(A, B) # creates a data frame including only those segments present in both query and subject
 
+#olaps is a two-column matrix, indicating which element(s) of A overlap the corresponding elements of B. In the invocation above A and B enter symmetrically, but could be re-ordered if there were restrictions on the type of overlap (argument type, e.g., all of B strictly within A). To find the extent of overlap, I looked at the parallel (element wise) intersection of each overlap
 
+ #"subjectHits" gives the index values in query where the subject range overlaps with query range for each range in 
 
+#ABdiff<- psetdiff(A[queryHits(ABlaps)], B[subjectHits(ABlaps)])
+#plot(coverage(A)$chr1, ty="l", main="Coverage of Reads of Chr1", xlab="Coordinates along Chr1", ylab="Coverage")
+
+#A[queryHits(ABlaps)[9]]
+#B[subjectHits(ABlaps)[9]]
 
 ##########HOW should I organize this information??????####################
 
