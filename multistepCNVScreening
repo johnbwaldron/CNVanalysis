@@ -6,17 +6,31 @@ library(Homo.sapiens)
 
 for(i in unique(GATKcnv$sample)){                      #i = GATKcnv$sample[1]
   GATKvsXHMM <- read.csv(file = paste("C:/Users/jwaldr/OneDrive - LSUHSC/GELCC/comparingAlgorithms/GATKvsXHMM.", i, ".csv", sep=""))
-  subset(GATKcnv, GATKcnv$sample == i)[5, ] #  chr1 16,950,072 -  16,979,166
-  subset(XHMMcnv, XHMMcnv$sample == i)[2, ] #  chr1 16,969,285 -  16,976,851
+ 
+  #subset(GATKcnv, GATKcnv$sample == i)[5, ] #  chr1 16,950,072 -  16,979,166
+  #subset(XHMMcnv, XHMMcnv$sample == i)[2, ] #  chr1 16,969,285 -  16,976,851
+   
+   
+  # create table of regions identified by both GATK and XHMM. XHMM calls a single CNV where GATK calls several within it. This table consolidates to the larger call and uses GATK inferences of copynumber. 
   
-  A <- makeGRangesFromDataFrame(subset(GATKcnv, GATKcnv$sample == i), keep.extra.columns=TRUE) 
-if(any(XHMMcnv$sample == i)){
-    B <- makeGRangesFromDataFrame(subset(XHMMcnv, XHMMcnv$sample == i), keep.extra.columns=TRUE)
+  # divide into deletions only
+  delGATKcnv <- subset(GATKcnv, GATKcnv$del_1.dup_2 == 1)
+  delXHMMcnv <- subset(XHMMcnv, XHMMcnv$del_1.dup_2 == 1)
+  
+  
+  sharedRegionGATK <- subset(GATKcnv, GATKcnv$sample == i)[GATKvsXHMM$query, ]
+  sharedRegionXHMM <- subset(XHMMcnv, XHMMcnv$sample == i)[GATKvsXHMM$subject, ]
+  
+  sharedRegionGATK[c(1:5), c(1:6)]
+  sharedRegionXHMM[c(1:5), c(1:6)]
+  
+    A <- makeGRangesFromDataFrame(subset(GATKcnv, GATKcnv$sample == i), keep.extra.columns=TRUE) 
+    if(any(XHMMcnv$sample == i)){
+      B <- makeGRangesFromDataFrame(subset(XHMMcnv, XHMMcnv$sample == i), keep.extra.columns=TRUE)
 
-    ABlaps <- findOverlaps(A, B)
-  
-  
-  t <- as.table(GATK
+      ABlaps <- findOverlaps(A, B)
+    t <- as.table(ABlaps)
+    inv <- as.table(t(ABlaps))
   }
   
 summary <- matrix(nrow=0, ncol=4)
