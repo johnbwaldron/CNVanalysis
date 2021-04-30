@@ -2,6 +2,8 @@
 # source("https://raw.githubusercontent.com/johnbwaldron/genes/master/convertGenomicRangeToGeneName")
 # look here for ideas: https://support.bioconductor.org/p/67118/
 
+load(file = "C:/Users/jwaldr/OneDrive - LSUHSC/GELCC/CNVsFrom3AlgsAndPhenoAndPhenoFam.2.19.2021.rda")
+
 library(Homo.sapiens)
 
 for(i in unique(GATKcnv$sample)){                      #i = GATKcnv$sample[1]
