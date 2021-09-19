@@ -6,14 +6,60 @@ load(file = "C:/Users/jwaldr/OneDrive - LSUHSC/GELCC/CNVsFrom3AlgsAndPhenoAndPhe
 
 library(Homo.sapiens)
 
+######## re-create overlaps between GATK and XHMM ONLY, inorder to add more information to the table and subset by del and those held in common
+
+for(i in unique(GATKcnv$sample)){                      #i = GATKcnv$sample[1]
+A <- FALSE
+B <- FALSE
+C <- FALSE
+
+A <- makeGRangesFromDataFrame(subset(GATKcnv, GATKcnv$sample == i), keep.extra.columns=TRUE) 
+if(any(XHMMcnv$sample == i)){
+    B <- makeGRangesFromDataFrame(subset(XHMMcnv, XHMMcnv$sample == i), keep.extra.columns=TRUE)
+
+    ABlaps <- findOverlaps(A, B)
+    ABsect <- pintersect(A[queryHits(ABlaps)], B[subjectHits(ABlaps)])
+    ##################################### GATK vs. XHMM CALLS TO SUBSET BY SAMPLE/INDIVIDUAL#####################################
+    GATKandXHMM <- data.frame(sample = A$sample[queryHits(ABlaps)],
+                chr = as.data.frame(A)$seqnames[queryHits(ABlaps)],
+                GATKstart = as.data.frame(A)$start[queryHits(ABlaps)],
+                GATKend = as.data.frame(A)$end[queryHits(ABlaps)],
+                XHMMstart = as.data.frame(B)$start[subjectHits(ABlaps)],
+                XHMMend = as.data.frame(B)$end[subjectHits(ABlaps)],
+                query=queryHits(ABlaps), subject=subjectHits(ABlaps),
+                olap_width=width(ABsect), 
+                query_width=width(A)[queryHits(ABlaps)],
+                GATKcall.del_1.dup_2 = as.data.frame(A)$del_1.dup_2[queryHits(ABlaps)],
+                gene=B$gene[subjectHits(ABlaps)])
+                # This will be fast for millions of records in A and B.
+    write.table(GATKandXHMM, file=paste("C:/Users/jwaldr/OneDrive - LSUHSC/GELCC/callsInCommonGATKandXHMM/GATKandXHMM.", i, ".csv", sep=""), row.names=FALSE, sep=",") #quote=c(1:3)???
+    }
+   
+
+} # end of loop
+
+
+#initiate commonCalls
+ commonCalls <- data.frame()
+
 for(i in unique(GATKcnv$sample)){                      #i = GATKcnv$sample[1]
   GATKvsXHMM <- read.csv(file = paste("C:/Users/jwaldr/OneDrive - LSUHSC/GELCC/comparingAlgorithms/GATKvsXHMM.", i, ".csv", sep=""))
  
-  #subset(GATKcnv, GATKcnv$sample == i)[5, ] #  chr1 16,950,072 -  16,979,166
+  #subset(GATKcnv, GATKcnv$sample == i)[5, ] #  chr1 16,950,072 -  16,979,166 # GATKcnv$sample == i[5, ]
   #subset(XHMMcnv, XHMMcnv$sample == i)[2, ] #  chr1 16,969,285 -  16,976,851
    
+  #create table with overlapping calls that include coordinates from both alogrithms and whether each one called del or dup
+  
+  overlappingCalls <- data.frame(subset(GATKcnv, GATKcnv$sample == i)[GATKvsXHMM$query,], num_XHMM_overlp_segs = 
+  
+  commonCalls <- rbind(commonCalls, 
+  
+  
+    write.table(GATKvsXHMM, file=paste("C:/Users/jwaldr/OneDrive - LSUHSC/GELCC/comparingAlgorithms/GATKvsXHMM.", i, ".csv", sep=""), row.names=FALSE, sep=",") #quote=c(1:3)???
+    
    
-  # create table of regions identified by both GATK and XHMM. XHMM calls a single CNV where GATK calls several within it. This table consolidates to the larger call and uses GATK inferences of copynumber. 
+  # create table of regions identified by both GATK and XHMM. XHMM calls a single CNV where GATK calls several within it. 
+  # This table consolidates to the larger call and uses GATK inferences of copynumber. 
   
   # divide into deletions only
   delGATKcnv <- subset(GATKcnv, GATKcnv$del_1.dup_2 == 1)
@@ -34,6 +80,10 @@ for(i in unique(GATKcnv$sample)){                      #i = GATKcnv$sample[1]
     t <- as.table(ABlaps)
     inv <- as.table(t(ABlaps))
   }
+  
+  summaryXHMMGATKoverlap
+  
+  save(summaryXHMMGATKoverlap, file = "C:/Users/jwaldr/OneDrive - LSUHSC/GELCC/overlappingCallsXHMMandGATK.rda")
   
 summary <- matrix(nrow=0, ncol=4)
 summary <- as.data.frame(summary)
