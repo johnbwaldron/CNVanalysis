@@ -30,7 +30,7 @@ if(any(XHMMcnv$sample == i)){
                 olap_width=width(ABsect), 
                 query_width=width(A)[queryHits(ABlaps)],
                 GATKcall.del_1.dup_2 = as.data.frame(A)$del_1.dup_2[queryHits(ABlaps)],
-                gene=B$gene[subjectHits(ABlaps)])
+                gene=A$gene[queryHits(ABlaps)])
                 # This will be fast for millions of records in A and B.
     write.table(GATKandXHMM, file=paste("C:/Users/jwaldr/OneDrive - LSUHSC/GELCC/callsInCommonGATKandXHMM/GATKandXHMM.", i, ".csv", sep=""), row.names=FALSE, sep=",") #quote=c(1:3)???
     }
@@ -38,12 +38,17 @@ if(any(XHMMcnv$sample == i)){
 
 } # end of loop
 
+############################################################
+# step 2 in (https://naturarimor.blogspot.com/2021/09/screen-out-cnvs-by-steps-1-must-be.html)
+############################################################################################3
 
-#initiate commonCalls
- commonCalls <- data.frame()
+
+match those genes found in those that phenoFam$diagnosis.of.lung.throat.pharynx.larynx.cancer == TRUE
+
+
 
 for(i in unique(GATKcnv$sample)){                      #i = GATKcnv$sample[1]
-  GATKvsXHMM <- read.csv(file = paste("C:/Users/jwaldr/OneDrive - LSUHSC/GELCC/comparingAlgorithms/GATKvsXHMM.", i, ".csv", sep=""))
+  GATKandXHMM <- read.csv(file = paste("C:/Users/jwaldr/OneDrive - LSUHSC/GELCC/callsInCommonGATKandXHMM/GATKandXHMM.", i, ".csv", sep=""))
  
   #subset(GATKcnv, GATKcnv$sample == i)[5, ] #  chr1 16,950,072 -  16,979,166 # GATKcnv$sample == i[5, ]
   #subset(XHMMcnv, XHMMcnv$sample == i)[2, ] #  chr1 16,969,285 -  16,976,851
