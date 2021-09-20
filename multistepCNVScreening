@@ -6,7 +6,7 @@
 load(file = "C:/Users/jwaldr/OneDrive - LSUHSC/GELCC/CNVsFrom3AlgsAndPhenoAndPhenoFam.9.20.21.rda")
 
 library(Homo.sapiens)
-
+ 
 ######## re-create overlaps between GATK and XHMM ONLY, inorder to add more information to the table and subset by del and those held in common
 
 for(i in unique(GATKcnv$sample)){                      #i = GATKcnv$sample[1]
@@ -106,75 +106,44 @@ phenotypeDdel <- subset(phenotypeD, phenotypeD$GATKcall.del_1.dup_2 == 1) #nrow(
 
 #################### double check subset function ## phenoFam$diagnosis.of.lung.throat.pharynx.larynx.cancer[which(phenoFam$submitted.sample.id %in% phenotype$sample)]
 
-geneIDs <- unlist(strsplit(phenotypeDdel$gene, split = ", ")) 
+####################################################################################################
+#################### subset cnvs for those without cancer diagnosis ####################
+####################################################################################################
+noDiseasePhenotype <- subset(cnvs, cnvs$sample %in% phenoFam$submitted.sample.id[which(phenoFam$diagnosis.of.lung.throat.pharynx.larynx.cancer == FALSE)])
 
-freq <- table(geneIDs) 
-   
-#alternative: library(dplyr)
-geneIDs %>% 
-count(geneIDs)   
-group_by(group = cut(age, breaks = seq(0, max(age), 11))) %>%
-  summarise(n = n())
-   
-  # create table of regions identified by both GATK and XHMM. XHMM calls a single CNV where GATK calls several within it. 
-  # This table consolidates to the larger call and uses GATK inferences of copynumber. 
-  
-  # divide into deletions only
-  delGATKcnv <- subset(GATKcnv, GATKcnv$del_1.dup_2 == 1)
-  delXHMMcnv <- subset(XHMMcnv, XHMMcnv$del_1.dup_2 == 1)
-  
-  
-  sharedRegionGATK <- subset(GATKcnv, GATKcnv$sample == i)[GATKvsXHMM$query, ]
-  sharedRegionXHMM <- subset(XHMMcnv, XHMMcnv$sample == i)[GATKvsXHMM$subject, ]
-  
-  sharedRegionGATK[c(1:5), c(1:6)]
-  sharedRegionXHMM[c(1:5), c(1:6)]
-  
-    A <- makeGRangesFromDataFrame(subset(GATKcnv, GATKcnv$sample == i), keep.extra.columns=TRUE) 
-    if(any(XHMMcnv$sample == i)){
-      B <- makeGRangesFromDataFrame(subset(XHMMcnv, XHMMcnv$sample == i), keep.extra.columns=TRUE)
-
-      ABlaps <- findOverlaps(A, B)
-    t <- as.table(ABlaps)
-    inv <- as.table(t(ABlaps))
-  }
-  
-  summaryXHMMGATKoverlap
-  
-  save(summaryXHMMGATKoverlap, file = "C:/Users/jwaldr/OneDrive - LSUHSC/GELCC/overlappingCallsXHMMandGATK.rda")
-  
-summary <- matrix(nrow=0, ncol=4)
-summary <- as.data.frame(summary)
-colnames(summary) <- c("sample", "GATKvsXHMM",  )
-
-for(i in unique(GATKcnv$sample)){                      #i = GATKcnv$sample[1]
-A <- FALSE
-B <- FALSE
-C <- FALSE
-
-A <- makeGRangesFromDataFrame(subset(GATKcnv, GATKcnv$sample == i), keep.extra.columns=TRUE) 
-if(any(XHMMcnv$sample == i)){
-    B <- makeGRangesFromDataFrame(subset(XHMMcnv, XHMMcnv$sample == i), keep.extra.columns=TRUE)
-
-    ABlaps <- findOverlaps(A, B)
-    ABsect <- pintersect(A[queryHits(ABlaps)], B[subjectHits(ABlaps)])
-   
-   ##################################### GATK vs. XHMM CALLS TO SUBSET BY SAMPLE/INDIVIDUAL#####################################
-    GATKvsXHMM <- data.frame(query=queryHits(ABlaps), subject=subjectHits(ABlaps),
-                olap_width=width(ABsect), 
-                query_width=width(A)[queryHits(ABlaps)],
-                variantaccession=B$gene[subjectHits(ABlaps)])
-                # This will be fast for millions of records in A and B.
-    write.table(GATKvsXHMM, file=paste("C:/Users/jwaldr/OneDrive - LSUHSC/GELCC/comparingAlgorithms/GATKvsXHMM.", i, ".csv", sep=""), row.names=FALSE, sep=",") #quote=c(1:3)???
+remove <- vector()
+for (i in 2:nrow(noDiseasePhenotype)){
+    if (noDiseasePhenotype$subject[i] == noDiseasePhenotype$subject[i-1]){
+        remove <- append(remove, i)
+        cat("deleting row ", i, '\n')
     }
-    
+    } #nrow(noDiseasePhenotype) = 6194 --> nrow(noDiseasePhenotype) = 3852
+noDiseasePhenotype <- noDiseasePhenotype[-remove,]
 
-##################################### summary calls #####################################
+# subset to only deletions:
+noDiseasePhenotypedel <- subset(noDiseasePhenotype, noDiseasePhenotype$GATKcall.del_1.dup_2 == 1)
+####################################################################################################
 
-summary[nrow(summary) + 1, ] <- c(i, nrow(GATKvsXHMM), nrow(XHMMvsCANOES), nrow(GATKvsCANOES)) 
-write.table(summary, file=paste("C:/Users/jwaldr/OneDrive - LSUHSC/GELCC/comparingAlgorithms/summaryComparingAlgorithms", ".csv", sep=""), row.names=FALSE, sep=",")
+LCgeneIDs <- unlist(strsplit(phenotypeDdel$gene, split = ", ")) 
 
-####################################################################################################################################################
-    } # end of loop
+geneIDs <- unlist(strsplit(noDiseasePhenotypedel$gene, split = ", ")) 
 
-
+freq <- table(geneIDs, exclude = "NA") 
+LCfreq <- table(LCgeneIDs, exclude = "NA")
+ 
+plot(freq, type="h")
+ 
+ README <- "tables and data created in CNVanalysis/multistepCNVScreening. phenotypeD is subset of cnvs with airway Ca dx. 
+ phenotypeDdel is subset of phenotypeD including only GATK calls for deletion. LCfreq is call to table on unlisted gene 
+ names inlcuded in phenotypeDdel. noDiseasePhenotype and noDiseasePhenotypedel are subsets of cnv that include CINDs with no
+ Ca Dx and only those with deletions, respectively. freq is call to table of unlisted gene names included in noDiseasePhenotypedel."
+ 
+ save(README, cnvs, pheno, phenoFam, XHMMcnv, GATKcnv, phenotypeD, phenotypeDdel, noDiseasePhenotype, noDiseasePhenotypedel, freq, LCfreq, file = "C:/Users/jwaldr/OneDrive - LSUHSC/GELCC/deletionsGeneFreqTables.9.20.21.rda")  
+ # load(file = "C:/Users/jwaldr/OneDrive - LSUHSC/GELCC/deletionsGeneFreqTables.9.20.21.rda")
+ 
+ 
+ #genes in > 10
+ 
+ kableExtra and ggplot2 packages. In the code chunk labelled packages, include the library()
+ 
+ 
