@@ -1,0 +1,49 @@
+#Rterm.exe --vanilla
+
+# load(file = "C:/Users/jwaldr/OneDrive - LSUHSC/GELCC/CNVsFrom3AlgsAndPhenoAndPhenoFam.2.19.2021.rda")
+# load(file = "C:/Users/jwaldr/OneDrive - LSUHSC/GELCC/CNVsFrom3AlgsAndPhenoAndPhenoFam.9.20.21.rda")
+
+library(Homo.sapiens)
+ # load(file = "C:/Users/jwaldr/OneDrive - LSUHSC/GELCC/deletionsGeneFreqTables.9.20.21.rda")
+ 
+ library(kableExtra)
+ # install.packages("kableExtra")
+ library(ggplot2)
+ library(magrittr)
+ library(dplyr)
+ 
+  ### dplyr::summarise(), dplyr::group_by(), dplyr::select(), dplyr::filter(), and dplyr::mutate()
+
+quantile(freq, prob=c(.25,.5,.75))
+
+
+freq.table <- as.data.frame(freq)
+freq.table$percentDelInUnaffected <- round((freq.table$Freq/length(unique(noDiseasePhenotypedel$sample)))*100, digits=1)
+above3rdQuartileFreq <- freq.table[which(freq.table$Freq > quantile(freq.table$Freq, prob=.75)),]
+
+above3rdQuartileLCfreq <- LCfreq[which(LCfreq > quantile(LCfreq, prob=.75))]
+LCfreq.table <- as.data.frame(LCfreq)
+LCfreq.table$percentDelInCases <- round((LCfreq.table$Freq/length(unique(phenotypeDdel$sample)))*100, digits=1)
+above3rdQuartileLCfreq <- LCfreq.table[which(LCfreq.table$Freq > quantile(LCfreq.table$Freq, prob=.75)),]
+
+above10thDecileLC <- LCfreq.table[which(LCfreq.table$Freq > quantile(LCfreq.table$Freq, prob=.90)),]
+
+mean(freq)
+[1] 6.729017
+ median(freq)
+[1] 3
+
+
+above3rdQuartileFreq %>%
+  kbl() %>%
+  kable_styling(bootstrap_options = c("striped", full_width = F, position = "left"))
+  
+  above10thDecileLC %>%
+  kbl() %>%
+  kable_styling(bootstrap_options = c("striped", full_width = F, position = "left"))
+  
+  
+  ###################################### deletion associated gene ID in airway cancer AND NOT undiagnosed relatives #######################
+  
+  noDiseasePhenotypedel
+  phenotypeDdel
