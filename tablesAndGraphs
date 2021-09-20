@@ -47,3 +47,116 @@ above3rdQuartileFreq %>%
   
   noDiseasePhenotypedel
   phenotypeDdel
+##### just a reminder of where theses variables came from ##############
+#LCgeneIDs <- unlist(strsplit(phenotypeDdel$gene, split = ", ")) 
+#geneIDs <- unlist(strsplit(noDiseasePhenotypedel$gene, split = ", ")) 
+#freq <- table(geneIDs, exclude = "NA") 
+#LCfreq <- table(LCgeneIDs, exclude = "NA")
+# both coerced to data.frame above
+########################################################
+# first compare to all those in freq.table, then just common enough ones to be above the 3rd quartile?
+
+inLCnotUnaffected <- LCfreq.table[-which(LCfreq.table$LCgeneIDs %in% freq.table$geneIDs),] #nearly all singletons, some where there are two in affected individuals
+
+inLCnotUpperQuartileUnaffected <- LCfreq.table[-which(LCfreq.table$LCgeneIDs %in% above3rdQuartileFreq$geneIDs),] 
+
+# list gene names in those affect, not in upper quartile of unaffected, that occur in more than 5 individuals
+inLCnotUpperQuartileUnaffected[which(inLCnotUpperQuartileUnaffected$Freq > 5),]
+
+
+####### what if I made a table of those most common deletions in these families, plus those that are only the affected individuals
+
+
+
+# consider using an odds ratio to creat cut off rather then %in%
+############################################################# annotate short list of genes that are not in common between affect and unaffected
+library("reutils")
+library(XML)
+
+################# code below does not work 9/2021 - it worked perfectly previously and from home. online and locally get:
+################# "CurlError: error:1407742E:SSL routines:SSL23_GET_SERVER_HELLO:tlsv1 alert protocol version"
+
+glist <- data.frame(genes=as.character(inLCnotUpperQuartileUnaffected[which(inLCnotUpperQuartileUnaffected$Freq > 5),1]))
+
+#esearch a database to acquire UIDs --> LIST DATABASES: einfo()
+for(i in glist$genes){                                               #i = glist$genes[1]
+    gid <- esearch(paste(paste(i,"[GENE]", sep=""), "human[ORGN]", sep=" AND "), db = "gene")
+    s <- esummary(uid(gid), db = "gene")
+   
+   ## try this means of parsing rather than all the acrobatics below?
+       ##entrezContent <- content(s, as = "parsed")
+       ##entrezSummary <- lapply(entrezContent, '[', "Summary")
+   
+   if(is.data.frame(content(s, "parsed"))){  
+          entrezGeneSummary <- content(s, "parsed")$Summary 
+          entrezGeneSummary <- paste(entrezGeneSummary, collapse = "--")
+          if("NA" %in% entrezGeneSummary){entrezGeneSummary <- content(s, "parsed")$Description}# doesn't work with formatting for a number of the genes
+     } else if (length(content(s, "parsed"))>0){
+             entrezGeneSummary <- content(s, "parsed")[[1]]$Summary
+             entrezGeneSummary <- paste(entrezGeneSummary, collapse = "--")
+             if("NA" %in% entrezGeneSummary){entrezGeneSummary <- content(s, "parsed")[[1]]$Description}
+    }   else {  entrezGeneSummary <- "gene not found in genbank"}
+        dex = which(glist$genes==i)
+    glist[dex,"Summary"]<- entrezGeneSummary
+    
+    # pubmeds with gene 
+        numb <- esearch(i, db = "pubmed", rettype = "count", field = NULL)
+        glist[dex,"pubmed.gene"] <- content(numb, "parsed")
+    Sys.sleep(.5)
+    # pubmeds with gene AND cancer
+        numb <- esearch(paste(i, "cancer", sep=" AND "), db = "pubmed", rettype = "count")   
+        glist[dex,"pubmed.cancerGene"] <- content(numb, "parsed")
+        
+       #keep getting "Warning: HTTP error: Status 429; Too Many Requests" b/c NCBI limits to 3 requests/s (10 with API key, see above)
+       # short cut: have R stop for a second every three requests (esearch)
+        Sys.sleep(1)
+       
+    # pubmeds with gene AND cancer AND lung
+        numb <- esearch(paste(i, "cancer", "(lung OR pulmonary)", sep=" AND "), db = "pubmed", rettype = "count")
+        glist[dex,"pubmed.lungCancerGene"] <- content(numb, "parsed")
+    
+    # NOW ADD TITLES FROM PUBMED FOR lungCancerGene or then geneCancer or then gene IF > 0
+        # search query format: (GSTM1) AND cancer AND ("2018"[Date - Publication] : "3000"[Date - Publication]) 
+        #dateRange = paste('(2017[Date - Publication] : 3000[Date - Publication])')
+            dateRange = ""
+        if(glist[dex,"pubmed.lungCancerGene"]>1){   
+           pmid <- esearch(paste(i, "cancer", "(lung OR pulmonary)", dateRange, sep=" AND "), retmax = 5, db = "pubmed", rettype = "uilist")
+            s <- esummary(uid(pmid), db = "pubmed")
+            pmContent <- content(s, as = "parsed")
+            pmTitles <- lapply(pmContent, '[', "Title")
+            # combine into a single string
+            titleString <- paste(unlist(pmTitles), sep = '----', collapse = '___')
+            glist[dex,"Titles"]<- titleString
+            
+        }else if(glist[dex,"pubmed.cancerGene"]>0){   
+            
+            pmid <- esearch(paste(i, "cancer", dateRange, sep=" AND "), retmax = 5, db = "pubmed", rettype = "uilist")
+            s <- esummary(uid(pmid), db = "pubmed")
+            pmContent <- content(s, as = "parsed")
+            pmTitles <- lapply(pmContent, '[', "Title")
+            # combine into a single string
+            titleString <- paste(unlist(pmTitles), sep = '----', collapse = '___')
+            glist[dex,"Titles"]<- titleString
+            
+        }else if(glist[dex,"pubmed.gene"]>0){
+            pmid <- esearch(i, retmax = 5, db = "pubmed", rettype = "uilist")
+            s <- esummary(uid(pmid), db = "pubmed")
+            pmContent <- content(s, as = "parsed")
+            pmTitles <- lapply(pmContent, '[', "Title")
+            # combine into a single string
+            titleString <- paste(unlist(pmTitles), sep = '', collapse = '___')
+            glist[dex,"Titles"]<- titleString
+        }
+        Sys.sleep(1)
+    }
+
+
+
+    
+#Mandal Lab Computer
+#rbind(list,list(0,0,0,0))
+#write.table(rbind(list,list(0,0,0,0)), file="C:/Users/jwaldr/Downloads/entrezGeneSummary.csv", row.names=FALSE, quote=2, sep=",")
+#At home
+write.table(glist, file="C:/Users/Public/entrezGeneSummary.csv", row.names=FALSE, quote=c(2,6), sep=",")
+
+
