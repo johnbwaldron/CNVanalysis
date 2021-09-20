@@ -2,7 +2,8 @@
 # source("https://raw.githubusercontent.com/johnbwaldron/genes/master/convertGenomicRangeToGeneName")
 # look here for ideas: https://support.bioconductor.org/p/67118/
 
-load(file = "C:/Users/jwaldr/OneDrive - LSUHSC/GELCC/CNVsFrom3AlgsAndPhenoAndPhenoFam.2.19.2021.rda")
+# load(file = "C:/Users/jwaldr/OneDrive - LSUHSC/GELCC/CNVsFrom3AlgsAndPhenoAndPhenoFam.2.19.2021.rda")
+load(file = "C:/Users/jwaldr/OneDrive - LSUHSC/GELCC/CNVsFrom3AlgsAndPhenoAndPhenoFam.9.20.21.rda")
 
 library(Homo.sapiens)
 
@@ -73,6 +74,8 @@ for(i in unique(GATKcnv$sample)){                      #i = GATKcnv$sample[1]
 write.table(cnvs, file=paste("C:/Users/jwaldr/OneDrive - LSUHSC/GELCC/compositeOfCNVsCalledByGATKandXHMM", ".csv", sep=""), row.names=FALSE, sep=",")
 
 #cnvs <- read.csv(file="C:/Users/jwaldr/OneDrive - LSUHSC/GELCC/compositeOfCNVsCalledByGATKandXHMM.csv")
+# save(cnvs, pheno, phenoFam, XHMMcnv, GATKcnv, file = "C:/Users/jwaldr/OneDrive - LSUHSC/GELCC/CNVsFrom3AlgsAndPhenoAndPhenoFam.9.20.21.rda")  
+  
   
 #################### #################### #################### #################### #################### #################### 
 #count incidence of gene names given subset based on disease status
@@ -85,23 +88,25 @@ phenotypeD <- subset(cnvs, cnvs$sample %in% phenoFam$submitted.sample.id[which(p
 
 # can subset to only those with 1 for GATKcalle.del_1.dup_2
 
+
 ## need to get rid of gene names repeated in a single individual
 # will do so by removing those where subject is not unique for each individual
-for (i in c(2:nrow(phenotypeD))){
+remove <- vector()
+for (i in 2:nrow(phenotypeD)){
     if (phenotypeD$subject[i] == phenotypeD$subject[i-1]){
-        phenotypeD <- phenotypeD[-i,]
+        remove <- append(remove, i)
+        cat("deleting row ", i, '\n')
     }
-    }
+    } #nrow(phenotypeD) = 2500 --> nrows(phenotyped) = 1552
+phenotypeD <- phenotypeD[-remove,]
 
-phenotypeD <- phenotypeD[-which(phenotypeD$subject==,]
+# can subset to only those with 1 for GATKcall.del_1.dup_2
 
-# can subset to only those with 1 for GATKcalle.del_1.dup_2
-
-phenotypeD <- subset(cnvs, cnvs$sample %in% phenoFam$submitted.sample.id[which(phenoFam$diagnosis.of.lung.throat.pharynx.larynx.cancer == TRUE)])
+phenotypeDdel <- subset(phenotypeD, phenotypeD$GATKcall.del_1.dup_2 == 1) #nrow(phenotypeDdel)= 811
 
 #################### double check subset function ## phenoFam$diagnosis.of.lung.throat.pharynx.larynx.cancer[which(phenoFam$submitted.sample.id %in% phenotype$sample)]
 
-geneIDs <- unlist(strsplit(phenotypeD$gene, split = ", ")) 
+geneIDs <- unlist(strsplit(phenotypeDdel$gene, split = ", ")) 
 
 freq <- table(geneIDs) 
    
