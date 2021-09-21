@@ -122,7 +122,25 @@ delCallsLCfamilies <- delCallsLCfamilies[-remove,]
 
 delCallsLCfamiliesgeneIDs <- unlist(strsplit(delCallsLCfamilies$gene, split = ", ")) 
 
-freq <- table(delCallsLCfamiliesgeneIDs, exclude = "NA") 
+freq <- table(delCallsLCfamiliesgeneIDs[delCallsLCfamiliesgeneIDs != "NA"]) 
+
+freqOfFreq <- as.data.frame(table(freq))
+prop.table(freqOfFreq)
+
+hist(as.data.frame(freq)[,2], main="Frequency of specific deletions within lung cancer families", 
+     xlab = "number of individuals with specific deletion", ylab = "number of distinct genes affected by deletions", col = 4)
+#hist(freqOfFreq, freq = T)
+#hist(freq)
+
+# limiting to those genes that are in greater than 5 individuals
+genelistG5 <- as.data.frame(freq)[as.data.frame(freq)[,2]>5,]
+colnames(genelistG5) <- c("gene", "Freq")
+
+# removing CNVs found in those who marry in:
+marriedInDeletions <- subset(cnvs, cnvs$sample == marriedInSampleName)
+marriedInDeletions <- unlist(strsplit(marriedInDeletions$gene, split = ", "))
+
+genelistG5 <- genelistG5[-which(genelistG5[,1] %in% marriedInDeletions),]
 
 # display
  library(kableExtra)
@@ -131,12 +149,19 @@ freq <- table(delCallsLCfamiliesgeneIDs, exclude = "NA")
  library(magrittr)
  library(dplyr)
 
+mybinwidth <- 10
+ggplot(as.data.frame(freq), aes(Freq)) +        # Draw ggplot2 plot with hist & density
+  geom_histogram(alpha = 0.5) +
+  geom_density(aes(y = ..density.. * (nrow(Freq) * mybinwidth)), col = 2))
 freq.table <- as.data.frame(freq)
 
 freq %>%
   kbl() %>%
   kable_styling(bootstrap_options = c("striped", full_width = F, position = "left"))
-  
+
+write.table(freq, file= "C:/Users/jwaldr/OneDrive - LSUHSC/GELCC/LCfamiliesOnlyDelsCalledbyXHMMandGATK.csv", row.names=FALSE, sep =",")
+write.table(freqOfFreq, file= "C:/Users/jwaldr/OneDrive - LSUHSC/GELCC/freqOfGenesLCfamiliesOnlyDelsCalledbyXHMMandGATK.csv", row.names=FALSE, sep =",")
+
 
 # display above 3rd quartile and 9th decile
 freq.table$percentDelInLCfamilies <- round((freq.table$Freq/length(unique(delCallsLCfamilies$sample)))*100, digits=1)
