@@ -4,6 +4,7 @@
 # load(file = "C:/Users/jwaldr/OneDrive - LSUHSC/GELCC/CNVsFrom3AlgsAndPhenoAndPhenoFam.9.20.21.rda")
  # load(file = "C:/Users/jwaldr/OneDrive - LSUHSC/GELCC/deletionsGeneFreqTables.9.20.21.rda")
  
+ 
 library(Homo.sapiens)
 
  
@@ -16,3 +17,70 @@ library(Homo.sapiens)
   ### dplyr::summarise(), dplyr::group_by(), dplyr::select(), dplyr::filter(), and dplyr::mutate()
 
 quantile(freq, prob=c(.25,.5,.75))
+
+########################################################################################################################################
+##### match phenoFam bam file name for example IGB image
+#### "1dcdea9c62584830a6a854cbd1db149e.bam"
+# subset(cnvs, cnvs$sample==phenoFam[phenoFam[,2] == "1dcdea9c62584830a6a854cbd1db149e.bam",1] & cnvs$GATKcall.del_1.dup_2 == 1)
+# GSTM1
+# i can;t make a pretty picture without the index files...blast!
+########################################################################################################################################
+# list married in unaffected CINDs and their deletions
+
+subset(phenoFam, phenoFam$CID==12) # married in 44 & 29
+subset(phenoFam[,c(4,14,15)], phenoFam$CID==33 ) # married in NONE
+subset(phenoFam[,c(4,14,15)], phenoFam$CID==35 ) # married in 29
+subset(phenoFam[,c(4,14,15)], phenoFam$CID==42 ) # married in NONE
+subset(phenoFam[,c(4,14,15)], phenoFam$CID==44 ) # married in NONE
+subset(phenoFam[,c(4,14,15)], phenoFam$CID==47 ) # married in 16
+subset(phenoFam[,c(4,14,15)], phenoFam$CID==59 ) # married in NONE
+subset(phenoFam[,c(4,14,15)], phenoFam$CID==102 ) # married in 346
+# La famileis 52, 88, 90
+subset(phenoFam[,c(4,14,15)], phenoFam$CID==52 ) # married in 4, 13
+subset(phenoFam[,c(4,14,15)], phenoFam$CID==88 ) # married in 13, 52 
+#! take a look at offspring of 13 and 52 (married in, WES on all children but not spouse wherein 6/8 siblings have lung cancer 
+
+# subset cnvs called by both tools, only deletions, only affected:
+LCgeneIDs <- unlist(strsplit(phenotypeDdel$gene, split = ", ")) 
+
+#subset cnvs called by both tools, only deletions, only married into the families
+marriedInsampleName <- phenoFam[phenoFam$CID == 12 & phenoFam$CIND == 44 | phenoFam$CID == 12 & phenoFam$CIND == 29 |
+                       phenoFam$CID == 35 & phenoFam$CIND == 29| 
+                       phenoFam$CID == 47 & phenoFam$CIND == 16|
+                       phenoFam$CID == 102 & phenoFam$CIND == 346|
+                       phenoFam$CID == 52 & phenoFam$CIND == 4| phenoFam$CID == 52 & phenoFam$CIND == 13|
+                       phenoFam$CID == 88 & phenoFam$CIND == 13| phenoFam$CID == 88 & phenoFam$CIND == 52,1]
+marriedIn <- subset(cnvs, cnvs$GATKcall.del_1.dup_2 == 1 & cnvs$sample %in% marriedInsampleName) 
+outGrpGenes <- unlist(strsplit(marriedIn$gene, split = ", "))
+
+
+
+listALLgenes <- unique(unlist(strsplit(cnvs$gene, split = ", ")))
+
+OR <- data.frame(gene=listALLgenes)
+
+for(j in 1:length(listALLgenes)){  # j = 74
+     i <- listALLgenes[j]
+     OR$odds.affected[j] <- (length(which(LCgeneIDs == i)))/(length(unique(phenotypeDdel$sample))-length(which(LCgeneIDs == i)))
+     OR$odds.marriedIn[j] <- length(which(outGrpGenes == i))/(length(marriedInsampleName)-length(which(outGrpGenes == i)))
+     OR$odds.ratio[j] <- OR$odds.affected[j]/OR$odds.marriedIn[j]
+     }
+   
+ # when dealing with such a small number of individuals as in the loop above, the exposure (gene presence) is often going to be zero which creates an undefeined Odds Ratio
+ # below I include all undiagnosed individuals
+ 
+   noDisGenes <- unlist(strsplit(noDiseasePhenotypedel$gene, split = ", "))
+  OR <- data.frame(gene=listALLgenes) 
+for(j in 1:length(listALLgenes)){  # j = 74
+     i <- listALLgenes[j]
+     OR$odds.affected[j] <- (length(which(LCgeneIDs == i)))/(length(unique(phenotypeDdel$sample))-length(which(LCgeneIDs == i)))
+     OR$odds.unaffected[j] <- length(which(noDisGenes == i))/(length(unique(noDiseasePhenotypedel$sample))-length(which(noDisGenes == i)))
+     OR$odds.ratio[j] <- OR$odds.affected[j]/OR$odds.unaffected[j]
+     }     
+ 
+ OR[which(OR[,3]>.5),]
+ 
+for each unique gene ID:
+odds of exposure in affected <- phenotypeDdel
+odds of exposure in married into the family (see boave) <- 
+
