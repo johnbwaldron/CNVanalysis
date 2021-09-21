@@ -80,6 +80,10 @@ for(j in 1:length(listALLgenes)){  # j = 74
  
  OR[which(OR[,3]>.5),]
  
+#write.table(OR, file = "C:/Users/jwaldr/OneDrive - LSUHSC/GELCC/oddsRatioForEveryGeneInDelByGATKAndXHMMofAffectedOverAllUnaffected.csv", row.names=FALSE, sep=",")
+#write.table(OR[which(OR[,3]>.5),], file = "C:/Users/jwaldr/OneDrive - LSUHSC/GELCC/oddsRatioForEveryGeneInDelByGATKAndXHMMofAffectedOverAllUnaffectedGreaterThan50percent.csv", row.names=FALSE, sep=",")
+
+ 
 for each unique gene ID:
 odds of exposure in affected <- phenotypeDdel
 odds of exposure in married into the family (see boave) <- 
