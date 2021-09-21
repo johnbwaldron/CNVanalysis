@@ -96,8 +96,8 @@ subset(phenoFam[,c(4,14,15)], phenoFam$CID==59 ) # married in NONE
 subset(phenoFam[,c(4,14,15)], phenoFam$CID==102 ) # married in 346
 # La famileis 52, 88, 90
 subset(phenoFam[,c(4,14,15)], phenoFam$CID==52 ) # married in 4, 13
-subset(phenoFam[,c(4,14,15)], phenoFam$CID==88 ) # married in 13, 52 
-#! take a look at offspring of 13 and 52 (married in, WES on all children but not spouse wherein 6/8 siblings have lung cancer 
+subset(phenoFam[,c(4,14,15)], phenoFam$CID==88 ) # married in 13, 52 #! take a look at offspring of 13 and 52 (married in, WES on all children but not spouse wherein 6/8 siblings have lung cancer 
+subset(phenoFam[,c(4,14,15)], phenoFam$CID==90 ) # married in NONE
 
 marriedInSampleName <- phenoFam[phenoFam$CID == 12 & phenoFam$CIND == 44 | phenoFam$CID == 12 & phenoFam$CIND == 29 |
                        phenoFam$CID == 35 & phenoFam$CIND == 29| 
@@ -140,8 +140,44 @@ colnames(genelistG5) <- c("gene", "Freq")
 marriedInDeletions <- subset(cnvs, cnvs$sample == marriedInSampleName)
 marriedInDeletions <- unlist(strsplit(marriedInDeletions$gene, split = ", "))
 
-genelistG5 <- genelistG5[-which(genelistG5[,1] %in% marriedInDeletions),]
+genelistG5noOverlap <- genelistG5[-which(genelistG5[,1] %in% marriedInDeletions),]
+genelistG5[which(genelistG5[,1] %in% marriedInDeletions),]
 
+
+write.table(genelistG5[which(genelistG5[,1] %in% marriedInDeletions),], file = "C:/Users/jwaldr/OneDrive - LSUHSC/GELCC/deletionsInMoreThan5individualsThatWereAlsoInNonBloodRelatives.csv", row.names=FALSE, sep=",")
+
+genelistG5[which(genelistG5[,1] %in% marriedInDeletions),] %>%
+  kbl() %>%
+  kable_styling(bootstrap_options = c("bordered", full_width = FALSE, row_label_position = "c"))
+
+
+hist(as.data.frame(genelistG5noOverlap)[,2], breaks = seq(5, 60, 5), main="Frequency of specific deletions within lung cancer families not found in non-blood relatives", 
+     xlab = "number of individuals with specific deletion", ylab = "number of distinct genes affected by deletions", col = 3)
+
+
+genelistG5noOverlap
+write.table(genelistG5noOverlap, file = "C:/Users/jwaldr/OneDrive - LSUHSC/GELCC/genelistG5noOverlap.csv", row.names=FALSE, sep=",")
+
+##### not sure what to make of gnomAD SV output based on gene name. I'd like to try to charcaterize the nature of the deletions first by calling up all the calls infor from cnvs that contian each gene in genelistG5noOverlap 
+
+# which gene
+
+for (j in 1:length(genelistG5noOverlap$gene)){
+
+      loc <- vector()
+      for(i in 1:length(cnvs$gene)){
+              if (genelistG5noOverlap$gene[j] %in% strsplit(cnvs$gene, split = ", ")[[i]]){
+              loc <- c(loc, i)}
+              }
+
+cnvs[loc,]
+
+genelistG5noOverlapWithIndexLocations$index.CIND <- genelistG5noOverlapWithIndexLocations 
+}
+
+
+
+############################################################### things that haven't worked out yet ##################################################
 # display
  library(kableExtra)
  # install.packages("kableExtra")
