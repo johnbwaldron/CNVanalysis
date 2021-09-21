@@ -158,12 +158,16 @@ hist(as.data.frame(genelistG5noOverlap)[,2], breaks = seq(5, 60, 5), main="Frequ
 genelistG5noOverlap
 write.table(genelistG5noOverlap, file = "C:/Users/jwaldr/OneDrive - LSUHSC/GELCC/genelistG5noOverlap.csv", row.names=FALSE, sep=",")
 
+###############################################################
+
+
+
 ##### not sure what to make of gnomAD SV output based on gene name. I'd like to try to charcaterize the nature of the deletions first by calling up all the calls infor from cnvs that contian each gene in genelistG5noOverlap 
 
 # which gene
 
-for (j in 1:length(genelistG5noOverlap$gene)){
-
+#for (j in 1:length(genelistG5noOverlap$gene)){
+j = 1
       loc <- vector()
       for(i in 1:length(cnvs$gene)){
               if (genelistG5noOverlap$gene[j] %in% strsplit(cnvs$gene, split = ", ")[[i]]){
@@ -172,9 +176,18 @@ for (j in 1:length(genelistG5noOverlap$gene)){
 
 cnvs[loc,]
 
-genelistG5noOverlapWithIndexLocations$index.CIND <- genelistG5noOverlapWithIndexLocations 
-}
+# load gnomAD SV data from csv that was manually created on 9/21/21
+gnomADgenelistG5noOverlap <- read.csv(file="C:/Users/jwaldr/OneDrive - LSUHSC/GELCC/gnomADfindingsgenelistG5noOverlap-.csv")
 
+removedCommonVariants <- gnomADgenelistG5noOverlap[which(gnomADgenelistG5noOverlap$gnomAD.deletion.AlleleFrequency > 0.05),c(1,2)]
+
+gnomADgenelistG5noOverlapUncommon <- subset(genelistG5noOverlap, gnomADgenelistG5noOverlap$gnomAD.deletion.AlleleFrequency < 0.05)
+
+# save(gnomADgenelistG5noOverlapUncommon, removedCommonVariants, file = "C:/Users/jwaldr/OneDrive - LSUHSC/GELCC/gnomADfindingsgenelistG5noOverlap.rda")
+
+#removedCommonVariants
+
+write.table(removedCommonVariants, file= "C:/Users/jwaldr/OneDrive - LSUHSC/GELCC/removedCommonVariants.csv", row.names=FALSE, sep =",")
 
 
 ############################################################### things that haven't worked out yet ##################################################
