@@ -5,7 +5,7 @@
 # load(file = "C:/Users/jwaldr/OneDrive - LSUHSC/GELCC/CNVsFrom3AlgsAndPhenoAndPhenoFam.2.19.2021.rda")
 load(file = "C:/Users/jwaldr/OneDrive - LSUHSC/GELCC/CNVsFrom3AlgsAndPhenoAndPhenoFam.9.20.21.rda")
 
-library(Homo.sapiens)
+library(Homo.sapiens) 
  
 ######## re-create overlaps between GATK and XHMM ONLY, inorder to add more information to the table and subset by del and those held in common
 
@@ -42,7 +42,7 @@ if(any(XHMMcnv$sample == i)){
                 GATKend = "no.olaps",
                 XHMMstart = "no.olaps",
                 XHMMend = "no.olaps",
-                query= "no.olaps",
+                query= "no.olaps", subject="no.olaps",
                 olap_width="no.olaps", 
                 query_width="no.olaps",
                 GATKcall.del_1.dup_2 = "no.olaps",
@@ -55,7 +55,8 @@ if(any(XHMMcnv$sample == i)){
 ############################################################
 # step 2 in (https://naturarimor.blogspot.com/2021/09/screen-out-cnvs-by-steps-1-must-be.html)
 ############################################################################################3
-
+# 1/21/21 - while there are 202 files, there appear to be only 135 samples in cnvs, why is that? the creation of cnvs through rbind with GATKandXHMM has an error, leaving just 134 samples. I must have saved the file and moved on without noticing the error. 
+#  1/22/21 - "subjectHits column was missing from the no.olaps section. fixed and rerunning.
 
 # do not limit genes to those found in diagnosed individuals, e.g. phenoFam$diagnosis.of.lung.throat.pharynx.larynx.cancer == TRUE
 
@@ -63,11 +64,11 @@ if(any(XHMMcnv$sample == i)){
 cnvs <- matrix(nrow=0, ncol=12)
 cnvs <- as.data.frame(cnvs)
 colnames(cnvs) <- c("sample", "chr", "GATKstart", "GATKend", "XHMMstart", "XHMMend", "query", "subject", "olap_width", "query_width", "GATKcall.del_1.dup_2", "gene")
-
+i=0
 for(i in unique(GATKcnv$sample)){                      #i = GATKcnv$sample[1]
   
   GATKandXHMM <- read.csv(file = paste("C:/Users/jwaldr/OneDrive - LSUHSC/GELCC/callsInCommonGATKandXHMM/GATKandXHMM.", i, ".csv", sep=""))
-  
+  cat(i, GATKandXHMM[1,3], "\n")
   cnvs <- rbind(cnvs, GATKandXHMM)
 }
 
