@@ -3,11 +3,12 @@
 # look here for ideas: https://support.bioconductor.org/p/67118/
 
 # load(file = "C:/Users/jwaldr/OneDrive - LSUHSC/GELCC/CNVsFrom3AlgsAndPhenoAndPhenoFam.2.19.2021.rda")
-load(file = "C:/Users/jwaldr/OneDrive - LSUHSC/GELCC/CNVsFrom3AlgsAndPhenoAndPhenoFam.9.20.21.rda")
+# load(file = "C:/Users/jwaldr/OneDrive - LSUHSC/GELCC/CNVsFrom3AlgsAndPhenoAndPhenoFam.9.20.21.rda")
 
 library(Homo.sapiens) # the genomicsRanges functions below have malfunctioned and need to be fixed and re-run. as of 450am on 9/22/21, I am unable to install and run genomicRanges. Will have to try in a little while. 
  
 ######## re-create overlaps between GATK and XHMM ONLY, inorder to add more information to the table and subset by del and those held in common
+# last re-created 9/22/21 due to different number of columns in no.olaps conditional. Had to create using 2nd instance and new download of R and packages no in mandal computer C:\Users\jwaldr\Documents\R.2\R-4.1.1\bin\x64
 
 for(i in unique(GATKcnv$sample)){                      #i = GATKcnv$sample[1]
 A <- FALSE
@@ -56,7 +57,7 @@ if(any(XHMMcnv$sample == i)){
 # step 2 in (https://naturarimor.blogspot.com/2021/09/screen-out-cnvs-by-steps-1-must-be.html)
 ############################################################################################3
 # 1/21/21 - while there are 202 files, there appear to be only 135 samples in cnvs, why is that? the creation of cnvs through rbind with GATKandXHMM has an error, leaving just 134 samples. I must have saved the file and moved on without noticing the error. 
-#  1/22/21 - "subjectHits column was missing from the no.olaps section. fixed and rerunning.
+#  1/22/21 - "subjectHits column was missing from the no.olaps section. fixed and rerunning. redone 9/22/21
 
 # do not limit genes to those found in diagnosed individuals, e.g. phenoFam$diagnosis.of.lung.throat.pharynx.larynx.cancer == TRUE
 
@@ -75,15 +76,15 @@ for(i in unique(GATKcnv$sample)){                      #i = GATKcnv$sample[1]
 write.table(cnvs, file=paste("C:/Users/jwaldr/OneDrive - LSUHSC/GELCC/compositeOfCNVsCalledByGATKandXHMM", ".csv", sep=""), row.names=FALSE, sep=",")
 
 #cnvs <- read.csv(file="C:/Users/jwaldr/OneDrive - LSUHSC/GELCC/compositeOfCNVsCalledByGATKandXHMM.csv")
-# save(cnvs, pheno, phenoFam, XHMMcnv, GATKcnv, file = "C:/Users/jwaldr/OneDrive - LSUHSC/GELCC/CNVsFrom3AlgsAndPhenoAndPhenoFam.9.20.21.rda")  
-# load(file = "C:/Users/jwaldr/OneDrive - LSUHSC/GELCC/CNVsFrom3AlgsAndPhenoAndPhenoFam.9.20.21.rda")
+# save(cnvs, pheno, phenoFam, XHMMcnv, GATKcnv, file = "C:/Users/jwaldr/OneDrive - LSUHSC/GELCC/CNVsFrom3AlgsAndPhenoAndPhenoFam.9.22.21.rda")  
+# load(file = "C:/Users/jwaldr/OneDrive - LSUHSC/GELCC/CNVsFrom3AlgsAndPhenoAndPhenoFam.9.22.21.rda") #### pay attention to this date!!! 9.20.21 has only 135 samples, 9.22.21 has 202
   
 #################### #################### #################### #################### #################### #################### 
 #
 #################### #################### #################### #################### #################### #################### 
-# load(file = "C:/Users/jwaldr/OneDrive - LSUHSC/GELCC/CNVsFrom3AlgsAndPhenoAndPhenoFam.9.20.21.rda")
+# load(file = "C:/Users/jwaldr/OneDrive - LSUHSC/GELCC/CNVsFrom3AlgsAndPhenoAndPhenoFam.9.22.21.rda")
 
-# includ only deletions
+# include only deletions
 delCalls <- subset(cnvs, cnvs$GATKcall.del_1.dup_2 ==1)
 # remove redundant calls because of XHMM, but THIS TIME without removing non-blood relatives as above
 remove <- vector()
@@ -103,18 +104,18 @@ length(genesBothCallersAllDeletions)/length(unique(delCalls$sample))
 # out of 135
 
 # exclude individualls known to marry into LC families: (only 9 known to be married in with data available at this time)
-subset(phenoFam, phenoFam$CID==12) # married in 44 & 29
-subset(phenoFam[,c(4,14,15)], phenoFam$CID==33 ) # married in NONE
-subset(phenoFam[,c(4,14,15)], phenoFam$CID==35 ) # married in 29
-subset(phenoFam[,c(4,14,15)], phenoFam$CID==42 ) # married in NONE
-subset(phenoFam[,c(4,14,15)], phenoFam$CID==44 ) # married in NONE
-subset(phenoFam[,c(4,14,15)], phenoFam$CID==47 ) # married in 16
-subset(phenoFam[,c(4,14,15)], phenoFam$CID==59 ) # married in NONE
-subset(phenoFam[,c(4,14,15)], phenoFam$CID==102 ) # married in 346
-# La famileis 52, 88, 90
-subset(phenoFam[,c(4,14,15)], phenoFam$CID==52 ) # married in 4, 13
-subset(phenoFam[,c(4,14,15)], phenoFam$CID==88 ) # married in 13, 52 #! take a look at offspring of 13 and 52 (married in, WES on all children but not spouse wherein 6/8 siblings have lung cancer 
-subset(phenoFam[,c(4,14,15)], phenoFam$CID==90 ) # married in NONE
+# subset(phenoFam, phenoFam$CID==12) # married in 44 & 29
+# subset(phenoFam[,c(4,14,15)], phenoFam$CID==33 ) # married in NONE
+# subset(phenoFam[,c(4,14,15)], phenoFam$CID==35 ) # married in 29
+# subset(phenoFam[,c(4,14,15)], phenoFam$CID==42 ) # married in NONE
+# subset(phenoFam[,c(4,14,15)], phenoFam$CID==44 ) # married in NONE
+# subset(phenoFam[,c(4,14,15)], phenoFam$CID==47 ) # married in 16
+# subset(phenoFam[,c(4,14,15)], phenoFam$CID==59 ) # married in NONE
+# subset(phenoFam[,c(4,14,15)], phenoFam$CID==102 ) # married in 346
+# La familiws 52, 88, 90
+# subset(phenoFam[,c(4,14,15)], phenoFam$CID==52 ) # married in 4, 13
+# subset(phenoFam[,c(4,14,15)], phenoFam$CID==88 ) # married in 13, 52 #! take a look at offspring of 13 and 52 (married in, WES on all children but not spouse wherein 6/8 siblings have lung cancer 
+# subset(phenoFam[,c(4,14,15)], phenoFam$CID==90 ) # married in NONE
 
 marriedInSampleName <- phenoFam[phenoFam$CID == 12 & phenoFam$CIND == 44 | phenoFam$CID == 12 & phenoFam$CIND == 29 |
                        phenoFam$CID == 35 & phenoFam$CIND == 29| 
@@ -124,21 +125,23 @@ marriedInSampleName <- phenoFam[phenoFam$CID == 12 & phenoFam$CIND == 44 | pheno
                        phenoFam$CID == 88 & phenoFam$CIND == 13| phenoFam$CID == 88 & phenoFam$CIND == 52,1]
 delCallsLCfamilies <- delCalls[-which(delCalls$sample %in% marriedInSampleName),]
 
+# ! the next several lines were run above and should not 
 ## need to get rid of gene names repeated in a single individual because XHMM calls multiple for one more inclusive GATK call
 # will do so by removing those where subject is not unique for each individual
-remove <- vector()
-for (i in 2:nrow(delCallsLCfamilies)){
-    if (delCallsLCfamilies$subject[i] == delCallsLCfamilies$subject[i-1]){
-        remove <- append(remove, i)
-        cat("deleting row ", i, '\n')
-    }
-    } #nrow(delCallsLCfamilies) = 4797 --> nrow(delCallsLCfamilies) = 2723
-delCallsLCfamilies <- delCallsLCfamilies[-remove,]
+# remove <- vector()
+#for (i in 2:nrow(delCallsLCfamilies)){
+ #   if (delCallsLCfamilies$subject[i] == delCallsLCfamilies$subject[i-1]){
+  #      remove <- append(remove, i)
+   #     cat("deleting row ", i, '\n')
+    #}
+    #} #nrow(delCallsLCfamilies) = 4797 --> nrow(delCallsLCfamilies) = 2723
+# delCallsLCfamilies <- delCallsLCfamilies[-remove,]
 
 #list genes affected by mutations and freq in LC familes
 
 delCallsLCfamiliesgeneIDs <- unlist(strsplit(delCallsLCfamilies$gene, split = ", ")) 
 
+# running list of gene lists prior to each screening step: genesBothCallersAllDeletions (both callers, only deletions, no redundant XHMM cals) --> delCallsLCfamiliesgeneIDs (screened out non-blood relatives)   
 freq <- table(delCallsLCfamiliesgeneIDs[delCallsLCfamiliesgeneIDs != "NA"]) 
 
 freqOfFreq <- as.data.frame(table(freq))
@@ -149,17 +152,23 @@ hist(as.data.frame(freq)[,2], main="Frequency of specific deletions within lung 
 #hist(freqOfFreq, freq = T)
 #hist(freq)
 
+##### !!!!! consider removing the bottom quartile (or some meaningful quantile) of frequencies so it isn't so arbitrary
 # limiting to those genes that are in greater than 5 individuals
 genelistG5 <- as.data.frame(freq)[as.data.frame(freq)[,2]>5,]
 colnames(genelistG5) <- c("gene", "Freq")
 
 # removing CNVs found in those who marry in:
-marriedInDeletions <- subset(cnvs, cnvs$sample == marriedInSampleName)
+marriedInDeletions <- subset(cnvs, cnvs$sample %in% marriedInSampleName)
 marriedInDeletions <- unlist(strsplit(marriedInDeletions$gene, split = ", "))
 
 genelistG5noOverlap <- genelistG5[-which(genelistG5[,1] %in% marriedInDeletions),]
-genelistG5[which(genelistG5[,1] %in% marriedInDeletions),]
+#genelistG5[which(genelistG5[,1] %in% marriedInDeletions),]
 
+# running list of gene lists prior to each screening step: 
+# genesBothCallersAllDeletions (both callers, only deletions, no redundant XHMM cals; length(genesBothCallersAllDeletions) = 6341) --> 
+# delCallsLCfamiliesgeneIDs (screened out non-blood relatives; length(delCallsLCfamiliesgeneIDs) = 6101) -->   
+# genelistG5 (screened out genes held by fewer than 5 LC family members; length(genelistG5$gene) = 211) -->
+# genelistG5noOverlap (screened out deletions also called in non-blood relatives) length(genelistG5noOverlap$gene) = 51 --> 
 
 write.table(genelistG5[which(genelistG5[,1] %in% marriedInDeletions),], file = "C:/Users/jwaldr/OneDrive - LSUHSC/GELCC/deletionsInMoreThan5individualsThatWereAlsoInNonBloodRelatives.csv", row.names=FALSE, sep=",")
 
@@ -173,30 +182,38 @@ hist(as.data.frame(genelistG5noOverlap)[,2], breaks = seq(5, 60, 5), main="Frequ
 
 
 genelistG5noOverlap
-write.table(genelistG5noOverlap, file = "C:/Users/jwaldr/OneDrive - LSUHSC/GELCC/genelistG5noOverlap.csv", row.names=FALSE, sep=",")
+write.table(genelistG5noOverlap, file = "C:/Users/jwaldr/OneDrive - LSUHSC/GELCC/genelistG5noOverlap.9.22.21.csv", row.names=FALSE, sep=",")
 
 ###############################################################
-
-
 
 ##### not sure what to make of gnomAD SV output based on gene name. I'd like to try to charcaterize the nature of the deletions first by calling up all the calls infor from cnvs that contian each gene in genelistG5noOverlap 
 
 # which gene
 
+# load gnomAD SV data from csv that was manually created on 9/21/21 - this is now a different list of - old list and gnomAD SV data = file="C:/Users/jwaldr/OneDrive - LSUHSC/GELCC/gnomADfindingsgenelistG5noOverlap-.csv"
+gnomADgenelistG5noOverlap <- read.csv(file="C:/Users/jwaldr/OneDrive - LSUHSC/GELCC/gnomADfindingsgenelistG5noOverlap-9.22.21.csv")
 
-# load gnomAD SV data from csv that was manually created on 9/21/21
-gnomADgenelistG5noOverlap <- read.csv(file="C:/Users/jwaldr/OneDrive - LSUHSC/GELCC/gnomADfindingsgenelistG5noOverlap-.csv")
+removedCommonVariants <- gnomADgenelistG5noOverlap[which(gnomADgenelistG5noOverlap$AF1 > 0.05),c(1,2)]
 
-removedCommonVariants <- gnomADgenelistG5noOverlap[which(gnomADgenelistG5noOverlap$gnomAD.deletion.AlleleFrequency > 0.05),c(1,2)]
+gnomADgenelistG5noOverlapUncommon <- subset(genelistG5noOverlap, gnomADgenelistG5noOverlap$AF1 < 0.05)
 
-gnomADgenelistG5noOverlapUncommon <- subset(genelistG5noOverlap, gnomADgenelistG5noOverlap$gnomAD.deletion.AlleleFrequency < 0.05)
+# running list of gene lists prior to each screening step: 
+# genesBothCallersAllDeletions (both callers, only deletions, no redundant XHMM cals; length(genesBothCallersAllDeletions) = 6341) --> 
+# delCallsLCfamiliesgeneIDs (screened out non-blood relatives; length(delCallsLCfamiliesgeneIDs) = 6101) -->   
+# genelistG5 (screened out genes held by fewer than 5 LC family members; length(genelistG5$gene) = 211) -->
+# genelistG5noOverlap (screened out deletions also called in non-blood relatives) length(genelistG5noOverlap$gene) = 51 --> 
+# gnomADgenelistG5noOverlapUncommon (screened out deletions with gnomAD AF > 0.05)
+
+save(cnvs, phenoFam, marriedInSampleName, genesBothCallersAllDeletions, delCallsLCfamiliesgeneIDs, genelistG5, genelistG5noOverlap, 
+gnomADgenelistG5noOverlap, gnomADgenelistG5noOverlapUncommon, removedCommonVariants, delCallsLCfamilies, file = "C:/Users/jwaldr/OneDrive - LSUHSC/GELCC/geneListProgressAndData.9.22.21.rda")
 
 # record of removedCommonVariants
-# write.table(removedCommonVariants, file= "C:/Users/jwaldr/OneDrive - LSUHSC/GELCC/removedCommonVariants.csv", row.names=FALSE, sep =",")
+# write.table(removedCommonVariants, file= "C:/Users/jwaldr/OneDrive - LSUHSC/GELCC/removedCommonVariants.9.22.21.csv", row.names=FALSE, sep =",")
 # write.table(gnomADgenelistG5noOverlapUncommon, file= "C:/Users/jwaldr/OneDrive - LSUHSC/GELCC/gnomADgenelistG5noOverlapUncommon.csv", row.names=FALSE, sep =",")
 
-# save(gnomADgenelistG5noOverlapUncommon, removedCommonVariants, file = "C:/Users/jwaldr/OneDrive - LSUHSC/GELCC/gnomADfindingsgenelistG5noOverlap.rda")
-load(file = "C:/Users/jwaldr/OneDrive - LSUHSC/GELCC/gnomADfindingsgenelistG5noOverlap.rda")
+# save(gnomADgenelistG5noOverlapUncommon, removedCommonVariants, file = "C:/Users/jwaldr/OneDrive - LSUHSC/GELCC/gnomADfindingsgenelistG5noOverlap.9.22.21.rda")
+load(file = "C:/Users/jwaldr/OneDrive - LSUHSC/GELCC/gnomADfindingsgenelistG5noOverlap.9.22.21.rda")
+
 
 # includ only deletions
 delCalls <- subset(cnvs, cnvs$GATKcall.del_1.dup_2 ==1)
@@ -241,7 +258,7 @@ cumgFamily <- rbind(cumgFamily, family)
 }
 
 save(cumgFamily, delCalls, gnomADgenelistG5noOverlapUncommon, cnvs, file = "C:/Users/jwaldr/OneDrive - LSUHSC/GELCC/cumgFamily.rda")
-# write.table(cumgFamily, file= "C:/Users/jwaldr/OneDrive - LSUHSC/GELCC/cumgFamily.csv", row.names=FALSE, sep =",")
+# write.table(cumgFamily, file= "C:/Users/jwaldr/OneDrive - LSUHSC/GELCC/cumgFamily.9.22.21.csv", row.names=FALSE, sep =",")
 
 ############################################################### things that haven't worked out yet ##################################################
 # display
