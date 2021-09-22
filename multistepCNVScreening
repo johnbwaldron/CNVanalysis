@@ -5,7 +5,7 @@
 # load(file = "C:/Users/jwaldr/OneDrive - LSUHSC/GELCC/CNVsFrom3AlgsAndPhenoAndPhenoFam.2.19.2021.rda")
 load(file = "C:/Users/jwaldr/OneDrive - LSUHSC/GELCC/CNVsFrom3AlgsAndPhenoAndPhenoFam.9.20.21.rda")
 
-library(Homo.sapiens) 
+library(Homo.sapiens) # the genomicsRanges functions below have malfunctioned and need to be fixed and re-run. as of 450am on 9/22/21, I am unable to install and run genomicRanges. Will have to try in a little while. 
  
 ######## re-create overlaps between GATK and XHMM ONLY, inorder to add more information to the table and subset by del and those held in common
 
