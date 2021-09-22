@@ -1,0 +1,50 @@
+#Rterm.exe --vanilla
+
+# objects in save file below: cnvs, phenoFam, marriedInSampleName, genesBothCallersAllDeletions, delCallsLCfamiliesgeneIDs, genelistG5, genelistG5noOverlap, gnomADgenelistG5noOverlap, gnomADgenelistG5noOverlapUncommon, removedCommonVariants, delCallsLCfamilies, 
+load(file = "C:/Users/jwaldr/OneDrive - LSUHSC/GELCC/geneListProgressAndData.9.22.21.rda")
+# cumgFamily <- read.csv(file= "C:/Users/jwaldr/OneDrive - LSUHSC/GELCC/cumgFamily.9.22.21.csv")
+
+# running list of gene lists prior to each screening step: 
+# genesBothCallersAllDeletions (both callers, only deletions, no redundant XHMM cals; length(genesBothCallersAllDeletions) = 6341) --> 
+# delCallsLCfamiliesgeneIDs (screened out non-blood relatives; length(delCallsLCfamiliesgeneIDs) = 6101) -->   
+# genelistG5 (screened out genes held by fewer than 5 LC family members; length(genelistG5$gene) = 211) -->
+# genelistG5noOverlap (screened out deletions also called in non-blood relatives) length(genelistG5noOverlap$gene) = 51 --> 
+# gnomADgenelistG5noOverlapUncommon (screened out deletions with gnomAD AF > 0.05)
+
+#
+freq1 <- table(genesBothCallersAllDeletions[genesBothCallersAllDeletions != "NA"])
+#?freq1 <- proportions()
+freq1.1 <- as.data.frame(freq1)
+freq1.1[,3] <- "G1"
+colnames(freq1.1 ) <- c("gene", "Freq", "Group")
+
+freq2 <- table(delCallsLCfamiliesgeneIDs[delCallsLCfamiliesgeneIDs != "NA"]) 
+freq2.1 <- as.data.frame(freq2)
+freq2.1[,3] <- "G2"
+colnames(freq2.1 ) <- c("gene", "Freq", "Group")
+
+freq3 <- genelistG5
+freq3[,3] <- "G3"
+colnames(freq3) <- c("gene", "Freq", "Group")
+
+freq4 <- genelistG5noOverlap
+freq4[,3] <- "G4"
+colnames(freq4) <- c("gene", "Freq", "Group")
+
+freq5 <- gnomADgenelistG5noOverlapUncommon
+freq5[,3] <- "G5"
+colnames(freq5) <- c("gene", "Freq", "Group")
+
+df <- rbind(freq1.1, freq2.1, freq3, freq4, freq5)
+
+library(ggplot2)
+ggplot(df, aes(x = Freq, fill = Group)) + 
+  geom_histogram()
+
+
+
+hist(as.data.frame(freq)[,2], main="Frequency of specific deletions within lung cancer families", 
+     xlab = "number of individuals with specific deletion", ylab = "number of distinct genes affected by deletions", col = 4)
+     
+     
+     In order to create a histogram by group in ggplot2 you will need to input the numerical and the categorical variable inside aes and use geom_histogram as follows.
