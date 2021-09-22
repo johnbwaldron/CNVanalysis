@@ -41,7 +41,7 @@ library(ggplot2)
 ggplot(df, aes(x = Freq, fill = Group)) + 
   geom_histogram()
 
-
+write.table(gnomADgenelistG5noOverlapUncommon, file = "C:/Users/jwaldr/OneDrive - LSUHSC/GELCC/gnomADgenelistG5noOverlapUncommon.9.22.21.rda")
 
 hist(as.data.frame(freq)[,2], main="Frequency of specific deletions within lung cancer families", 
      xlab = "number of individuals with specific deletion", ylab = "number of distinct genes affected by deletions", col = 4)
