@@ -1,5 +1,5 @@
 #Rterm.exe --vanilla
-
+ 
 # objects in save file below: cnvs, phenoFam, marriedInSampleName, genesBothCallersAllDeletions, delCallsLCfamiliesgeneIDs, genelistG5, genelistG5noOverlap, gnomADgenelistG5noOverlap, gnomADgenelistG5noOverlapUncommon, removedCommonVariants, delCallsLCfamilies, 
 load(file = "C:/Users/jwaldr/OneDrive - LSUHSC/GELCC/geneListProgressAndData.9.22.21.rda")
 # cumgFamily <- read.csv(file= "C:/Users/jwaldr/OneDrive - LSUHSC/GELCC/cumgFamily.9.22.21.csv")
