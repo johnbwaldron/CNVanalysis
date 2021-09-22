@@ -183,6 +183,17 @@ load(file = "C:/Users/jwaldr/OneDrive - LSUHSC/GELCC/gnomADfindingsgenelistG5noO
 
 # includ only deletions
 delCalls <- subset(cnvs, cnvs$GATKcall.del_1.dup_2 ==1)
+
+# remove redundant calls because of XHMM, but THIS TIME without removing non-blood relatives as above
+remove <- vector()
+for (i in 2:nrow(delCalls)){
+    if (delCalls$subject[i] == delCalls$subject[i-1]){
+        remove <- append(remove, i)
+        cat("deleting row ", i, '\n')
+    }
+    } #nrow
+delCalls <- delCalls[-remove,]
+
 # IMPORTANTLY: THE STRUCTURE OF ORGANIZING THE CALLS THEN ADDING THE PHENO DATA CREATES MULTIPLE ROWS FOR THE SAME CIND; it has not falsely inflated the number of individuals with the given deletion.
 # inititate data.frame for CUMmulative family data organized by gene (affected by deletion in both calling tools, not in nonblood relatives, with allele frequency > 0.05, in greater than 5 individuals
 cumgFamily <- data.frame() # matrix()
