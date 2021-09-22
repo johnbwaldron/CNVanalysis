@@ -57,7 +57,7 @@ if(any(XHMMcnv$sample == i)){
 ############################################################################################3
 
 
-# do not limit those match those genes found in those that phenoFam$diagnosis.of.lung.throat.pharynx.larynx.cancer == TRUE
+# do not limit genes to those found in diagnosed individuals, e.g. phenoFam$diagnosis.of.lung.throat.pharynx.larynx.cancer == TRUE
 
 #create one table with all shared CNV calls
 cnvs <- matrix(nrow=0, ncol=12)
@@ -78,12 +78,26 @@ write.table(cnvs, file=paste("C:/Users/jwaldr/OneDrive - LSUHSC/GELCC/compositeO
 # load(file = "C:/Users/jwaldr/OneDrive - LSUHSC/GELCC/CNVsFrom3AlgsAndPhenoAndPhenoFam.9.20.21.rda")
   
 #################### #################### #################### #################### #################### #################### 
-#count incidence of gene names given subset based on disease status
+#
 #################### #################### #################### #################### #################### #################### 
 # load(file = "C:/Users/jwaldr/OneDrive - LSUHSC/GELCC/CNVsFrom3AlgsAndPhenoAndPhenoFam.9.20.21.rda")
 
 # includ only deletions
 delCalls <- subset(cnvs, cnvs$GATKcall.del_1.dup_2 ==1)
+# remove redundant calls because of XHMM, but THIS TIME without removing non-blood relatives as above
+remove <- vector()
+for (i in 2:nrow(delCalls)){
+    if (delCalls$subject[i] == delCalls$subject[i-1]){
+        remove <- append(remove, i)
+        cat("deleting row ", i, '\n')
+    }
+    } #nrow
+delCalls <- delCalls[-remove,]
+#see what we have here for genes
+genesBothCallersAllDeletions <- unlist(strsplit(delCalls$gene, split = ", ")) 
+
+length(genesBothCallersAllDeletions)/length(unique(delCalls$sample))
+
 
 # exclude individualls known to marry into LC families: (only 9 known to be married in with data available at this time)
 subset(phenoFam, phenoFam$CID==12) # married in 44 & 29
@@ -194,7 +208,7 @@ for (i in 2:nrow(delCalls)){
     } #nrow
 delCalls <- delCalls[-remove,]
 
-# IMPORTANTLY: THE STRUCTURE OF ORGANIZING THE CALLS THEN ADDING THE PHENO DATA CREATES MULTIPLE ROWS FOR THE SAME CIND; it has not falsely inflated the number of individuals with the given deletion.
+# IMPORTANTLY: the following is only true if you fail to remove redundant calls as the "#remove step" does immediately above: THE STRUCTURE OF ORGANIZING THE CALLS THEN ADDING THE PHENO DATA CREATES MULTIPLE ROWS FOR THE SAME CIND; it has not falsely inflated the number of individuals with the given deletion.
 # inititate data.frame for CUMmulative family data organized by gene (affected by deletion in both calling tools, not in nonblood relatives, with allele frequency > 0.05, in greater than 5 individuals
 cumgFamily <- data.frame() # matrix()
 
