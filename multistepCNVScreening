@@ -183,7 +183,7 @@ load(file = "C:/Users/jwaldr/OneDrive - LSUHSC/GELCC/gnomADfindingsgenelistG5noO
 
 # includ only deletions
 delCalls <- subset(cnvs, cnvs$GATKcall.del_1.dup_2 ==1)
-
+# IMPORTANTLY: THE STRUCTURE OF ORGANIZING THE CALLS THEN ADDING THE PHENO DATA CREATES MULTIPLE ROWS FOR THE SAME CIND; it has not falsely inflated the number of individuals with the given deletion.
 # inititate data.frame for CUMmulative family data organized by gene (affected by deletion in both calling tools, not in nonblood relatives, with allele frequency > 0.05, in greater than 5 individuals
 cumgFamily <- data.frame() # matrix()
 
@@ -213,6 +213,7 @@ cumgFamily <- rbind(cumgFamily, family)
 }
 
 save(cumgFamily, delCalls, gnomADgenelistG5noOverlapUncommon, cnvs, file = "C:/Users/jwaldr/OneDrive - LSUHSC/GELCC/cumgFamily.rda")
+# write.table(cumgFamily, file= "C:/Users/jwaldr/OneDrive - LSUHSC/GELCC/cumgFamily.csv", row.names=FALSE, sep =",")
 
 ############################################################### things that haven't worked out yet ##################################################
 # display
