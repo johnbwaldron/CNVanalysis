@@ -1,0 +1,149 @@
+Rterm.exe --vanilla
+#cumgFamily, delCalls, gnomADgenelistG5noOverlapUncommon, cnvs,
+load(file = "C:/Users/jwaldr/OneDrive - LSUHSC/GELCC/CNVsFrom3AlgsAndPhenoAndPhenoFam.9.20.21.rda")
+
+library(Homo.sapiens)
+
+load(file = "C:/Users/jwaldr/OneDrive - LSUHSC/GELCC/cumgFamily.rda")
+load(file = "C:/Users/jwaldr/OneDrive - LSUHSC/GELCC/gnomADfindingsgenelistG5noOverlap.rda")
+
+############## goal: GO cataegories --> enrichment for gene list 
+
+
+library(DOSE)
+# Guangchuang Yu, Li-Gen Wang, Guang-Rong Yan, Qing-Yu He. DOSE: an R/Bioconductor package for Disease Ontology Semantic and Enrichment analysis. Bioinformatics 2015, 31(4):608-609
+
+#convert fomr alpha gene SYMBOL to entrey gene id using bitr
+# BiocManager::install("clusterProfiler")
+library(clusterProfiler) #T Wu, E Hu, S Xu, M Chen, P Guo, Z Dai, T Feng, L Zhou, W Tang, L Zhan, X Fu, S Liu, X Bo, and G Yu. clusterProfiler 4.0: A universal enrichment tool for interpreting omics data. The Innovation. 2021, 2(3):100141. doi: 10.1016/j.xinn.2021.100141
+x <- gnomADgenelistG5noOverlapUncommon$gene
+eg = bitr(x, fromType="SYMBOL", toType="ENTREZID", OrgDb="org.Hs.eg.db")
+g <- eg[,2][order(eg[,2], decreasing = TRUE)]
+g <- sort.list(eg$ENTREZID, decreasing = TRUE)
+
+gseDO(g,
+      minGSSize     = 120,
+      pvalueCutoff  = 0.2,
+      pAdjustMethod = "BH",
+      verbose       = FALSE)
+
+
+############################################# enrichDGN #############################
+
+enrichDGN(eg[,2]) 
+
+#
+# over-representation test
+#
+#...@organism    Homo sapiens
+#...@ontology    DisGeNET
+#...@keytype     ENTREZID
+#...@gene        chr [1:37] "113146" "644019" "9720" "728642" "10877" "1548" "1755" ...
+#...pvalues adjusted by 'BH' with cutoff <0.05
+#...4 enriched terms found
+'data.frame':   4 obs. of  9 variables:
+ $ ID         : chr  "C0200633" "C0523465" "C0200641" "C0042834"
+ $ Description: chr  "Neutrophil count (procedure)" "Serum albumin measurement" "Blood basophil count (lab test)" "Vital capacity"
+ $ GeneRatio  : chr  "6/29" "8/29" "6/29" "6/29"
+ $ BgRatio    : chr  "145/21671" "433/21671" "272/21671" "430/21671"
+ $ pvalue     : num  3.38e-08 7.07e-08 1.38e-06 1.90e-05
+ $ p.adjust   : num  1.08e-05 1.12e-05 1.46e-04 1.51e-03
+ $ qvalue     : num  9.19e-06 9.61e-06 1.25e-04 1.29e-03
+ $ geneID     : chr  "56147/56146/56145/56144/56142/56141" "56147/56146/56145/56144/56142/56141/23042/85363" "56147/56146/56145/56144/56142/56141" "56147/56146/56145/56144/56142/56141"
+ $ Count      : int  6 8 6 6
+#...Citation
+  Guangchuang Yu, Li-Gen Wang, Yanyan Han and Qing-Yu He.
+  clusterProfiler: an R package for comparing biological themes among
+  gene clusters. OMICS: A Journal of Integrative Biology
+  2012, 16(5):284-287
+
+############################################# enrichNCG #############################
+
+ncg <- enrichNCG(eg[,2]) 
+### yields 0 enriched terms
+
+############################################# enrichDO ############################# (yeilds 0 enriched GO terms ##############################
+
+backgroundGenes <- unique(unlist(strsplit(cnvs$gene, split = ", "))) #2182 unique genes ID as cnvs without all the steps of screening out genes
+# convert to entrez ID
+backgroundGenes = bitr(backgroundGenes, fromType="SYMBOL", toType="ENTREZID", OrgDb="org.Hs.eg.db")
+
+# below results in 0 enriched terms found
+x <- enrichDO(gene          = eg[,2],
+              ont           = "DO",
+              pvalueCutoff  = 0.05,
+              pAdjustMethod = "BH",
+              universe      = names(backgroundGenes[,2]),
+              minGSSize     = 5,
+              maxGSSize     = 500,
+              qvalueCutoff  = 0.05,
+              readable      = FALSE)
+# try testing for enrichment with ALL human genes as background instead (by removing "universe = " --> yields 0 enriched terms
+x <- enrichDO(gene          = eg[,2],
+              ont           = "DO",
+              pvalueCutoff  = 0.05,
+              pAdjustMethod = "BH",
+              minGSSize     = 5,
+              maxGSSize     = 500,
+              qvalueCutoff  = 0.05,
+              readable      = FALSE)
+
+
+##########################################################################################################################################################
+GO analysis: 
+
+cite: 
+Ashburner et al. Gene ontology: tool for the unification of biology. Nat Genet. May 2000;25(1):25-9. [abstract | full text]
+The Gene Ontology resource: enriching a GOld mine. Nucleic Acids Res. Jan 2021;49(D1):D325-D334. [abstract | full text]
+
+Analysis Type:	PANTHER Overrepresentation Test (Released 20210224)
+Annotation Version and Release Date:	GO Ontology database DOI:  10.5281/zenodo.5080993 Released 2021-07-02
+Analyzed List:	upload_1 (Homo sapiens)
+Reference List:	Homo sapiens (all genes in database)
+Test Type:	FISHER
+Correction:	FDR
+GO biological process complete	Homo sapiens - REFLIST (20595)	upload_1 (38)	upload_1 (expected)	upload_1 (over/under)	upload_1 (fold Enrichment)	upload_1 (raw P-value)	upload_1 (FDR)
+homophilic cell adhesion via plasma membrane adhesion molecules (GO:0007156)	167	8	.31	+	25.96	8.98E-10	1.41E-05
+cell-cell adhesion via plasma-membrane adhesion molecules (GO:0098742)	258	8	.48	+	16.81	2.40E-08	1.89E-04
+cell-cell adhesion (GO:0098609)	515	8	.95	+	8.42	4.04E-06	2.12E-02
+biological regulation (GO:0065007)	12242	9	22.59	-	.40	9.15E-06	3.60E-02
+
+
+homophilic cell adhesion via plasma membrane adhesion molecules	167	8	.31	25.96	+	8.98E-10	1.41E-05
+cell-cell adhesion via plasma-membrane adhesion molecules	258	8	.48	16.81	+	2.40E-08	1.89E-04
+cell-cell adhesion	515	8	.95	8.42	+	4.04E-06	2.12E-02
+biological regulation
+
+Significant Cadherin signaling pathway and wnt signaling pathway
+GO-slim biological process significant for cell adhesion and biological adhesion
+
+	Homo sapiens (REF)	upload_1 ( Hierarchy  NEW! Tips)
+PANTHER GO-Slim Biological Process	#	#	expected	Fold Enrichment	+/-	raw P value	FDR
+cell adhesion	366	8	.68	11.85	+	3.29E-07	7.18E-04
+biological adhesion	366	8	.68	11.85	+	3.29E-07	3.59E-04
+
+
+PANTHER Pathways	#	#	expected	Fold Enrichment	+/-	raw P value	FDR
+Cadherin signaling pathway	164	8	.30	26.44	+	7.83E-10	1.31E-07
+Wnt signaling pathway	317	8	.58	13.68	+	1.13E-07	9.41E-06
+
+GO-slim cellular component signiciant for integral component of plasma membrane
+	Homo sapiens (REF)	upload_1 ( Hierarchy  NEW! Tips)
+PANTHER GO-Slim Cellular Component	#	#	expected	Fold Enrichment	+/-	raw P value	FDR
+integral component of plasma membrane	786	8	1.45	5.52	+	8.14E-05	4.13E-02
+intrinsic component of plasma membrane	798	8	1.47	5.43	+	9.03E-05	2.29E-02
+
+
+	Homo sapiens (REF)	upload_1 ( Hierarchy  NEW! Tips)
+PANTHER GO-Slim Biological Process	#	#	expected	Fold Enrichment	+/-	raw P value	FDR
+cell adhesion	366	8	.68	11.85	+	3.29E-07	7.18E-04
+biological adhesion	366	8	.68	11.85	+	3.29E-07	3.59E-04
+
+
+No statistically significant results for cellular component GO analysis
+No statistically significant results for molecular function GO analysis
+No statistically significant results for GO-slim molecular function analysis
+ 
+
+ego2 <- simplify(ego)
+cnetplot(ego2, foldChange=geneList)
