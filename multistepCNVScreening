@@ -166,15 +166,6 @@ write.table(genelistG5noOverlap, file = "C:/Users/jwaldr/OneDrive - LSUHSC/GELCC
 
 # which gene
 
-#for (j in 1:length(genelistG5noOverlap$gene)){
-j = 1
-      loc <- vector()
-      for(i in 1:length(cnvs$gene)){
-              if (genelistG5noOverlap$gene[j] %in% strsplit(cnvs$gene, split = ", ")[[i]]){
-              loc <- c(loc, i)}
-              }
-
-cnvs[loc,]
 
 # load gnomAD SV data from csv that was manually created on 9/21/21
 gnomADgenelistG5noOverlap <- read.csv(file="C:/Users/jwaldr/OneDrive - LSUHSC/GELCC/gnomADfindingsgenelistG5noOverlap-.csv")
@@ -183,12 +174,45 @@ removedCommonVariants <- gnomADgenelistG5noOverlap[which(gnomADgenelistG5noOverl
 
 gnomADgenelistG5noOverlapUncommon <- subset(genelistG5noOverlap, gnomADgenelistG5noOverlap$gnomAD.deletion.AlleleFrequency < 0.05)
 
+# record of removedCommonVariants
+# write.table(removedCommonVariants, file= "C:/Users/jwaldr/OneDrive - LSUHSC/GELCC/removedCommonVariants.csv", row.names=FALSE, sep =",")
+# write.table(gnomADgenelistG5noOverlapUncommon, file= "C:/Users/jwaldr/OneDrive - LSUHSC/GELCC/gnomADgenelistG5noOverlapUncommon.csv", row.names=FALSE, sep =",")
+
 # save(gnomADgenelistG5noOverlapUncommon, removedCommonVariants, file = "C:/Users/jwaldr/OneDrive - LSUHSC/GELCC/gnomADfindingsgenelistG5noOverlap.rda")
+load(file = "C:/Users/jwaldr/OneDrive - LSUHSC/GELCC/gnomADfindingsgenelistG5noOverlap.rda")
 
-#removedCommonVariants
+# includ only deletions
+delCalls <- subset(cnvs, cnvs$GATKcall.del_1.dup_2 ==1)
 
-write.table(removedCommonVariants, file= "C:/Users/jwaldr/OneDrive - LSUHSC/GELCC/removedCommonVariants.csv", row.names=FALSE, sep =",")
+# inititate data.frame for CUMmulative family data organized by gene (affected by deletion in both calling tools, not in nonblood relatives, with allele frequency > 0.05, in greater than 5 individuals
+cumgFamily <- data.frame() # matrix()
 
+for (j in 1:length(gnomADgenelistG5noOverlapUncommon$gene)){    #j=1
+      loc <- vector()
+      for(i in 1:length(delCalls$gene)){
+              if (gnomADgenelistG5noOverlapUncommon$gene[j] %in% strsplit(delCalls$gene, split = ", ")[[i]]){
+              loc <- c(loc, i)}
+                          
+              } # i
+      cat("working on ", gnomADgenelistG5noOverlapUncommon$gene[j], "\n")
+
+# match sample in delCalls (cnvs with only dels) to sample in phenoFam: CID and CIND, "CF", "CM", "diagnosis.of.lung.throat.pharynx.larynx.cancer", "Age.at.Onset.1o.cancer"
+      family <- delCalls[loc,1:4] 
+      for(w in 1:length(family$sample)){    # w = 2
+         family[w,"CID"] <- phenoFam[which(phenoFam$submitted.sample.id == family$sample[w]), "CID"]
+         family[w,"CIND"] <- phenoFam[which(phenoFam$submitted.sample.id == family$sample[w]), "CIND"]
+         family[w,"CF"] <- phenoFam[which(phenoFam$submitted.sample.id == family$sample[w]), "CF"]
+         family[w,"CM"] <- phenoFam[which(phenoFam$submitted.sample.id == family$sample[w]), "CM"]
+         family[w,"diagnosis.of.lung.throat.pharynx.larynx.cancer"] <- phenoFam[which(phenoFam$submitted.sample.id == family$sample[w]), "diagnosis.of.lung.throat.pharynx.larynx.cancer"]
+         family[w,"Age.at.Onset.1o.cancer"] <- phenoFam[which(phenoFam$submitted.sample.id == family$sample[w]), "Age.at.Onset.1o.cancer"]
+         } # w
+   #label this information with the gene of interest
+   family$gene <- gnomADgenelistG5noOverlapUncommon$gene[j]
+
+cumgFamily <- rbind(cumgFamily, family)
+}
+
+save(cumgFamily, delCalls, gnomADgenelistG5noOverlapUncommon, cnvs, file = "C:/Users/jwaldr/OneDrive - LSUHSC/GELCC/cumgFamily.rda")
 
 ############################################################### things that haven't worked out yet ##################################################
 # display
