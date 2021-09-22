@@ -53,18 +53,48 @@ delCallsLCfamiliesgeneIDs <- unlist(strsplit(delCallsLCfamilies$gene, split = ",
 
 ##### !!!!! consider removing the bottom quartile (or some meaningful quantile) of frequencies so it isn't so arbitrary
 # limiting to those genes that are in greater than 5 individuals
+freq <-table(delCallsLCfamiliesgeneIDs[delCallsLCfamiliesgeneIDs != "NA"]) 
 genelistG5 <- as.data.frame(freq)[as.data.frame(freq)[,2]>5,]
 colnames(genelistG5) <- c("gene", "Freq")
 
+###!!!!!!!!!!!!!!!! do not do the next step!
 # removing CNVs found in those who marry in:
-marriedInDeletions <- subset(cnvs, cnvs$sample %in% marriedInSampleName)
-marriedInDeletions <- unlist(strsplit(marriedInDeletions$gene, split = ", "))
+# marriedInDeletions <- subset(cnvs, cnvs$sample %in% marriedInSampleName)
+# marriedInDeletions <- unlist(strsplit(marriedInDeletions$gene, split = ", "))
+# genelistG5noOverlap <- genelistG5[-which(genelistG5[,1] %in% marriedInDeletions),]
+# genelistG5[which(genelistG5[,1] %in% marriedInDeletions),]
 
-genelistG5noOverlap <- genelistG5[-which(genelistG5[,1] %in% marriedInDeletions),]
-#genelistG5[which(genelistG5[,1] %in% marriedInDeletions),]
+save(cnvs, phenoFam, marriedInSampleName, genesBothCallersAllDeletions, delCallsLCfamiliesgeneIDs, genelistG5, delCallsLCfamilies, file = "C:/Users/jwaldr/OneDrive - LSUHSC/GELCC/THISpoint69.4.15pm.9.22.21.rda")
 
-hist(as.data.frame(genelistG5noOverlap)[,2], breaks = seq(5, 60, 5), main="Frequency of specific deletions within lung cancer families not found in non-blood relatives", 
-     xlab = "number of individuals with specific deletion", ylab = "number of distinct genes affected by deletions", col = 3)
+# structure data.frame by gene so i can ID length(unique(CID)) > 3 and CIND > 2 per CID
+
+for (j in 1:length(genelistG5$gene)){    #j=1
+      loc <- vector()
+      for(i in 1:length(delCalls$gene)){
+              if (genelistG5$gene[j] %in% strsplit(delCalls$gene, split = ", ")[[i]]){
+              loc <- c(loc, i)}
+                          
+              } # i
+      cat("working on ", genelistG5$gene[j], "\n")
+
+# match sample in delCalls (cnvs with only dels) to sample in phenoFam: CID and CIND, "CF", "CM", "diagnosis.of.lung.throat.pharynx.larynx.cancer", "Age.at.Onset.1o.cancer"
+      family <- delCalls[loc,1:4] 
+      for(w in 1:length(family$sample)){    # w = 2
+         family[w,"CID"] <- phenoFam[which(phenoFam$submitted.sample.id == family$sample[w]), "CID"]
+         family[w,"CIND"] <- phenoFam[which(phenoFam$submitted.sample.id == family$sample[w]), "CIND"]
+         family[w,"CF"] <- phenoFam[which(phenoFam$submitted.sample.id == family$sample[w]), "CF"]
+         family[w,"CM"] <- phenoFam[which(phenoFam$submitted.sample.id == family$sample[w]), "CM"]
+         family[w,"diagnosis.of.lung.throat.pharynx.larynx.cancer"] <- phenoFam[which(phenoFam$submitted.sample.id == family$sample[w]), "diagnosis.of.lung.throat.pharynx.larynx.cancer"]
+         family[w,"Age.at.Onset.1o.cancer"] <- phenoFam[which(phenoFam$submitted.sample.id == family$sample[w]), "Age.at.Onset.1o.cancer"]
+         } # w
+   #label this information with the gene of interest
+   family$gene <- genelistG5$gene[j]
+
+cumgFamily <- rbind(cumgFamily, family)
+}
+### starting running this at 4:23p 9.22.21 - check that it saves output (next two lines) in OneDrive in a bit from home - then use the output to limit the genes to those with at least 3 CIDs and >1 CIND per CID
+save(cumgFamily, file = "C:/Users/jwaldr/OneDrive - LSUHSC/GELCC/cumgFamilyat4.23p.9.22.21.rda")
+write.table(cumgFamily, file= "C:/Users/jwaldr/OneDrive - LSUHSC/GELCC/cumgFamilyat4.23p.9.22.21.csv", row.names=FALSE, sep =",")
 
 # load gnomAD SV data from csv that was manually created on 9/21/21 - this is now a different list of - old list and gnomAD SV data = file="C:/Users/jwaldr/OneDrive - LSUHSC/GELCC/gnomADfindingsgenelistG5noOverlap-.csv"
 gnomADgenelistG5noOverlap <- read.csv(file="C:/Users/jwaldr/OneDrive - LSUHSC/GELCC/gnomADfindingsgenelistG5noOverlap-9.22.21.csv")
@@ -72,6 +102,99 @@ gnomADgenelistG5noOverlap <- read.csv(file="C:/Users/jwaldr/OneDrive - LSUHSC/GE
 removedCommonVariants <- gnomADgenelistG5noOverlap[which(gnomADgenelistG5noOverlap$AF1 > 0.05),c(1,2)]
 
 gnomADgenelistG5noOverlapUncommon <- subset(genelistG5noOverlap, gnomADgenelistG5noOverlap$AF1 < 0.05)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 # running list of gene lists prior to each screening step: 
 # genesBothCallersAllDeletions (both callers, only deletions, no redundant XHMM cals; length(genesBothCallersAllDeletions) = 6341) --> 
