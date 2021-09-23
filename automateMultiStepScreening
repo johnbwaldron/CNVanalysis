@@ -93,8 +93,8 @@ for (j in 1:length(genelistG5$gene)){    #j=1
 cumgFamily <- rbind(cumgFamily, family)
 }
 ### starting running this at 4:23p 9.22.21 - check that it saves output (next two lines) in OneDrive in a bit from home - then use the output to limit the genes to those with at least 3 CIDs and >1 CIND per CID
-save(cumgFamily, file = "C:/Users/jwaldr/OneDrive - LSUHSC/GELCC/cumgFamilyat4.23p.9.22.21.rda")
-write.table(cumgFamily, file= "C:/Users/jwaldr/OneDrive - LSUHSC/GELCC/cumgFamilyat4.23p.9.22.21.csv", row.names=FALSE, sep =",")
+#save(cumgFamily, file = "C:/Users/jwaldr/OneDrive - LSUHSC/GELCC/cumgFamilyat4.23p.9.22.21.rda")
+#write.table(cumgFamily, file= "C:/Users/jwaldr/OneDrive - LSUHSC/GELCC/cumgFamilyat4.23p.9.22.21.csv", row.names=FALSE, sep =",")
 
 # load gnomAD SV data from csv that was manually created on 9/21/21 - this is now a different list of - old list and gnomAD SV data = file="C:/Users/jwaldr/OneDrive - LSUHSC/GELCC/gnomADfindingsgenelistG5noOverlap-.csv"
 gnomADgenelistG5noOverlap <- read.csv(file="C:/Users/jwaldr/OneDrive - LSUHSC/GELCC/gnomADfindingsgenelistG5noOverlap-9.22.21.csv")
@@ -104,7 +104,17 @@ removedCommonVariants <- gnomADgenelistG5noOverlap[which(gnomADgenelistG5noOverl
 gnomADgenelistG5noOverlapUncommon <- subset(genelistG5noOverlap, gnomADgenelistG5noOverlap$AF1 < 0.05)
 
 
+load(file = "C:/Users/jwaldr/OneDrive - LSUHSC/GELCC/cumgFamilyat4.23p.9.22.21.rda")
+# loop through genes listed in cumgFamily, for each create table row with:
+# number of CIDs, next column: paste(CIDs, sep =", ")
+# number of CIND per CID (paste(
+# count of diagnosis.of.lung.throat.pharynx.larynx.cancer == TRUE
+head(cumgFamily)
+geneSummary <- data.frame()
+colnames(geneSummary) <- c("gene", "#CIDs", "CIDs", "#CINDs", "CID_CINDs", "#_affected", "#_unaffected", "mean_width")
 
+for(i in cumgFamily$gene){    i = cumgFamily$gene[1]
+     peeps <- subset(cumgFamily, cumgFamily$gene %in% i)
 
 
 
