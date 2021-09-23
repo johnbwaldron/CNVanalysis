@@ -68,6 +68,7 @@ save(cnvs, phenoFam, marriedInSampleName, genesBothCallersAllDeletions, delCalls
 
 # structure data.frame by gene so i can ID length(unique(CID)) > 3 and CIND > 2 per CID
 
+cumgFamily <- data.frame() 
 for (j in 1:length(genelistG5$gene)){    #j=1
       loc <- vector()
       for(i in 1:length(delCalls$gene)){
@@ -103,18 +104,35 @@ removedCommonVariants <- gnomADgenelistG5noOverlap[which(gnomADgenelistG5noOverl
 
 gnomADgenelistG5noOverlapUncommon <- subset(genelistG5noOverlap, gnomADgenelistG5noOverlap$AF1 < 0.05)
 
-
-load(file = "C:/Users/jwaldr/OneDrive - LSUHSC/GELCC/cumgFamilyat4.23p.9.22.21.rda")
+cumgFamily <- read.csv(file = "C:/Users/jwaldr/OneDrive - LSUHSC/GELCC/cumgFamilyat4.23p.9.22.21.csv")
+# DO NOT DO THIS 9/22 the RDA file contains new data appended to end of old data. NEED to zero out the old object before running rbind to add new data. #load(file = "C:/Users/jwaldr/OneDrive - LSUHSC/GELCC/cumgFamilyat4.23p.9.22.21.rda")
 # loop through genes listed in cumgFamily, for each create table row with:
 # number of CIDs, next column: paste(CIDs, sep =", ")
 # number of CIND per CID (paste(
 # count of diagnosis.of.lung.throat.pharynx.larynx.cancer == TRUE
 head(cumgFamily)
-geneSummary <- data.frame()
-colnames(geneSummary) <- c("gene", "#CIDs", "CIDs", "#CINDs", "CID_CINDs", "#_affected", "#_unaffected", "mean_width")
 
-for(i in cumgFamily$gene){    i = cumgFamily$gene[1]
+geneSummary <- as.data.frame(matrix(nrow=0, ncol=8))
+colnames(geneSummary) <- c("gene", "#CIDs", "#CIDs.with.>2ind", "#CINDs", "#_affected", "#_unaffected", "mean_width", "#_unique_widths")
+
+for(i in unique(cumgFamily$gene)){    #i = cumgFamily$gene[1]
      peeps <- subset(cumgFamily, cumgFamily$gene %in% i)
+     k=0
+     for(j in unique(peeps$CID)) {    #j=peeps$CID[1]
+         if(length(which(peeps$CID %in% j))>1){ k=k+1 }
+            } # j
+     geneSummary <- rbind(geneSummary, data.frame(i, length(unique(peeps$CID)), 
+                                         k, length(peeps$CIND), 
+                                         length(which(peeps$diagnosis.of.lung.throat.pharynx.larynx.cancer)),
+                                         length(which(peeps$diagnosis.of.lung.throat.pharynx.larynx.cancer==FALSE)),
+                                         round(mean(peeps$width), 1), length(unique(peeps$width))))
+     # this could be a great place to use a statistical test of association between Dx and cnv width, CID and CNV width, or                         
+     
+     cat(i, " has ",  length(unique(peeps$CID)), " CIDs and ", k, " families with > 2 CINDs with this CNV\n")   
+     } # i
+     colnames(geneSummary) <- c("gene", "#CIDs", "#CIDs.with.>2ind", "#CINDs", "#_affected", "#_unaffected", "mean_width", "#_unique_widths")
+write.table(geneSummary, file= "C:/Users/jwaldr/OneDrive - LSUHSC/GELCC/statsByGene.9.23.21.csv", row.names=FALSE, sep =",")                                         
+                                         
 
 
 
