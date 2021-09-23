@@ -3,7 +3,11 @@
 # load(file = "C:/Users/jwaldr/OneDrive - LSUHSC/GELCC/CNVsFrom3AlgsAndPhenoAndPhenoFam.2.19.2021.rda")
 # load(file = "C:/Users/jwaldr/OneDrive - LSUHSC/GELCC/CNVsFrom3AlgsAndPhenoAndPhenoFam.9.20.21.rda")
  # load(file = "C:/Users/jwaldr/OneDrive - LSUHSC/GELCC/deletionsGeneFreqTables.9.20.21.rda")
+ # !!!!!!!!!!!! Note issue above: incomplete cnvs used previously: adding corrected data froam with load below (today is 9/23/21)
  
+ load(file = "C:/Users/jwaldr/OneDrive - LSUHSC/GELCC/CNVsFrom3AlgsAndPhenoAndPhenoFam.9.22.21.rda") #### pay attention to this date!!! 9.20.21 has only 135 samples, 9.22.21 has 202
+# only at home PC: load(file = "C:/Users/4wald/OneDrive - LSUHSC/GELCC/CNVsFrom3AlgsAndPhenoAndPhenoFam.9.22.21.rda") #### pay attention to this date!!! 9.20.21 has only 135 samples, 9.22.21 has 202
+
  
 library(Homo.sapiens)
 
@@ -53,7 +57,14 @@ marriedInsampleName <- phenoFam[phenoFam$CID == 12 & phenoFam$CIND == 44 | pheno
 marriedIn <- subset(cnvs, cnvs$GATKcall.del_1.dup_2 == 1 & cnvs$sample %in% marriedInsampleName) 
 outGrpGenes <- unlist(strsplit(marriedIn$gene, split = ", "))
 
+# affected and unaffected:
+length(which(phenoFam$diagnosis.of.lung.throat.pharynx.larynx.cancer)) #= 60
+length(unique(phenoFam$submitted.sample.id)) #= 204
+length(unique(cnvs$sample) #= 202
+samplesInCnvs <- subset(phenoFam, phenoFam$submitted.sample.id %in% unique(cnvs$sample))
 
+length(which(samplesInCnvs$diagnosis.of.lung.throat.pharynx.larynx.cancer)) #60
+length(which(samplesInCnvs$diagnosis.of.lung.throat.pharynx.larynx.cancer==FALSE)) # 142
 
 listALLgenes <- unique(unlist(strsplit(cnvs$gene, split = ", ")))
 
