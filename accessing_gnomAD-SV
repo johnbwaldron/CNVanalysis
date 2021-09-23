@@ -1,0 +1,15 @@
+Rterm.exe --vanilla
+
+library(Homo.sapiens)
+
+# purpose: To access gnomAD and query positions of CNVs with general population database (https://gnomad.broadinstitute.org/downloads#v2-variants)
+# gsutil ls gs://gcp-public-data--gnomad/release/
+
+load(file = "C:/Users/jwaldr/OneDrive - LSUHSC/GELCC/CNVsFrom3AlgsAndPhenoAndPhenoFam.9.22.21.rda") #### pay attention to this date!!! 9.20.21 has only 135 samples, 9.22.21 has 202
+
+# anVIL package information: http://www.bioconductor.org/packages/release/bioc/vignettes/AnVIL/inst/doc/Introduction.html
+if (!requireNamespace("BiocManager", quietly = TRUE))
+    install.packages("BiocManager", repos = "https://cran.r-project.org")
+BiocManager::install("AnVIL")
+
+library(AnVIL)
