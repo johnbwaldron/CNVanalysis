@@ -57,6 +57,8 @@ marriedInsampleName <- phenoFam[phenoFam$CID == 12 & phenoFam$CIND == 44 | pheno
 marriedIn <- subset(cnvs, cnvs$GATKcall.del_1.dup_2 == 1 & cnvs$sample %in% marriedInsampleName) 
 outGrpGenes <- unlist(strsplit(marriedIn$gene, split = ", "))
 
+
+################### 9/23/21 OR and CI#####################
 # affected and unaffected:
 length(which(phenoFam$diagnosis.of.lung.throat.pharynx.larynx.cancer)) #= 60
 length(unique(phenoFam$submitted.sample.id)) #= 204
@@ -66,11 +68,73 @@ samplesInCnvs <- subset(phenoFam, phenoFam$submitted.sample.id %in% unique(cnvs$
 length(which(samplesInCnvs$diagnosis.of.lung.throat.pharynx.larynx.cancer)) #60
 length(which(samplesInCnvs$diagnosis.of.lung.throat.pharynx.larynx.cancer==FALSE)) # 142
 
+# must first remove redundant and duplication calls
+onlyDels <- subset(cnvs, cnvs$GATKcall.del_1.dup_2 ==1)
+
+# remove redundant calls because of XHMM
+remove <- vector()
+for (i in 2:nrow(onlyDels)){
+    if (onlyDels$subject[i] == onlyDels$subject[i-1]){
+        remove <- append(remove, i)
+        cat("deleting row ", i, '\n')
+    }
+    } #nrow
+onlyDelsNoRedundant <- onlyDels[-remove,]
+
+
+diseasePhenotypeOnlyDels <- subset(onlyDelsNoRedundant, onlyDelsNoRedundant[,1] %in% phenoFam[which(phenoFam$diagnosis.of.lung.throat.pharynx.larynx.cancer),1])
+
+##### list of genes found in affected (uniqueDiseaseGeneIDs) and in unaffected individuals
+# for OR, we do not want just a list of unique names, but need to know how many individuals have them affected
+# uniqueDiseaseGeneIDs <- unique(unlist(strsplit(diseasePhenotypeOnlyDels$gene, split = ", "))) # length(uniqueDiseaseGeneIDs)
+
+# need to create allDisease for all individuals with cancer diagnosis, even if they don't have any overlapping deletions
+allDisease <- subset(cnvs, cnvs$sample %in% phenoFam[which(phenoFam$diagnosis.of.lung.throat.pharynx.larynx.cancer),1]) # length(unique(allDisease$sample)) = 60
+
+NODisease <- subset(cnvs, cnvs$sample %in% phenoFam[which(phenoFam$diagnosis.of.lung.throat.pharynx.larynx.cancer == FALSE),1]) # length(unique(NODisease$sample)) = 142
+
+diseaseGeneIDs <- unlist(strsplit(diseasePhenotypeOnlyDels$gene, split = ", ")) # length(diseaseGeneIDs) #length(diseaseGeneIDs) = 1870
+
+# must list all genes in all undiagnosed individuals
+healthyPhenotypeOnlyDels <- subset(onlyDelsNoRedundant, onlyDelsNoRedundant[,1] %in% phenoFam[which(phenoFam$diagnosis.of.lung.throat.pharynx.larynx.cancer == FALSE),1])
+
+healthyGeneIDs <- unlist(strsplit(healthyPhenotypeOnlyDels$gene, split = ", ")) # length(healthyGeneIDs) = 4471
+
+listALLuniqueGenes <- unique(unlist(strsplit(cnvs$gene, split = ", "))) # length(listALLuniqueGenes) # length(listALLuniqueGenes) = 2257
+
+################### 95% CI for odds ratio###############
+install.packages("epitools")
+library(epitools)
+oddsratio.wald(ORtable) 
+
+OR <- data.frame(gene=listALLgenes, odds.affected = NA, odds.unaffected = NA, odds.ratio = NA, CI = NA)
+
+for(j in 1:length(OR$gene)){  # j = 1
+     i <- OR$gene[j]
+       # odds.affected = how many in affected / how many affected inds. without the gene (diseasePhenotypeOnlyDels 
+       howManyAffectedWithGene <- length(which(diseaseGeneIDs == i))
+       AffectedWithOUTGene <- length(unique(allDisease$sample)) - howManyAffectedWithGene
+     OR[j,2] <- howManyAffectedWithGene / AffectedWithOUTGene
+     
+       howManyHealthyWithGene <- length(which(healthyGeneIDs == i))
+       healthyWithOUTGene <- length(unique(NODisease$sample)) - howManyHealthyWithGene
+     OR[j,3] <- howManyHealthyWithGene / healthyWithOUTGene
+     
+     OR[j,4] <- OR$odds.affected[j]/OR$odds.unaffected[j]
+    }
+
+OR[which(OR[,4]>.5),]
+
+
+
+
+
+######### below: as completed prior to 9/23/21 (probably using cnvs with 135 instead of 202 samples
 listALLgenes <- unique(unlist(strsplit(cnvs$gene, split = ", ")))
 
 OR <- data.frame(gene=listALLgenes)
 
-for(j in 1:length(listALLgenes)){  # j = 74
+for(j in 1:length(OR$gene)){  # j = 74
      i <- listALLgenes[j]
      OR$odds.affected[j] <- (length(which(LCgeneIDs == i)))/(length(unique(phenotypeDdel$sample))-length(which(LCgeneIDs == i)))
      OR$odds.marriedIn[j] <- length(which(outGrpGenes == i))/(length(marriedInsampleName)-length(which(outGrpGenes == i)))
