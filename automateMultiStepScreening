@@ -36,7 +36,7 @@ genesBothCallersAllDeletions <- unlist(strsplit(delCalls$gene, split = ", "))
 # subset(phenoFam[,c(4,14,15)], phenoFam$CID==47 ) # married in 16
 # subset(phenoFam[,c(4,14,15)], phenoFam$CID==59 ) # married in NONE
 # subset(phenoFam[,c(4,14,15)], phenoFam$CID==102 ) # married in 346
-# La familiws 52, 88, 90
+# La families 52, 88, 90
 # subset(phenoFam[,c(4,14,15)], phenoFam$CID==52 ) # married in 4, 13
 # subset(phenoFam[,c(4,14,15)], phenoFam$CID==88 ) # married in 13, 52 #! take a look at offspring of 13 and 52 (married in, WES on all children but not spouse wherein 6/8 siblings have lung cancer 
 # subset(phenoFam[,c(4,14,15)], phenoFam$CID==90 ) # married in NONE
@@ -134,8 +134,11 @@ for(i in unique(cumgFamily$gene)){    #i = cumgFamily$gene[1]
 write.table(geneSummary, file= "C:/Users/jwaldr/OneDrive - LSUHSC/GELCC/statsByGene.9.23.21.csv", row.names=FALSE, sep =",")                                         
                                          
 
+# now screen out all genes where geneSummary[,2] < 3 | geneSummary[,3] < 3
 
+G2FamiliesWithG2per <- subset(geneSummary, geneSummary[,3] > 2)
 
+write.table(G2FamiliesWithG2per, file= "C:/Users/jwaldr/OneDrive - LSUHSC/GELCC/G2FamiliesWithG2per.9.23.21.csv", row.names=FALSE, sep =",")  
 
 
 
