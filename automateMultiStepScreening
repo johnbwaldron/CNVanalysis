@@ -139,11 +139,76 @@ write.table(geneSummary, file= "C:/Users/jwaldr/OneDrive - LSUHSC/GELCC/statsByG
 G2FamiliesWithG2per <- subset(geneSummary, geneSummary[,3] > 2)
 
 write.table(G2FamiliesWithG2per, file= "C:/Users/jwaldr/OneDrive - LSUHSC/GELCC/G2FamiliesWithG2per.9.23.21.csv", row.names=FALSE, sep =",")  
+# G2FamiliesWithG2per <- read.csv(file= "C:/Users/jwaldr/OneDrive - LSUHSC/GELCC/G2FamiliesWithG2per.9.23.21.csv")
+# ONLY on home desktop: G2FamiliesWithG2per <- read.csv(file= "C:/Users/4wald/OneDrive - LSUHSC/GELCC/G2FamiliesWithG2per.9.23.21.csv")
+##################################################################################################
+# let's see what we have left after eliminating cnvs overlapping with non-blood relatives:
+
+load(file = "C:/Users/jwaldr/OneDrive - LSUHSC/GELCC/CNVsFrom3AlgsAndPhenoAndPhenoFam.9.22.21.rda") #### pay attention to this date!!! 9.20.21 has only 135 samples, 9.22.21 has 202
+# at home PC only: load(file = "C:/Users/4wald/OneDrive - LSUHSC/GELCC/CNVsFrom3AlgsAndPhenoAndPhenoFam.9.22.21.rda") #### pay attention to this date!!! 9.20.21 has only 135 samples, 9.22.21 has 202
+
+marriedInSampleName <- phenoFam[phenoFam$CID == 12 & phenoFam$CIND == 44 | phenoFam$CID == 12 & phenoFam$CIND == 29 |
+                       phenoFam$CID == 35 & phenoFam$CIND == 29| 
+                       phenoFam$CID == 47 & phenoFam$CIND == 16|
+                       phenoFam$CID == 102 & phenoFam$CIND == 346|
+                       phenoFam$CID == 52 & phenoFam$CIND == 4| phenoFam$CID == 52 & phenoFam$CIND == 13|
+                       phenoFam$CID == 88 & phenoFam$CIND == 13| phenoFam$CID == 88 & phenoFam$CIND == 52,1]
+
+
+# removing CNVs found in those who marry in:
+marriedInDeletions <- subset(cnvs[which(cnvs$GATKcall.del_1.dup_2==1),], cnvs[which(cnvs$GATKcall.del_1.dup_2==1),]$sample %in% marriedInSampleName)
+marriedInDeletions <- unlist(strsplit(marriedInDeletions$gene, split = ", "))
+genelistNoOverlap <- G2FamiliesWithG2per[-which(G2FamiliesWithG2per[,1] %in% marriedInDeletions),1]
+
+#subset G2FamiliesWithG2per to the list that does not overlap with non-blood relatives
+glist <- G2FamiliesWithG2per[-which(G2FamiliesWithG2per$gene %in% genelistNoOverlap),]
+colnames(glist) <- c("gene", "#CIDs", "#CIDs.with.>2ind", "#CINDs", "#_affected", "#_unaffected", "mean_width", "#_unique_widths")
+
+# only usable at home PC: write.table(glist, file= "C:/Users/4wald/OneDrive - LSUHSC/GELCC/glist.9.23.21.csv", row.names=FALSE, sep =",")  
+
+
+#conider using biomaRt later (https://bioconductor.org/packages/release/bioc/html/biomaRt.html)
 
 
 
+############################################ a little GO exploration to narrow things down? for gnomAD ############################################
+##seems helpful: https://yulab-smu.top/biomedical-knowledge-mining-book/faq.html#how-to-extract-genes-of-a-specific-termpathway
+
+library(clusterProfiler) #T Wu, E Hu, S Xu, M Chen, P Guo, Z Dai, T Feng, L Zhou, W Tang, L Zhan, X Fu, S Liu, X Bo, and G Yu. clusterProfiler 4.0: A universal enrichment tool for interpreting omics data. The Innovation. 2021, 2(3):100141. doi: 10.1016/j.xinn.2021.100141
+x <- G2FamiliesWithG2per$gene
+
+# i need UniProtKB:
+
+eg = bitr(x, fromType="SYMBOL", toType="UNIPROT", OrgDb="org.Hs.eg.db")
+# paste on "UniProtKB:"
+eg[,2] <- paste("UniProtKB:", eg[,2], sep="")
+write.table(eg, file= "C:/Users/4wald/OneDrive - LSUHSC/GELCC/UniProtKB.csv", row.names=FALSE, sep =",")  
+
+eg = bitr(x, fromType="SYMBOL", toType="ENTREZID", OrgDb="org.Hs.eg.db")
+
+library(DOSE)
+
+enrichNCG(eg[,2]) 
+
+x <- enrichDO(eg[,2])
+geneInCategory(x)
 
 
+enrichDGN(eg[,2]) 
+
+g <- eg[,2][order(eg[,2], decreasing = TRUE)]
+g <- sort.list(eg$ENTREZID, decreasing = TRUE)
+
+gseDO(g,
+      minGSSize     = 120,
+      pvalueCutoff  = 0.2,
+      pAdjustMethod = "BH",
+      verbose       = FALSE)
+
+
+############################################# enrichDGN #############################
+
+enrichDGN(eg[,2]) 
 
 
 
