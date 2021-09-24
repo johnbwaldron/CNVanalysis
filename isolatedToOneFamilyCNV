@@ -4,6 +4,65 @@ library(Homo.sapiens)
 
 # only at home PC # cumgFamily <- read.csv(file= "C:/Users/4wald/OneDrive - LSUHSC/GELCC/cumgFamilyat4.23p.9.22.21.csv")
 
+# problem: cumgFamily is limited to those genes with at least 6 individuals affected.
+
+# create table grouped by gene that includes deletions in genes that affect at least 3 individuals.
+
+load(file = "C:/Users/4wald/OneDrive - LSUHSC/GELCC/THISpoint69.4.15pm.9.22.21.rda")
+
+# load includes cnvs, phenoFam, marriedInSampleName, genesBothCallersAllDeletions, delCallsLCfamiliesgeneIDs, genelistG5, delCallsLCfamilies, 
+length(unique(cnvs$sample))
+
+freq <-table(delCallsLCfamiliesgeneIDs[delCallsLCfamiliesgeneIDs != "NA"]) 
+genelistG3 <- as.data.frame(freq)[as.data.frame(freq)[,2]>3,]
+colnames(genelistG3) <- c("gene", "Freq")
+
+
+allGenesInG2CIND <- data.frame() 
+for (j in 1:length(genelistG3$gene)){    #j=1
+      loc <- vector()
+      for(i in 1:length(delCallsLCfamilies$gene)){
+              if (genelistG3$gene[j] %in% strsplit(delCallsLCfamilies$gene, split = ", ")[[i]]){
+              loc <- c(loc, i)}
+                          
+              } # i
+      cat("working on ", genelistG5$gene[j], "\n")
+
+# match sample in delCallsLCfamilies (cnvs with only dels, minus married-ins) to sample in phenoFam: CID and CIND, "CF", "CM", "diagnosis.of.lung.throat.pharynx.larynx.cancer", "Age.at.Onset.1o.cancer"
+      family <- delCallsLCfamilies[loc,1:4] 
+      for(w in 1:length(family$sample)){    # w = 2
+         family[w,"CID"] <- phenoFam[which(phenoFam$submitted.sample.id == family$sample[w]), "CID"]
+         family[w,"CIND"] <- phenoFam[which(phenoFam$submitted.sample.id == family$sample[w]), "CIND"]
+         family[w,"CF"] <- phenoFam[which(phenoFam$submitted.sample.id == family$sample[w]), "CF"]
+         family[w,"CM"] <- phenoFam[which(phenoFam$submitted.sample.id == family$sample[w]), "CM"]
+         family[w,"diagnosis.of.lung.throat.pharynx.larynx.cancer"] <- phenoFam[which(phenoFam$submitted.sample.id == family$sample[w]), "diagnosis.of.lung.throat.pharynx.larynx.cancer"]
+         family[w,"Age.at.Onset.1o.cancer"] <- phenoFam[which(phenoFam$submitted.sample.id == family$sample[w]), "Age.at.Onset.1o.cancer"]
+         } # w
+   #label this information with the gene of interest
+   family$gene <- genelistG3$gene[j]
+
+allGenesInG2CIND <- rbind(allGenesInG2CIND, family)
+}
+
+write.table(allGenesInG2CIND, file= "C:/Users/4wald/OneDrive - LSUHSC/GELCC/sampleInfoOrganizedBtGenes-presentInMoreThan2CINDs.9.24.21.csv", row.names=FALSE, sep =",")                                         
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 # loop through cumgFamily by geneSummary
 
 geneSummary <- as.data.frame(matrix(nrow=0, ncol=8))
