@@ -1,0 +1,38 @@
+#Rterm.exe --vanilla
+
+library(Homo.sapiens)
+
+# only at home PC # cumgFamily <- read.csv(file= "C:/Users/4wald/OneDrive - LSUHSC/GELCC/cumgFamilyat4.23p.9.22.21.csv")
+
+# loop through cumgFamily by geneSummary
+
+geneSummary <- as.data.frame(matrix(nrow=0, ncol=8))
+colnames(geneSummary) <- c("gene", "num.CIDs", "num.CIDs.with.>2ind", "num.CINDs", "num.affected", "num.unaffected", "mean_width", "num.unique_widths")
+
+for(i in unique(cumgFamily$gene)){    #i = cumgFamily$gene[1]
+     peeps <- subset(cumgFamily, cumgFamily$gene %in% i)
+     k=0
+     for(j in unique(peeps$CID)) {    #j=peeps$CID[1]
+         if(length(which(peeps$CID %in% j))>1){ k=k+1 }
+            } # j
+     geneSummary <- rbind(geneSummary, data.frame(i, length(unique(peeps$CID)), 
+                                         k, length(peeps$CIND), 
+                                         length(which(peeps$diagnosis.of.lung.throat.pharynx.larynx.cancer)),
+                                         length(which(peeps$diagnosis.of.lung.throat.pharynx.larynx.cancer==FALSE)),
+                                         round(mean(peeps$width), 1), length(unique(peeps$width))))
+     # this could be a great place to use a statistical test of association between Dx and cnv width, CID and CNV width, or                         
+     
+     cat(i, " has ",  length(unique(peeps$CID)), " CIDs and ", k, " families with > 2 CINDs with this CNV\n")   
+     } # i
+    
+#write.table(geneSummary, file= "C:/Users/4wald/OneDrive - LSUHSC/GELCC/statsByGene.9.23.21.csv", row.names=FALSE, sep =",")                                         
+#### from home PC only# geneSummary <- read.csv(file= "C:/Users/4wald/OneDrive - LSUHSC/GELCC/statsByGene.9.23.21.csv")                     
+colnames(geneSummary) <- c("gene", "num.CIDs", "num.CIDs.with.>2ind", "num.CINDs", "num.affected", "num.unaffected", "mean_width", "num.unique_widths")
+
+geneSummary[which(geneSummary$num.CIDs < 3),]
+
+# CYP2F1 (2 families, 6 individuals) and SSX1 (1 family, 6 individuals) 
+cumgFamily[which(cumgFamily$gene == "SSX1" | cumgFamily$gene == "CYP2F1"),]
+
+write.table(cumgFamily[which(cumgFamily$gene == "SSX1" | cumgFamily$gene == "CYP2F1"),], file= "C:/Users/4wald/OneDrive - LSUHSC/GELCC/onlyInOneFamily.csv", row.names=FALSE, sep =",")                                         
+
