@@ -97,20 +97,25 @@ diseaseGeneIDs <- unlist(strsplit(diseasePhenotypeOnlyDels$gene, split = ", ")) 
 
 # must list all genes in all undiagnosed individuals
 healthyPhenotypeOnlyDels <- subset(onlyDelsNoRedundant, onlyDelsNoRedundant[,1] %in% phenoFam[which(phenoFam$diagnosis.of.lung.throat.pharynx.larynx.cancer == FALSE),1])
-
+# must remove NAs
 healthyGeneIDs <- unlist(strsplit(healthyPhenotypeOnlyDels$gene, split = ", ")) # length(healthyGeneIDs) = 4471
 
 listALLuniqueGenes <- unique(unlist(strsplit(cnvs$gene, split = ", "))) # length(listALLuniqueGenes) # length(listALLuniqueGenes) = 2257
 
 ################### 95% CI for odds ratio###############
-install.packages("epitools")
+#install.packages("epitools")
 library(epitools)
-oddsratio.wald(ORtable) 
 
-OR <- data.frame(gene=listALLgenes, odds.affected = NA, odds.unaffected = NA, odds.ratio = NA, CI = NA)
+# setting up matrix for oddsratio()
+treatments <- c("without.gene", "with.gene")
+LC_present <- c("No", "Yes")
 
-for(j in 1:length(OR$gene)){  # j = 1
+OR <- data.frame(gene=listALLgenes, odds.affected = NA, odds.unaffected = NA,
+                 odds.ratio = NA, CI.lower = NA, CI.upper = NA, OR.check= NA)
+
+for(j in 1:length(OR$gene)){  # j = 1570
      i <- OR$gene[j]
+       if(is.na(i)==FALSE & i != "NA"){  #cat("ye\n")
        # odds.affected = how many in affected / how many affected inds. without the gene (diseasePhenotypeOnlyDels 
        howManyAffectedWithGene <- length(which(diseaseGeneIDs == i))
        AffectedWithOUTGene <- length(unique(allDisease$sample)) - howManyAffectedWithGene
@@ -121,9 +126,19 @@ for(j in 1:length(OR$gene)){  # j = 1
      OR[j,3] <- howManyHealthyWithGene / healthyWithOUTGene
      
      OR[j,4] <- OR$odds.affected[j]/OR$odds.unaffected[j]
-    }
+    
+       dat <- matrix(c(healthyWithOUTGene, AffectedWithOUTGene, howManyHealthyWithGene, howManyAffectedWithGene), nrow = 2, ncol = 2, byrow = TRUE)
+         dimnames(dat) <- list("Treatments" = treatments, "Disease" = LC_present)
+         odds.ratio <- oddsratio.wald(dat) 
 
-OR[which(OR[,4]>.5),]
+    #double check with epitools + CI
+     OR[j,5] <- odds.ratio$measure[2,2]
+     OR[j,6] <- odds.ratio$measure[2,3]
+     #OR[j,7] <- odds.ratio$measure[2,1] # can remove this column once I am confident that both methods calculate as intended
+      } # if NA
+    } # j
+
+OR[which(OR[,5]>1),]
 
 
 
