@@ -139,9 +139,12 @@ for(j in 1:length(OR$gene)){  # j = 1570
     } # j
 
 OR[which(OR[,5]>1),]
+#protective?
+OR[which(OR[,6]<1),]
 
+#write.table(OR, file= "C:/Users/jwaldr/OneDrive - LSUHSC/GELCC/OddsRatioByGene.9.23.21.csv", row.names=FALSE, sep =",")
 
-
+#write.table(OR[which(OR[,5]>1),], file= "C:/Users/4wald/OneDrive - LSUHSC/GELCC/SIGNIFICANTOddsRatioByGene.9.23.21.csv", row.names=FALSE, sep =",")
 
 
 ######### below: as completed prior to 9/23/21 (probably using cnvs with 135 instead of 202 samples
