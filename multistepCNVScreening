@@ -56,8 +56,8 @@ if(any(XHMMcnv$sample == i)){
 ############################################################
 # step 2 in (https://naturarimor.blogspot.com/2021/09/screen-out-cnvs-by-steps-1-must-be.html)
 ############################################################################################3
-# 1/21/21 - while there are 202 files, there appear to be only 135 samples in cnvs, why is that? the creation of cnvs through rbind with GATKandXHMM has an error, leaving just 134 samples. I must have saved the file and moved on without noticing the error. 
-#  1/22/21 - "subjectHits column was missing from the no.olaps section. fixed and rerunning. redone 9/22/21
+# 9/21/21 - while there are 202 files, there appear to be only 135 samples in cnvs, why is that? the creation of cnvs through rbind with GATKandXHMM has an error, leaving just 134 samples. I must have saved the file and moved on without noticing the error. 
+#  9/22/21 - "subjectHits column was missing from the no.olaps section. fixed and rerunning. redone 9/22/21
 
 # do not limit genes to those found in diagnosed individuals, e.g. phenoFam$diagnosis.of.lung.throat.pharynx.larynx.cancer == TRUE
 
