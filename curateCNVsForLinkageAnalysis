@@ -1,0 +1,129 @@
+#Rterm.exe --vanilla
+
+library(Homo.sapiens) 
+
+load(file = "C:/Users/jwaldr/OneDrive - LSUHSC/GELCC/CNVsFrom3AlgsAndPhenoAndPhenoFam.9.22.21.rda") #from githubusercontent.com/johnbwaldron/CNVanalysis/main/multistepCNVScreening
+#### pay attention to this date!!! 9.20.21 has only 135 samples, 9.22.21 has 202
+
+#add copyNum to data.frame of overlaps  
+for(i in unique(GATKcnv$sample)){                      #i = GATKcnv$sample[1]
+A <- FALSE
+B <- FALSE
+
+A <- makeGRangesFromDataFrame(subset(GATKcnv, GATKcnv$sample == i), keep.extra.columns=TRUE) 
+if(any(XHMMcnv$sample == i)){
+    B <- makeGRangesFromDataFrame(subset(XHMMcnv, XHMMcnv$sample == i), keep.extra.columns=TRUE)
+
+    ABlaps <- findOverlaps(A, B)
+    ABsect <- pintersect(A[queryHits(ABlaps)], B[subjectHits(ABlaps)])
+    ##################################### GATK vs. XHMM CALLS TO SUBSET BY SAMPLE/INDIVIDUAL#####################################
+    GATKandXHMM <- data.frame(sample = A$sample[queryHits(ABlaps)],
+                chr = as.data.frame(A)$seqnames[queryHits(ABlaps)],
+                GATKstart = as.data.frame(A)$start[queryHits(ABlaps)],
+                GATKend = as.data.frame(A)$end[queryHits(ABlaps)],
+                XHMMstart = as.data.frame(B)$start[subjectHits(ABlaps)],
+                XHMMend = as.data.frame(B)$end[subjectHits(ABlaps)],
+                query=queryHits(ABlaps), subject=subjectHits(ABlaps),
+                olap_width=width(ABsect), 
+                query_width=width(A)[queryHits(ABlaps)],
+                GATKcall.del_1.dup_2 = as.data.frame(A)$del_1.dup_2[queryHits(ABlaps)],
+                GATKcall.copyNum = as.data.frame(A)$copyNum[queryHits(ABlaps)],
+                gene=A$gene[queryHits(ABlaps)])
+                
+    write.table(GATKandXHMM, file=paste("C:/Users/jwaldr/OneDrive - LSUHSC/GELCC/callsInCommonGATKandXHMMpluScopyNum/GATKandXHMM.", i, ".csv", sep=""), row.names=FALSE, sep=",") #quote=c(1:3)???
+    } else {
+        cat("no.olaps in ", i)
+        GATKandXHMM <- data.frame(sample = i,
+                chr = "no.olaps",
+                GATKstart = "no.olaps",
+                GATKend = "no.olaps",
+                XHMMstart = "no.olaps",
+                XHMMend = "no.olaps",
+                query= "no.olaps", subject="no.olaps",
+                olap_width="no.olaps", 
+                query_width="no.olaps",
+                GATKcall.del_1.dup_2 = "no.olaps",
+                GATKcall.copyNum = "no.olaps",
+                gene="no.olaps")
+        write.table(GATKandXHMM, file=paste("C:/Users/jwaldr/OneDrive - LSUHSC/GELCC/callsInCommonGATKandXHMMpluScopyNum/GATKandXHMM.", i, ".csv", sep=""), row.names=FALSE, sep=",")
+                }
+
+} # end of loop
+
+##create new data.frame with overlapping cnvs + copyNum
+
+overlappingCNVs <- matrix(nrow=0, ncol=12)
+overlappingCNVs <- as.data.frame(overlappingCNVs)
+colnames(overlappingCNVs) <- c("sample", "chr", "GATKstart", "GATKend", "XHMMstart", "XHMMend", "query", "subject", "olap_width", "query_width", "GATKcall.del_1.dup_2", "copyNum", "gene")
+i=0
+for(i in unique(GATKcnv$sample)){                      #i = GATKcnv$sample[1]
+  
+  GATKandXHMM <- read.csv(file = paste("C:/Users/jwaldr/OneDrive - LSUHSC/GELCC/callsInCommonGATKandXHMMpluScopyNum/GATKandXHMM.", i, ".csv", sep=""))
+  cat(i, GATKandXHMM[1,1], "\n")
+  overlappingCNVs <- rbind(overlappingCNVs, GATKandXHMM)
+}
+
+write.table(overlappingCNVs, file=paste("C:/Users/jwaldr/OneDrive - LSUHSC/GELCC/compositeOfCNVsCalledByGATKandXHMMpluScopyNum", ".csv", sep=""), row.names=FALSE, sep=",")
+
+# save(cnvs, overlappingCNVs, pheno, phenoFam, XHMMcnv, GATKcnv, file = "C:/Users/jwaldr/OneDrive - LSUHSC/GELCC/CNVsBothAlgsPhenoFamPluSoverlappingCNVs.9.28.21.rda")  
+
+# include only deletions
+
+delCalls <- subset(overlappingCNVs, overlappingCNVs$GATKcall.del_1.dup_2 ==1)
+# remove redundant calls because of XHMM, but THIS TIME without removing non-blood relatives as above
+remove <- vector()
+for (i in 2:nrow(delCalls)){
+    if (delCalls$subject[i] == delCalls$subject[i-1]){
+        remove <- append(remove, i)
+        cat("deleting row ", i, '\n')
+    }
+    } #nrow
+delCalls <- delCalls[-remove,]
+#see what we have here for genes
+genesBothCallersAllDeletions <- unlist(strsplit(delCalls$gene, split = ", ")) # length(unique(genesBothCallersAllDeletions) = 580
+
+marriedInSampleName <- phenoFam[phenoFam$CID == 12 & phenoFam$CIND == 44 | phenoFam$CID == 12 & phenoFam$CIND == 29 |
+                       phenoFam$CID == 35 & phenoFam$CIND == 29| 
+                       phenoFam$CID == 47 & phenoFam$CIND == 16|
+                       phenoFam$CID == 102 & phenoFam$CIND == 346|
+                       phenoFam$CID == 52 & phenoFam$CIND == 4| phenoFam$CID == 52 & phenoFam$CIND == 13|
+                       phenoFam$CID == 88 & phenoFam$CIND == 13| phenoFam$CID == 88 & phenoFam$CIND == 52,1]
+delCallsLCfamilies <- delCalls[-which(delCalls$sample %in% marriedInSampleName),]
+
+delCallsLCfamiliesgeneIDs <- unlist(strsplit(delCallsLCfamilies$gene, split = ", "))  # length(unique(delCallsLCfamiliesgeneIDs)) = 566
+
+# create table grouped by gene that includes deletions in genes that affect at least 3 individuals.
+
+freq <-table(delCallsLCfamiliesgeneIDs[delCallsLCfamiliesgeneIDs != "NA"]) 
+genelistG2 <- as.data.frame(freq)[as.data.frame(freq)[,2]>2,]
+colnames(genelistG2) <- c("gene", "Freq")
+
+
+allGenesInG2CIND <- data.frame() 
+for (j in 1:length(genelistG2$gene)){    #j=1
+      loc <- vector()
+      for(i in 1:length(delCallsLCfamilies$gene)){
+              if (genelistG2$gene[j] %in% strsplit(delCallsLCfamilies$gene, split = ", ")[[i]]){
+              loc <- c(loc, i)}
+                          
+              } # i
+      cat("working on ", as.vector(genelistG2$gene)[j], "\n")
+
+# match sample in delCallsLCfamilies (cnvs with only dels, minus married-ins) to sample in phenoFam: CID and CIND, "CF", "CM", "diagnosis.of.lung.throat.pharynx.larynx.cancer", "Age.at.Onset.1o.cancer"
+      family <- delCallsLCfamilies[loc,1:4] 
+      for(w in 1:length(family$sample)){    # w = 2
+         family[w,"CID"] <- phenoFam[which(phenoFam$submitted.sample.id == family$sample[w]), "CID"]
+         family[w,"CIND"] <- phenoFam[which(phenoFam$submitted.sample.id == family$sample[w]), "CIND"]
+         family[w,"CF"] <- phenoFam[which(phenoFam$submitted.sample.id == family$sample[w]), "CF"]
+         family[w,"CM"] <- phenoFam[which(phenoFam$submitted.sample.id == family$sample[w]), "CM"]
+         family[w,"diagnosis.of.lung.throat.pharynx.larynx.cancer"] <- phenoFam[which(phenoFam$submitted.sample.id == family$sample[w]), "diagnosis.of.lung.throat.pharynx.larynx.cancer"]
+         family[w,"Age.at.Onset.1o.cancer"] <- phenoFam[which(phenoFam$submitted.sample.id == family$sample[w]), "Age.at.Onset.1o.cancer"]
+         } # w
+   #label this information with the gene of interest
+   family$gene <- genelistG3$gene[j]
+
+allGenesInG2CIND <- rbind(allGenesInG2CIND, family)
+}
+
+
+
