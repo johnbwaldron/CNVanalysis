@@ -2,6 +2,90 @@
 
 library(Homo.sapiens) 
 
+
+########################## starting from scratch.
+########################## for careful comparison of deletion and duplication calls PRIOR to checking for overlap between calls
+########################## for implementation of appropriate quality scores PRIOR to inclusion of CNV calls in analysis
+# for previous (9/28/21) GATK output combined int one table, see CNVanalysis/blob/main/individualGATKgenotypeCallsToOneTable
+# redo process of combining important GATK calls into one table with quality scores:
+##FORMAT=<ID=CN,Number=1,Type=Integer,Description="Segment most-likely copy-number call">
+##FORMAT=<ID=GT,Number=1,Type=Integer,Description="Segment genotype">
+##FORMAT=<ID=NP,Number=1,Type=Integer,Description="Number of points (i.e. targets or bins) in the segment">
+##FORMAT=<ID=QA,Number=1,Type=Integer,Description="Complementary Phred-scaled probability that all points (i.e. targets or bins) in the segment agree with the segment copy-number call">
+##FORMAT=<ID=QS,Number=1,Type=Integer,Description="Complementary Phred-scaled probability that at least one point (i.e. target or bin) in the segment agrees with the segment copy-number call">
+##FORMAT=<ID=QSE,Number=1,Type=Integer,Description="Complementary Phred-scaled probability that the segment end position is a genuine copy-number changepoint">
+##FORMAT=<ID=QSS,Number=1,Type=Integer,Description="Complementary Phred-scaled probability that the segment start position is a genuine copy-number changepoint">
+## GT:CN:NP:QA:QS:QSE:QSS	0:2:1:67:67:67:67 ####### df <- read.delim(file= paste("C:/Users/jwaldr/OneDrive - LSUHSC/Literature/genotyped/unzipped/genotyped-segments-cohort203-sample.", i, ".vcf", sep = ""), colClasses = "character") 
+
+files = list.files(path = "C:/Users/jwaldr/OneDrive - LSUHSC/Literature/genotyped/unzipped/", pattern = "^.*(.vcf)$")
+
+# make dataframe with columns = "sample", "chr", "start", "end", "del_1.dup_2", "copyNum", "PhredAllPtsAgree", "PhredMinOnePtAgrees" 
+GATKresults <- data.frame(sample="0", chr="0", ID="0", X ="0")[-1,]
+
+
+for(i in 1:202){
+           # note sample 0 only shows CNVs in chr 1, something is likely wrong with this
+           df <- read.delim(file= paste("C:/Users/jwaldr/OneDrive - LSUHSC/Literature/genotyped/unzipped/genotyped-segments-cohort203-sample.", i, ".vcf", sep = ""), 
+           colClasses = "character", skip = 11)
+           tableBySample <- data.frame(sample="0", chr=df$X.CHROM, ID=df$ID, X=df[,10])
+           tableBySample[c(1:nrow(df)),1] <- gsub("[.]", "-", colnames(df)[10]) ########paste(strsplit(colnames(df)[10], "[.]")[[1]][1], strsplit(colnames(df)[10], "[.]")[[1]][2], strsplit(colnames(df)[10], "[.]")[[1]][3], sep="-")
+            
+           GATKresults <- rbind(GATKresults, tableBySample)
+           }
+
+GATKresults <- GATKresults[-which(GATKresults$SAMPLE == "" | GATKresults$SAMPLE == "SAMPLE"),] # removes none
+GATKresults <- GATKresults[-which(GATKresults$ID == "" | GATKresults$ID == "NA"),] # removes 2 rows (3157, 80448) #(prior to this step,  nrow(GATKresults) = 89056. Aftter, nrow(GATKresults) =  89054)
+
+#create new dataframe with the following columns for each sample: "sample", "chr", "start", "end", "del_1.dup_2", "copyNum", "PhredAllPtsAgree", "PhredMinOnePtAgrees" 
+loc <- strsplit(GATKresults[,"ID"], "_")
+mut <- strsplit(GATKresults[,"X"], ":")
+cnv <- data.frame("sample"= as.character(GATKresults$sample), 
+                  "chr"= sapply(loc, "[", 2), 
+                  "start" = as.numeric(sapply(loc, "[", 3)), 
+                  "end" = as.numeric(sapply(loc, "[", 4)), 
+                  "del_1.dup_2" = sapply(mut, "[", 1), 
+                  "copyNum" = sapply(mut, "[", 2),
+                  "PhredAllPtsAgree" = sapply(mut, "[", 4), 
+                  "PhredMinOnePtAgrees" = sapply(mut, "[", 5))
+
+write.table(cnv, file="C:/Users/jwaldr/OneDrive - LSUHSC/GELCC/GATKfor202samplesInOneTableWithQAandQS.csv")
+ GATKcnv <- cnv
+###################################################### XHMM
+
+df <- read.delim(file="C:/Users/jwaldr/OneDrive - LSUHSC/GELCC/XHMM/DATA.xcnv") # , colClasses = , sep=",""character"
+#remove empty rows
+# df <- df[-which(df$SAMPLE == ""),] # before removing empty rows (nrow(df) = 11550)
+
+#create new dataframe with the following columns for each sample: "sample", "chr", "start", "end", "del_1.dup_2", "copyNum", "PhredAllPtsAgree", "PhredMinOnePtAgrees"
+loc <- strsplit(df[,"INTERVAL"], "[:-]")
+
+#if "DUP" -> 2, if "DEL" -> 1 for del_1.dup_2"
+df$CNV[which(df$CNV == "DUP")] <- 2 
+df$CNV[which(df$CNV == "DEL")] <- 1 
+
+XHMMcnv <- data.frame("sample"= as.character(df$SAMPLE), 
+                      "chr"= sapply(loc, "[", 1), 
+                      "start" = as.numeric(sapply(loc, "[", 2)), 
+                      "end" = as.numeric(sapply(loc, "[", 3)), 
+                      "del_1.dup_2" = df$CNV, 
+                      "copyNum" = "NA",
+                      "PhredAllPtsAgree" = df$Q_EXACT, 
+                      "PhredMinOnePtAgrees" = df$Q_SOME)
+# chromosome format with "chr#"
+#### XHMMcnv$chr <- paste("chr", XHMMcnv$chr, sep="")
+
+#write.table(XHMMcnv, file="C:/Users/jwaldr/OneDrive - LSUHSC/GELCC/XHMMcnv_sample_chr_start_end_del1.dup2_copyInOneTableWithQAandQS.txt", row.names=FALSE, sep=",")
+
+######################### then see CNVanalysis/blob/main/GELCCfindOverlapInCANOES-XHMM-GATK for combining GATK and XHMM into overlaping calls.
+
+save(XHMMcnv, GATKcnv, phenoFam, file="C:/Users/jwaldr/OneDrive - LSUHSC/GELCC/XHMMcnvAndGATKcnvWithQAandQS.rda")
+
+
+
+
+
+
+
 load(file = "C:/Users/jwaldr/OneDrive - LSUHSC/GELCC/CNVsFrom3AlgsAndPhenoAndPhenoFam.9.22.21.rda") #from githubusercontent.com/johnbwaldron/CNVanalysis/main/multistepCNVScreening
 #### pay attention to this date!!! 9.20.21 has only 135 samples, 9.22.21 has 202
 
