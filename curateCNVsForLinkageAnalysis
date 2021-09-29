@@ -2,6 +2,52 @@
 
 library(Homo.sapiens) 
 
+####################################################################################################
+###################################FUNCTIONS########################################################
+#Find overlap
+splitByOverlap <-
+    function(query, subject, column="ENTREZID", ...)
+{
+    olaps <- findOverlaps(query, subject, ...)
+    f1 <- factor(subjectHits(olaps),
+                 levels=seq_len(subjectLength(olaps)))
+    splitAsList(mcols(query)[[column]][queryHits(olaps)], f1)
+}
+
+geneRanges <- 
+    function(db, column="ENTREZID")
+{
+    g <- genes(db, columns=column) #, single.strand.genes.only=ss) # No matter what I do, including single.strand.genes.only= FALSE returns: Error in .local(x, ...) : unused argument (single.strand.genes.only = FALSE)
+    col <- mcols(g)[[column]]
+    genes <- granges(g)[rep(seq_along(g), elementNROWS(col))]
+    mcols(genes)[[column]] <- as.character(unlist(col))
+    genes
+}
+
+# try creating a different function in order to include even those genes with exons on both strands (some 400+) transcripts() or exons() or cds()
+## does not work yet
+transcriptRanges <- 
+    function(db, column="ENTREZID")
+{
+    t <- transcripts(db, columns=column) # t <- transcripts(Homo.sapiens, column="SYMBOL")
+    col <- mcols(t)[[column]]
+    transcripts <- granges(t)[rep(seq_along(t), elementNROWS(col))]
+    mcols(transcripts)[[column]] <- as.character(unlist(col))
+    transcripts
+}
+
+# try creating a CDS function, that should be restiricted to one strand and incdlude only protein coding sequences
+cdsRanges <- 
+    function(db, column="ENTREZID")
+{
+    c <- cds(db, columns=column) 
+    col <- mcols(c)[[column]]
+    CDS <- granges(c)[rep(seq_along(c), elementNROWS(col))]
+    mcols(CDS)[[column]] <- as.character(unlist(col))
+    CDS
+}
+####################################################################################################
+
 
 ########################## starting from scratch.
 ########################## for careful comparison of deletion and duplication calls PRIOR to checking for overlap between calls
@@ -78,16 +124,89 @@ XHMMcnv <- data.frame("sample"= as.character(df$SAMPLE),
 
 ######################### then see CNVanalysis/blob/main/GELCCfindOverlapInCANOES-XHMM-GATK for combining GATK and XHMM into overlaping calls.
 
-save(XHMMcnv, GATKcnv, phenoFam, file="C:/Users/jwaldr/OneDrive - LSUHSC/GELCC/XHMMcnvAndGATKcnvWithQAandQS.rda")
+#save(XHMMcnv, GATKcnv, phenoFam, file="C:/Users/jwaldr/OneDrive - LSUHSC/GELCC/XHMMcnvAndGATKcnvWithQAandQS.rda")
+# load(file="C:/Users/jwaldr/OneDrive - LSUHSC/GELCC/XHMMcnvAndGATKcnvWithQAandQS.rda")
+# only at home PC # load(file="C:/Users/4wald/OneDrive - LSUHSC/GELCC/XHMMcnvAndGATKcnvWithQAandQS.rda")
+
+# find overlaps between XHMM and GATK, BUT first subset to only deletions to avoid a CNV called as deletion in one is classed as duplication in the other.
+# subset for deletions only: 
+GATKcnv <- subset(GATKcnv, GATKcnv$del_1.dup_2 == 1) # nrow(GATKcnv) = 89054 --> 29206
+XHMMcnv <- subset(XHMMcnv, XHMMcnv$del_1.dup_2 ==1) # nrow(XHMMcnv) = 11550 --> 5673
 
 
+####### i need to add ENTREZID to each region using genomicRanges
+# load rda from previous work, is it the chr naming convention? (this is not to be loaded for running the following. It is only for checking prior chr notation.)#load(file = "C:/Users/4wald/OneDrive - LSUHSC/GELCC/CNVsFrom3AlgsAndPhenoAndPhenoFam.2.19.2021.rda")
+# at least some of the problems are coming from chromosomes in my CNV output listed only as number instead of chr#
+GATKcnv$chr <- paste("chr", GATKcnv$chr, sep="")
+XHMMcnv$chr <- paste("chr", XHMMcnv$chr, sep="")
+
+XHMMcnvGranges <- makeGRangesFromDataFrame(XHMMcnv, keep.extra.columns=TRUE, seqnames.field = "chr")
+
+GATKcnvGranges <- makeGRangesFromDataFrame(GATKcnv, keep.extra.columns=TRUE, seqnames.field = "chr")
+
+# When run with geneRanges <- function(db, column="ENTREZID") { g <- genes(db, columns=column) # , single.strand.genes.only=TRUE
+#     col <- mcols(g)[[column]]
+#     genes <- granges(g)[rep(seq_along(g), elementNROWS(col))]
+#     mcols(genes)[[column]] <- as.character(unlist(col))
+#     genes}
+#   403 genes were dropped because they have exons located on both strands
+#   of the same reference sequence or on more than one reference sequence,
+#   so cannot be represented by a single genomic range.
+#   Use 'single.strand.genes.only=FALSE' to get all the genes in a
+#   GRangesList object
 
 
+####################################################################################################
 
+gns = geneRanges(Homo.sapiens, column="SYMBOL")
+trnscrpts = transcriptRanges(Homo.sapiens, column="SYMBOL")
+coding <- cdsRanges(Homo.sapiens, column="SYMBOL")
+EID <- geneRanges(Homo.sapiens)
 
+# splitByOverlap genes, transcripts, CDS by GATKcnvGranges
+gns_symInCnv = splitByOverlap(gns, GATKcnvGranges, "SYMBOL")
+trnscrpts_symInCnv = splitByOverlap(trnscrpts, GATKcnvGranges, "SYMBOL")
+coding_symInCnv = splitByOverlap(coding, GATKcnvGranges, "SYMBOL")
+entrez_symInCnv = splitByOverlap(EID, GATKcnvGranges, "ENTREZID")
 
-load(file = "C:/Users/jwaldr/OneDrive - LSUHSC/GELCC/CNVsFrom3AlgsAndPhenoAndPhenoFam.9.22.21.rda") #from githubusercontent.com/johnbwaldron/CNVanalysis/main/multistepCNVScreening
-#### pay attention to this date!!! 9.20.21 has only 135 samples, 9.22.21 has 202
+GATKcnv$gene <- NA
+GATKcnv$transcript <- NA
+GATKcnv$CDS <- NA
+GATKcnv$Entrez <- NA
+
+# GATK - loop through each CNV listed in each table from each algorithm
+for(i in 1:nrow(GATKcnv)){
+cat("GATKcnv #", i, " covers ", paste(gns_symInCnv[[i]], collapse=", "), "\n")
+GATKcnv$gene[i] <- paste(gns_symInCnv[[i]], collapse=", ")
+GATKcnv$transcript[i] <- paste(trnscrpts_symInCnv[[i]], collapse=", ")
+GATKcnv$CDS[i] <- paste(coding_symInCnv[[i]], collapse=", ")
+GATKcnv$Entrez[i] <-paste(entrez_symInCnv[[i]], collapse=", ")
+           }
+
+# write.table(GATKcnv, file="C:/Users/jwaldr/OneDrive - LSUHSC/GELCC/GATKcnv_delsONLY.9.29.21.csv", row.names=FALSE, sep=",") #quote=c(1:3)???
+
+# splitByOverlap genes, transcripts, CDS by XHMMcnvGranges
+gns_symInCnv = splitByOverlap(gns, XHMMcnvGranges, "SYMBOL")
+trnscrpts_symInCnv = splitByOverlap(trnscrpts, XHMMcnvGranges, "SYMBOL")
+coding_symInCnv = splitByOverlap(coding, XHMMcnvGranges, "SYMBOL")
+entrez_symInCnv = splitByOverlap(EID, XHMMcnvGranges, "ENTREZID")
+
+XHMMcnv$gene <- NA
+XHMMcnv$transcript <- NA
+XHMMcnv$CDS <- NA
+XHMMcnv$Entrez <- NA
+
+# XHMM - loop through each CNV listed in each table from each algorithm
+for(i in 1:nrow(XHMMcnv)){
+cat("XHMMcnv #", i, " covers ", paste(gns_symInCnv[[i]], collapse=", "), "\n")
+XHMMcnv$gene[i] <- paste(gns_symInCnv[[i]], collapse=", ")
+XHMMcnv$transcript[i] <- paste(trnscrpts_symInCnv[[i]], collapse=", ")
+XHMMcnv$CDS[i] <- paste(coding_symInCnv[[i]], collapse=", ")
+XHMMcnv$Entrez[i] <-paste(entrez_symInCnv[[i]], collapse=", ")
+           }
+# write.table(XHMMcnv, file="C:/Users/4wald/OneDrive - LSUHSC/GELCC/XHMMcnv_delsONLY.9.29.21.csv", row.names=FALSE, sep=",") #quote=c(1:3)???
+
+######################################################################################
 
 #add copyNum to data.frame of overlaps  
 for(i in unique(GATKcnv$sample)){                      #i = GATKcnv$sample[1]
@@ -96,23 +215,32 @@ B <- FALSE
 
 A <- makeGRangesFromDataFrame(subset(GATKcnv, GATKcnv$sample == i), keep.extra.columns=TRUE) 
 if(any(XHMMcnv$sample == i)){
-    B <- makeGRangesFromDataFrame(subset(XHMMcnv, XHMMcnv$sample == i), keep.extra.columns=TRUE)
+B <- makeGRangesFromDataFrame(subset(XHMMcnv, XHMMcnv$sample == i), keep.extra.columns=TRUE)
 
     ABlaps <- findOverlaps(A, B)
     ABsect <- pintersect(A[queryHits(ABlaps)], B[subjectHits(ABlaps)])
-    ##################################### GATK vs. XHMM CALLS TO SUBSET BY SAMPLE/INDIVIDUAL#####################################
+   
+   ##################################### GATK vs. XHMM CALLS TO SUBSET BY SAMPLE/INDIVIDUAL#####################################
     GATKandXHMM <- data.frame(sample = A$sample[queryHits(ABlaps)],
                 chr = as.data.frame(A)$seqnames[queryHits(ABlaps)],
                 GATKstart = as.data.frame(A)$start[queryHits(ABlaps)],
                 GATKend = as.data.frame(A)$end[queryHits(ABlaps)],
                 XHMMstart = as.data.frame(B)$start[subjectHits(ABlaps)],
                 XHMMend = as.data.frame(B)$end[subjectHits(ABlaps)],
-                query=queryHits(ABlaps), subject=subjectHits(ABlaps),
+                query=queryHits(ABlaps), 
+                subject=subjectHits(ABlaps),
                 olap_width=width(ABsect), 
                 query_width=width(A)[queryHits(ABlaps)],
-                GATKcall.del_1.dup_2 = as.data.frame(A)$del_1.dup_2[queryHits(ABlaps)],
                 GATKcall.copyNum = as.data.frame(A)$copyNum[queryHits(ABlaps)],
-                gene=A$gene[queryHits(ABlaps)])
+                GATKgene=A$gene[queryHits(ABlaps)],
+                XHMMgene = B$gene[subjectHits(ABlaps)],
+                GATKPhred = A$PhredMinOnePtAgrees[queryHits(ABlaps)],
+                XHMMPhred = B$PhredMinOnePtAgrees[subjectHits(ABlaps)]
+                #add PhredMinOnePtAgrees for both. add CDS or transcipt or EID? for both Algs?
+                # del/dup is not helpful as these are all deletions
+                # GATKcall.del_1.dup_2 = as.data.frame(A)$del_1.dup_2[queryHits(ABlaps)],
+                # XHMMcall.del_1.dup_2 = as.data.frame(B)$del_1.dup_2[subjecHits(ABlaps)],
+                )
                 
     write.table(GATKandXHMM, file=paste("C:/Users/jwaldr/OneDrive - LSUHSC/GELCC/callsInCommonGATKandXHMMpluScopyNum/GATKandXHMM.", i, ".csv", sep=""), row.names=FALSE, sep=",") #quote=c(1:3)???
     } else {
@@ -123,12 +251,18 @@ if(any(XHMMcnv$sample == i)){
                 GATKend = "no.olaps",
                 XHMMstart = "no.olaps",
                 XHMMend = "no.olaps",
-                query= "no.olaps", subject="no.olaps",
+                query= "no.olaps", 
+                subject="no.olaps",
                 olap_width="no.olaps", 
                 query_width="no.olaps",
-                GATKcall.del_1.dup_2 = "no.olaps",
                 GATKcall.copyNum = "no.olaps",
-                gene="no.olaps")
+                # del/dup is not helpful as these are all deletions
+                # GATKcall.del_1.dup_2 = as.data.frame(A)$del_1.dup_2[queryHits(ABlaps)],
+                # XHMMcall.del_1.dup_2 = as.data.frame(B)$del_1.dup_2[subjecHits(ABlaps)],
+                GATKgene="no.olaps",
+                XHMMgene = "no.olaps",
+                #add PhredMinOnePtAgrees for both. add CDS or transcipt or EID? for both Algs?
+                      )
         write.table(GATKandXHMM, file=paste("C:/Users/jwaldr/OneDrive - LSUHSC/GELCC/callsInCommonGATKandXHMMpluScopyNum/GATKandXHMM.", i, ".csv", sep=""), row.names=FALSE, sep=",")
                 }
 
@@ -210,4 +344,7 @@ allGenesInG2CIND <- rbind(allGenesInG2CIND, family)
 }
 
 
+
+# rda below from 9.22.21 includes: "cnvs"     "GATKcnv"  "pheno"    "phenoFam" "XHMMcnv"
+# load(file = "C:/Users/jwaldr/OneDrive - LSUHSC/GELCC/CNVsFrom3AlgsAndPhenoAndPhenoFam.9.22.21.rda") #from githubusercontent.com/johnbwaldron/CNVanalysis/main/multistepCNVScreening #### pay attention to this date!!! 9.20.21 has only 135 samples, 9.22.21 has 202
 
