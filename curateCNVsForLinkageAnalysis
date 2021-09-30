@@ -176,11 +176,11 @@ GATKcnv$Entrez <- NA
 
 # GATK - loop through each CNV listed in each table from each algorithm
 for(i in 1:nrow(GATKcnv)){
-cat("GATKcnv #", i, " covers ", paste(gns_symInCnv[[i]], collapse=", "), "\n")
-GATKcnv$gene[i] <- paste(gns_symInCnv[[i]], collapse=", ")
-GATKcnv$transcript[i] <- paste(trnscrpts_symInCnv[[i]], collapse=", ")
-GATKcnv$CDS[i] <- paste(coding_symInCnv[[i]], collapse=", ")
-GATKcnv$Entrez[i] <-paste(entrez_symInCnv[[i]], collapse=", ")
+cat("GATKcnv #", i, " covers ", paste(gns_symInCnv[[i]][!is.na(gns_symInCnv[[i]])], collapse=", "), "\n")
+GATKcnv$gene[i] <-  paste(gns_symInCnv[[i]][!is.na(gns_symInCnv[[i]])], collapse=", ")
+GATKcnv$transcript[i] <- paste(trnscrpts_symInCnv[[i]][!is.na(trnscrpts_symInCnv[[i]])], collapse=", ")
+GATKcnv$CDS[i] <- paste(coding_symInCnv[[i]][!is.na(coding_symInCnv[[i]])], collapse=", ")
+GATKcnv$Entrez[i] <-paste(entrez_symInCnv[[i]][!is.na(entrez_symInCnv[[i]])], collapse=", ")
            }
 
 # write.table(GATKcnv, file="C:/Users/jwaldr/OneDrive - LSUHSC/GELCC/GATKcnv_delsONLY.9.29.21.csv", row.names=FALSE, sep=",") #quote=c(1:3)???
@@ -198,11 +198,11 @@ XHMMcnv$Entrez <- NA
 
 # XHMM - loop through each CNV listed in each table from each algorithm
 for(i in 1:nrow(XHMMcnv)){
-cat("XHMMcnv #", i, " covers ", paste(gns_symInCnv[[i]], collapse=", "), "\n")
-XHMMcnv$gene[i] <- paste(gns_symInCnv[[i]], collapse=", ")
-XHMMcnv$transcript[i] <- paste(trnscrpts_symInCnv[[i]], collapse=", ")
-XHMMcnv$CDS[i] <- paste(coding_symInCnv[[i]], collapse=", ")
-XHMMcnv$Entrez[i] <-paste(entrez_symInCnv[[i]], collapse=", ")
+cat("XHMMcnv #", i, " covers ", paste(gns_symInCnv[[i]][!is.na(gns_symInCnv[[i]])], collapse=", "), "\n")
+XHMMcnv$gene[i] <- paste(gns_symInCnv[[i]][!is.na(gns_symInCnv[[i]])], collapse=", ")
+XHMMcnv$transcript[i] <- paste(trnscrpts_symInCnv[[i]][!is.na(trnscrpts_symInCnv[[i]])], collapse=", ")
+XHMMcnv$CDS[i] <- paste(coding_symInCnv[[i]][!is.na(coding_symInCnv[[i]])], collapse=", ")
+XHMMcnv$Entrez[i] <-paste(entrez_symInCnv[[i]][!is.na(entrez_symInCnv[[i]])], collapse=", ")
            }
 # write.table(XHMMcnv, file="C:/Users/4wald/OneDrive - LSUHSC/GELCC/XHMMcnv_delsONLY.9.29.21.csv", row.names=FALSE, sep=",") #quote=c(1:3)???
 
@@ -221,7 +221,8 @@ B <- makeGRangesFromDataFrame(subset(XHMMcnv, XHMMcnv$sample == i), keep.extra.c
     ABsect <- pintersect(A[queryHits(ABlaps)], B[subjectHits(ABlaps)])
    
    ##################################### GATK vs. XHMM CALLS TO SUBSET BY SAMPLE/INDIVIDUAL#####################################
-    GATKandXHMM <- data.frame(sample = A$sample[queryHits(ABlaps)],
+    GATKandXHMM <- data.frame(
+                sample = A$sample[queryHits(ABlaps)],
                 chr = as.data.frame(A)$seqnames[queryHits(ABlaps)],
                 GATKstart = as.data.frame(A)$start[queryHits(ABlaps)],
                 GATKend = as.data.frame(A)$end[queryHits(ABlaps)],
@@ -235,14 +236,23 @@ B <- makeGRangesFromDataFrame(subset(XHMMcnv, XHMMcnv$sample == i), keep.extra.c
                 GATKgene=A$gene[queryHits(ABlaps)],
                 XHMMgene = B$gene[subjectHits(ABlaps)],
                 GATKPhred = A$PhredMinOnePtAgrees[queryHits(ABlaps)],
-                XHMMPhred = B$PhredMinOnePtAgrees[subjectHits(ABlaps)]
+                XHMMPhred = B$PhredMinOnePtAgrees[subjectHits(ABlaps)],
                 #add PhredMinOnePtAgrees for both. add CDS or transcipt or EID? for both Algs?
                 # del/dup is not helpful as these are all deletions
                 # GATKcall.del_1.dup_2 = as.data.frame(A)$del_1.dup_2[queryHits(ABlaps)],
                 # XHMMcall.del_1.dup_2 = as.data.frame(B)$del_1.dup_2[subjecHits(ABlaps)],
+                
+                # GATKcds = A$CDS[queryHits(ABlaps)],
+                #  XHMMcds = B$CDS[subjectHits(ABlaps)],
+                
+                # GATKtranscipt = A$transcript[queryHits(ABlaps)],
+                # XHMMtranscipt = B$transcript[subjectHits(ABlaps)],
+                
+                GATKentrez = A$Entrez[queryHits(ABlaps)],
+                XHMMentrez = B$Entrez[subjectHits(ABlaps)]
                 )
                 
-    write.table(GATKandXHMM, file=paste("C:/Users/jwaldr/OneDrive - LSUHSC/GELCC/callsInCommonGATKandXHMMpluScopyNum/GATKandXHMM.", i, ".csv", sep=""), row.names=FALSE, sep=",") #quote=c(1:3)???
+    write.table(GATKandXHMM, file=paste("C:/Users/4wald/OneDrive - LSUHSC/GELCC/callsInCommonGATKandXHMMpluScopyNum/9.29.21.GATKandXHMM.", i, ".csv", sep=""), row.names=FALSE, sep=",") #quote=c(1:3)???
     } else {
         cat("no.olaps in ", i)
         GATKandXHMM <- data.frame(sample = i,
@@ -261,42 +271,81 @@ B <- makeGRangesFromDataFrame(subset(XHMMcnv, XHMMcnv$sample == i), keep.extra.c
                 # XHMMcall.del_1.dup_2 = as.data.frame(B)$del_1.dup_2[subjecHits(ABlaps)],
                 GATKgene="no.olaps",
                 XHMMgene = "no.olaps",
-                #add PhredMinOnePtAgrees for both. add CDS or transcipt or EID? for both Algs?
+                GATKPhred = "no.olaps",
+                XHMMPhred = "no.olaps",
+                
+                GATKentrez = "no.olaps",
+                XHMMentrez = "no.olaps"
+
                       )
-        write.table(GATKandXHMM, file=paste("C:/Users/jwaldr/OneDrive - LSUHSC/GELCC/callsInCommonGATKandXHMMpluScopyNum/GATKandXHMM.", i, ".csv", sep=""), row.names=FALSE, sep=",")
+        write.table(GATKandXHMM, file=paste("C:/Users/4wald/OneDrive - LSUHSC/GELCC/callsInCommonGATKandXHMMpluScopyNum/9.29.21.GATKandXHMM.", i, ".csv", sep=""), row.names=FALSE, sep=",")
                 }
 
 } # end of loop
 
 ##create new data.frame with overlapping cnvs + copyNum
 
-overlappingCNVs <- matrix(nrow=0, ncol=12)
+overlappingCNVs <- matrix(nrow=0, ncol=17)
 overlappingCNVs <- as.data.frame(overlappingCNVs)
-colnames(overlappingCNVs) <- c("sample", "chr", "GATKstart", "GATKend", "XHMMstart", "XHMMend", "query", "subject", "olap_width", "query_width", "GATKcall.del_1.dup_2", "copyNum", "gene")
+colnames(overlappingCNVs) <- c("sample", "chr", "GATKstart", "GATKend", "XHMMstart", "XHMMend", 
+                                "query", "subject", "olap_width", "query_width", 
+                                "GATKcall.copyNum", "GATKgene", "XHMMgene", "GATKPhred", "XHMMPhred",
+                                "GATKentrez", "XHMMentrez")
 i=0
 for(i in unique(GATKcnv$sample)){                      #i = GATKcnv$sample[1]
   
-  GATKandXHMM <- read.csv(file = paste("C:/Users/jwaldr/OneDrive - LSUHSC/GELCC/callsInCommonGATKandXHMMpluScopyNum/GATKandXHMM.", i, ".csv", sep=""))
+  GATKandXHMM <- read.csv(file = paste("C:/Users/4wald/OneDrive - LSUHSC/GELCC/callsInCommonGATKandXHMMpluScopyNum/9.29.21.GATKandXHMM.", i, ".csv", sep=""))
   cat(i, GATKandXHMM[1,1], "\n")
   overlappingCNVs <- rbind(overlappingCNVs, GATKandXHMM)
 }
 
-write.table(overlappingCNVs, file=paste("C:/Users/jwaldr/OneDrive - LSUHSC/GELCC/compositeOfCNVsCalledByGATKandXHMMpluScopyNum", ".csv", sep=""), row.names=FALSE, sep=",")
+write.table(overlappingCNVs, file=paste("C:/Users/4wald/OneDrive - LSUHSC/GELCC/9.29.21.compositeOfCNVsCalledByGATKandXHMM", ".csv", sep=""), row.names=FALSE, sep=",")
+# overlappingCNVs <- read.csv(file = "C:/Users/4wald/OneDrive - LSUHSC/GELCC/9.29.21.compositeOfCNVsCalledByGATKandXHMM.csv")
 
-# save(cnvs, overlappingCNVs, pheno, phenoFam, XHMMcnv, GATKcnv, file = "C:/Users/jwaldr/OneDrive - LSUHSC/GELCC/CNVsBothAlgsPhenoFamPluSoverlappingCNVs.9.28.21.rda")  
+# save(overlappingCNVs, phenoFam, XHMMcnv, GATKcnv, file = "C:/Users/4wald/OneDrive - LSUHSC/GELCC/overlappingCNVsBothAlgsPhenoFam.9.29.21.rda")  
+####### characterize differences in GATK and XHMM calls
+# length(which(overlappingCNVs$GATKgene != overlappingCNVs$XHMMgene)) # = 2732 (39% aren't identical)
+# nrow(overlappingCNVs) # = 7052
+# overlappingCNVs[which(overlappingCNVs$GATKgene != overlappingCNVs$XHMMgene)[10:20],c(3, 4, 5, 6, 7, 8, 12, 13, 14, 15)]
+# From examining the overlap between calls and address redundannt calls I think it best to find the first instance of a gene overlapping a deletion and remove subsequent calls of a deletion covering that same gene
+# it appears that many of these redundant calls also have a low GATKPhred score
+# if XHMM genes match previous, then take the one of the two with the higher GATK Phred Score
+# change structure to go by sample, id anyCNVs with the same genes and include only the one with the highest Phred score
 
-# include only deletions
-
-delCalls <- subset(overlappingCNVs, overlappingCNVs$GATKcall.del_1.dup_2 ==1)
-# remove redundant calls because of XHMM, but THIS TIME without removing non-blood relatives as above
+keep <- vector()
+for(i in unique(overlappingCNVs$sample) { # i = unique(overlappingCNVs$sample)[42]
+    for(j in which(overlappingCNVs$sample == i)){ # j = which(overlappingCNVs$sample == i)[1]
+        w <- which(overlappingCNVs$XHMMgene[j] == overlappingCNVs$XHMMgene[which(overlappingCNVs$sample == i)])
+            if(length(w) < 2){ keep =  append(keep, j) 
+                } else { 
+                phScores <- overlappingCNVs$GATKPhred[which(overlappingCNVs$sample == i)][w]
+                if(overlappingCNVs$GATKPhred[j] == max(as.numeric(phScores))){
+                       if(j %in% keep == FALSE){
+                            keep =  append(keep, j)
+                            } # if j is not already in keep
+                        } # if j highest Phred
+                   } # else w > 0     
+            } # for j 
+      } # for i
 remove <- vector()
-for (i in 2:nrow(delCalls)){
-    if (delCalls$subject[i] == delCalls$subject[i-1]){
-        remove <- append(remove, i)
-        cat("deleting row ", i, '\n')
-    }
+for (i in 2:nrow(overlappingCNVs)){ # i = 56
+    if (strsplit(overlappingCNVs$XHMMgene[i], split = ", ") %in% strsplit(overlappingCNVs$XHMMgene[i-1], split = ", ")){
+        k = c(i-1,i)[which(as.numeric(overlappingCNVs[c(i-1,i),"GATKPhred"])==min(as.numeric(overlappingCNVs[c(i-1,i),"GATKPhred"])))[1]]
+        m = c(i-1,i)[which(as.numeric(overlappingCNVs[c(i-1,i),"GATKPhred"])==max(as.numeric(overlappingCNVs[c(i-1,i),"GATKPhred"])))[1]]
+        overlappingCNVs <- overlappingCNVs[-k,]
+        remove <- append(remove, k)
+        cat("deleting row ", k, " GATKPhred = ", overlappingCNVs$GATKPhred[k], " is less than ", overlappingCNVs$GATKPhred[m], '\n')
+        } # if same genes as row i-1
     } #nrow
-delCalls <- delCalls[-remove,]
+
+#nrow(overlappingCNVs) = 7052 --> 3871
+
+# overlappingCNVs[,] # overlappingCNVs[which(overlappingCNVs$sample =="H_NK-127GELCC001-127001"),]
+# strsplit(overlappingCNVs$GATKgene[6844], split = ", ") %in% strsplit(overlappingCNVs$GATKgene[6845], split = ", ")
+# overlappingCNVs$GATKgene[6843] %in% overlappingCNVs$GATKgene[6844]
+
+overlappingCNVsPostRemoved <- overlappingCNVs[-remove,]
+
 #see what we have here for genes
 genesBothCallersAllDeletions <- unlist(strsplit(delCalls$gene, split = ", ")) # length(unique(genesBothCallersAllDeletions) = 580
 
