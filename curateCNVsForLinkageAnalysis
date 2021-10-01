@@ -410,8 +410,42 @@ save(allGenesInG2CIND, overlappingCNVs, overlappingCNVsPostRemoved, GATKcnv, XHM
 #### Now time for branch point - all those genes in 3 families at least 2 individuals per family and those in < 3 families but > 4(3?) individuals per family
 # frankly, that (above line) should be easy to subset
 
+############################################################################################################################################################################
+# cumgFamily <- read.csv(file = "C:/Users/jwaldr/OneDrive - LSUHSC/GELCC/cumgFamilyat4.23p.9.22.21.csv")
+# DO NOT DO THIS 9/22 the RDA file contains new data appended to end of old data. NEED to zero out the old object before running rbind to add new data. #load(file = "C:/Users/jwaldr/OneDrive - LSUHSC/GELCC/cumgFamilyat4.23p.9.22.21.rda")
 
+############################################################################################################################################################################
+# organize to determine how many per family 
+geneSummary <- as.data.frame(matrix(nrow=0, ncol=8))
+colnames(geneSummary) <- c("gene", "#CIDs", "#CIDs.with.>2ind", "#CINDs", "#_affected", "#_unaffected", "mean_width", "#_unique_widths")
 
-# rda below from 9.22.21 includes: "cnvs"     "GATKcnv"  "pheno"    "phenoFam" "XHMMcnv"
-# load(file = "C:/Users/jwaldr/OneDrive - LSUHSC/GELCC/CNVsFrom3AlgsAndPhenoAndPhenoFam.9.22.21.rda") #from githubusercontent.com/johnbwaldron/CNVanalysis/main/multistepCNVScreening #### pay attention to this date!!! 9.20.21 has only 135 samples, 9.22.21 has 202
+for(i in unique(cumgFamily$gene)){    #i = cumgFamily$gene[1]
+     peeps <- subset(cumgFamily, cumgFamily$gene %in% i)
+     k=0
+     for(j in unique(peeps$CID)) {    #j=peeps$CID[1]
+         if(length(which(peeps$CID %in% j))>1){ k=k+1 }
+            } # j
+     geneSummary <- rbind(geneSummary, data.frame(i, length(unique(peeps$CID)), 
+                                         k, length(peeps$CIND), 
+                                         length(which(peeps$diagnosis.of.lung.throat.pharynx.larynx.cancer)),
+                                         length(which(peeps$diagnosis.of.lung.throat.pharynx.larynx.cancer==FALSE)),
+                                         round(mean(peeps$width), 1), length(unique(peeps$width))))
+     # this could be a great place to use a statistical test of association between Dx and cnv width, CID and CNV width, or                         
+     
+     cat(i, " has ",  length(unique(peeps$CID)), " CIDs and ", k, " families with > 2 CINDs with this CNV\n")   
+     } # i
+     colnames(geneSummary) <- c("gene", "#CIDs", "#CIDs.with.>2ind", "#CINDs", "#_affected", "#_unaffected", "mean_width", "#_unique_widths")
+write.table(geneSummary, file= "C:/Users/jwaldr/OneDrive - LSUHSC/GELCC/statsByGene.9.23.21.csv", row.names=FALSE, sep =",")                                         
+                                         
+
+# now screen out all genes where geneSummary[,2] < 3 | geneSummary[,3] < 3
+
+G2FamiliesWithG2per <- subset(geneSummary, geneSummary[,3] > 2)
+
+write.table(G2FamiliesWithG2per, file= "C:/Users/jwaldr/OneDrive - LSUHSC/GELCC/G2FamiliesWithG2per.9.23.21.csv", row.names=FALSE, sep =",")  
+
+removedCommonVariants <- gnomADgenelistG5noOverlap[which(gnomADgenelistG5noOverlap$AF1 > 0.05),c(1,2)]
+
+gnomADgenelistG5noOverlapUncommon <- subset(genelistG5noOverlap, gnomADgenelistG5noOverlap$AF1 < 0.05)
+
 
