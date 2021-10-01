@@ -155,7 +155,6 @@ GATKcnvGranges <- makeGRangesFromDataFrame(GATKcnv, keep.extra.columns=TRUE, seq
 #   Use 'single.strand.genes.only=FALSE' to get all the genes in a
 #   GRangesList object
 
-
 ####################################################################################################
 
 gns = geneRanges(Homo.sapiens, column="SYMBOL")
@@ -183,7 +182,7 @@ GATKcnv$CDS[i] <- paste(coding_symInCnv[[i]][!is.na(coding_symInCnv[[i]])], coll
 GATKcnv$Entrez[i] <-paste(entrez_symInCnv[[i]][!is.na(entrez_symInCnv[[i]])], collapse=", ")
            }
 
-# write.table(GATKcnv, file="C:/Users/jwaldr/OneDrive - LSUHSC/GELCC/GATKcnv_delsONLY.9.29.21.csv", row.names=FALSE, sep=",") #quote=c(1:3)???
+# write.table(GATKcnv, file="C:/Users/4wald/OneDrive - LSUHSC/GELCC/GATKcnv_delsONLY.9.30.21.csv", row.names=FALSE, sep=",") #quote=c(1:3)???
 
 # splitByOverlap genes, transcripts, CDS by XHMMcnvGranges
 gns_symInCnv = splitByOverlap(gns, XHMMcnvGranges, "SYMBOL")
@@ -204,7 +203,7 @@ XHMMcnv$transcript[i] <- paste(trnscrpts_symInCnv[[i]][!is.na(trnscrpts_symInCnv
 XHMMcnv$CDS[i] <- paste(coding_symInCnv[[i]][!is.na(coding_symInCnv[[i]])], collapse=", ")
 XHMMcnv$Entrez[i] <-paste(entrez_symInCnv[[i]][!is.na(entrez_symInCnv[[i]])], collapse=", ")
            }
-# write.table(XHMMcnv, file="C:/Users/4wald/OneDrive - LSUHSC/GELCC/XHMMcnv_delsONLY.9.29.21.csv", row.names=FALSE, sep=",") #quote=c(1:3)???
+# write.table(XHMMcnv, file="C:/Users/4wald/OneDrive - LSUHSC/GELCC/XHMMcnv_delsONLY.9.30.21.csv", row.names=FALSE, sep=",") #quote=c(1:3)???
 
 ######################################################################################
 
@@ -252,7 +251,7 @@ B <- makeGRangesFromDataFrame(subset(XHMMcnv, XHMMcnv$sample == i), keep.extra.c
                 XHMMentrez = B$Entrez[subjectHits(ABlaps)]
                 )
                 
-    write.table(GATKandXHMM, file=paste("C:/Users/4wald/OneDrive - LSUHSC/GELCC/callsInCommonGATKandXHMMpluScopyNum/9.29.21.GATKandXHMM.", i, ".csv", sep=""), row.names=FALSE, sep=",") #quote=c(1:3)???
+    write.table(GATKandXHMM, file=paste("C:/Users/4wald/OneDrive - LSUHSC/GELCC/callsInCommonGATKandXHMMpluScopyNum/9.30.21.GATKandXHMM.", i, ".csv", sep=""), row.names=FALSE, sep=",") #quote=c(1:3)???
     } else {
         cat("no.olaps in ", i)
         GATKandXHMM <- data.frame(sample = i,
@@ -278,7 +277,7 @@ B <- makeGRangesFromDataFrame(subset(XHMMcnv, XHMMcnv$sample == i), keep.extra.c
                 XHMMentrez = "no.olaps"
 
                       )
-        write.table(GATKandXHMM, file=paste("C:/Users/4wald/OneDrive - LSUHSC/GELCC/callsInCommonGATKandXHMMpluScopyNum/9.29.21.GATKandXHMM.", i, ".csv", sep=""), row.names=FALSE, sep=",")
+        write.table(GATKandXHMM, file=paste("C:/Users/4wald/OneDrive - LSUHSC/GELCC/callsInCommonGATKandXHMMpluScopyNum/9.30.21.GATKandXHMM.", i, ".csv", sep=""), row.names=FALSE, sep=",")
                 }
 
 } # end of loop
@@ -294,12 +293,12 @@ colnames(overlappingCNVs) <- c("sample", "chr", "GATKstart", "GATKend", "XHMMsta
 i=0
 for(i in unique(GATKcnv$sample)){                      #i = GATKcnv$sample[1]
   
-  GATKandXHMM <- read.csv(file = paste("C:/Users/4wald/OneDrive - LSUHSC/GELCC/callsInCommonGATKandXHMMpluScopyNum/9.29.21.GATKandXHMM.", i, ".csv", sep=""))
-  cat(i, GATKandXHMM[1,1], "\n")
+  GATKandXHMM <- read.csv(file = paste("C:/Users/4wald/OneDrive - LSUHSC/GELCC/callsInCommonGATKandXHMMpluScopyNum/9.30.21.GATKandXHMM.", i, ".csv", sep=""))
+  cat(GATKandXHMM[1,1], "\n")
   overlappingCNVs <- rbind(overlappingCNVs, GATKandXHMM)
 }
 
-write.table(overlappingCNVs, file=paste("C:/Users/4wald/OneDrive - LSUHSC/GELCC/9.29.21.compositeOfCNVsCalledByGATKandXHMM", ".csv", sep=""), row.names=FALSE, sep=",")
+write.table(overlappingCNVs, file=paste("C:/Users/4wald/OneDrive - LSUHSC/GELCC/9.30.21.compositeOfCNVsCalledByGATKandXHMM", ".csv", sep=""), row.names=FALSE, sep=",")
 # overlappingCNVs <- read.csv(file = "C:/Users/4wald/OneDrive - LSUHSC/GELCC/9.29.21.compositeOfCNVsCalledByGATKandXHMM.csv")
 
 # save(overlappingCNVs, phenoFam, XHMMcnv, GATKcnv, file = "C:/Users/4wald/OneDrive - LSUHSC/GELCC/overlappingCNVsBothAlgsPhenoFam.9.29.21.rda")  
@@ -313,8 +312,8 @@ write.table(overlappingCNVs, file=paste("C:/Users/4wald/OneDrive - LSUHSC/GELCC/
 # change structure to go by sample, id anyCNVs with the same genes and include only the one with the highest Phred score
 
 keep <- vector()
-for(i in unique(overlappingCNVs$sample) { # i = unique(overlappingCNVs$sample)[42]
-    for(j in which(overlappingCNVs$sample == i)){ # j = which(overlappingCNVs$sample == i)[1]
+for(i in unique(overlappingCNVs$sample)) { # i = unique(overlappingCNVs$sample)[42]
+    for(j in which(overlappingCNVs$sample == i)){ # j = which(overlappingCNVs$sample == i)[5]
         w <- which(overlappingCNVs$XHMMgene[j] == overlappingCNVs$XHMMgene[which(overlappingCNVs$sample == i)])
             if(length(w) < 2){ keep =  append(keep, j) 
                 } else { 
@@ -324,30 +323,40 @@ for(i in unique(overlappingCNVs$sample) { # i = unique(overlappingCNVs$sample)[4
                             keep =  append(keep, j)
                             } # if j is not already in keep
                         } # if j highest Phred
-                   } # else w > 0     
+                   } # else w > 1     
             } # for j 
       } # for i
-remove <- vector()
-for (i in 2:nrow(overlappingCNVs)){ # i = 56
-    if (strsplit(overlappingCNVs$XHMMgene[i], split = ", ") %in% strsplit(overlappingCNVs$XHMMgene[i-1], split = ", ")){
-        k = c(i-1,i)[which(as.numeric(overlappingCNVs[c(i-1,i),"GATKPhred"])==min(as.numeric(overlappingCNVs[c(i-1,i),"GATKPhred"])))[1]]
-        m = c(i-1,i)[which(as.numeric(overlappingCNVs[c(i-1,i),"GATKPhred"])==max(as.numeric(overlappingCNVs[c(i-1,i),"GATKPhred"])))[1]]
-        overlappingCNVs <- overlappingCNVs[-k,]
-        remove <- append(remove, k)
-        cat("deleting row ", k, " GATKPhred = ", overlappingCNVs$GATKPhred[k], " is less than ", overlappingCNVs$GATKPhred[m], '\n')
-        } # if same genes as row i-1
-    } #nrow
 
+######################################################################################
+###########################The old way of removing redundant calls ####################################
+######################################################################################
+#remove <- vector()
+#for (i in 2:nrow(overlappingCNVs)){ # i = 56
+#    if (strsplit(overlappingCNVs$XHMMgene[i], split = ", ") %in% strsplit(overlappingCNVs$XHMMgene[i-1], split = ", ")){
+#        k = c(i-1,i)[which(as.numeric(overlappingCNVs[c(i-1,i),"GATKPhred"])==min(as.numeric(overlappingCNVs[c(i-1,i),"GATKPhred"])))[1]]
+#        m = c(i-1,i)[which(as.numeric(overlappingCNVs[c(i-1,i),"GATKPhred"])==max(as.numeric(overlappingCNVs[c(i-1,i),"GATKPhred"])))[1]]
+#        overlappingCNVs <- overlappingCNVs[-k,]
+#        remove <- append(remove, k)
+#        cat("deleting row ", k, " GATKPhred = ", overlappingCNVs$GATKPhred[k], " is less than ", overlappingCNVs$GATKPhred[m], '\n')
+#        } # if same genes as row i-1
+#    } #nrow
 #nrow(overlappingCNVs) = 7052 --> 3871
-
 # overlappingCNVs[,] # overlappingCNVs[which(overlappingCNVs$sample =="H_NK-127GELCC001-127001"),]
 # strsplit(overlappingCNVs$GATKgene[6844], split = ", ") %in% strsplit(overlappingCNVs$GATKgene[6845], split = ", ")
 # overlappingCNVs$GATKgene[6843] %in% overlappingCNVs$GATKgene[6844]
+######################################################################################
+######################################################################################
+######################################################################################
 
-overlappingCNVsPostRemoved <- overlappingCNVs[-remove,]
+# length(keep) # = 3636
+overlappingCNVsPostRemoved <- overlappingCNVs[keep,]
+
+#save(overlappingCNVs, overlappingCNVsPostRemoved, GATKcnv, XHMMcnv, phenoFam, file="C:/Users/4wald/OneDrive - LSUHSC/GELCC/9.30.21.callsPhenoRemovedRedundant.rda")
 
 #see what we have here for genes
-genesBothCallersAllDeletions <- unlist(strsplit(delCalls$gene, split = ", ")) # length(unique(genesBothCallersAllDeletions) = 580
+genesBothCallersAllDeletions <- unlist(strsplit(overlappingCNVsPostRemoved$XHMMgene, split = ", ")) 
+
+# length(unique(genesBothCallersAllDeletions)) = now 879, first time around (week of 9/21) it was 580
 
 marriedInSampleName <- phenoFam[phenoFam$CID == 12 & phenoFam$CIND == 44 | phenoFam$CID == 12 & phenoFam$CIND == 29 |
                        phenoFam$CID == 35 & phenoFam$CIND == 29| 
@@ -355,22 +364,26 @@ marriedInSampleName <- phenoFam[phenoFam$CID == 12 & phenoFam$CIND == 44 | pheno
                        phenoFam$CID == 102 & phenoFam$CIND == 346|
                        phenoFam$CID == 52 & phenoFam$CIND == 4| phenoFam$CID == 52 & phenoFam$CIND == 13|
                        phenoFam$CID == 88 & phenoFam$CIND == 13| phenoFam$CID == 88 & phenoFam$CIND == 52,1]
-delCallsLCfamilies <- delCalls[-which(delCalls$sample %in% marriedInSampleName),]
+###!!! 9.30.21 I am going to leave this for now, but this is where I need to account for ALL married-in CINDs
+# load data from database to examine and identify 
+# db <- read.csv(file= "C:/Users/4wald/OneDrive - LSUHSC/GELCC/Demographics - Demographics.csv")
+## spouses <- subset(db, db$CF == 0)
 
-delCallsLCfamiliesgeneIDs <- unlist(strsplit(delCallsLCfamilies$gene, split = ", "))  # length(unique(delCallsLCfamiliesgeneIDs)) = 566
+delCallsLCfamilies <- overlappingCNVsPostRemoved[-which(overlappingCNVsPostRemoved$sample %in% marriedInSampleName),]
+
+delCallsLCfamiliesgeneIDs <- unlist(strsplit(delCallsLCfamilies$XHMMgene, split = ", "))  # length(unique(delCallsLCfamiliesgeneIDs)) = now (9/30/21) 813, prior to 9/30/21 it was 566
 
 # create table grouped by gene that includes deletions in genes that affect at least 3 individuals.
 
-freq <-table(delCallsLCfamiliesgeneIDs[delCallsLCfamiliesgeneIDs != "NA"]) 
+freq <-table(delCallsLCfamiliesgeneIDs) # freq <-table(delCallsLCfamiliesgeneIDs[delCallsLCfamiliesgeneIDs != "NA"]) 
 genelistG2 <- as.data.frame(freq)[as.data.frame(freq)[,2]>2,]
 colnames(genelistG2) <- c("gene", "Freq")
-
 
 allGenesInG2CIND <- data.frame() 
 for (j in 1:length(genelistG2$gene)){    #j=1
       loc <- vector()
-      for(i in 1:length(delCallsLCfamilies$gene)){
-              if (genelistG2$gene[j] %in% strsplit(delCallsLCfamilies$gene, split = ", ")[[i]]){
+      for(i in 1:length(delCallsLCfamilies$XHMMgene)){ # i=1
+              if (genelistG2$gene[j] %in% strsplit(delCallsLCfamilies$XHMMgene, split = ", ")[[i]]){
               loc <- c(loc, i)}
                           
               } # i
@@ -387,10 +400,15 @@ for (j in 1:length(genelistG2$gene)){    #j=1
          family[w,"Age.at.Onset.1o.cancer"] <- phenoFam[which(phenoFam$submitted.sample.id == family$sample[w]), "Age.at.Onset.1o.cancer"]
          } # w
    #label this information with the gene of interest
-   family$gene <- genelistG3$gene[j]
+   family$gene <- genelistG2$gene[j]
 
 allGenesInG2CIND <- rbind(allGenesInG2CIND, family)
-}
+            } # j 
+
+save(allGenesInG2CIND, overlappingCNVs, overlappingCNVsPostRemoved, GATKcnv, XHMMcnv, phenoFam, file="C:/Users/4wald/OneDrive - LSUHSC/GELCC/9.30.21.upToAllDataOrganizedByGene.rda")
+
+#### Now time for branch point - all those genes in 3 families at least 2 individuals per family and those in < 3 families but > 4(3?) individuals per family
+# frankly, that (above line) should be easy to subset
 
 
 
