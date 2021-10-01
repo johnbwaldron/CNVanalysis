@@ -406,21 +406,19 @@ allGenesInG2CIND <- rbind(allGenesInG2CIND, family)
             } # j 
 
 save(allGenesInG2CIND, overlappingCNVs, overlappingCNVsPostRemoved, GATKcnv, XHMMcnv, phenoFam, file="C:/Users/4wald/OneDrive - LSUHSC/GELCC/9.30.21.upToAllDataOrganizedByGene.rda")
-
+# load(file="C:/Users/4wald/OneDrive - LSUHSC/GELCC/9.30.21.upToAllDataOrganizedByGene.rda")
 #### Now time for branch point - all those genes in 3 families at least 2 individuals per family and those in < 3 families but > 4(3?) individuals per family
 # frankly, that (above line) should be easy to subset
 
 ############################################################################################################################################################################
-# cumgFamily <- read.csv(file = "C:/Users/jwaldr/OneDrive - LSUHSC/GELCC/cumgFamilyat4.23p.9.22.21.csv")
-# DO NOT DO THIS 9/22 the RDA file contains new data appended to end of old data. NEED to zero out the old object before running rbind to add new data. #load(file = "C:/Users/jwaldr/OneDrive - LSUHSC/GELCC/cumgFamilyat4.23p.9.22.21.rda")
 
 ############################################################################################################################################################################
 # organize to determine how many per family 
 geneSummary <- as.data.frame(matrix(nrow=0, ncol=8))
 colnames(geneSummary) <- c("gene", "#CIDs", "#CIDs.with.>2ind", "#CINDs", "#_affected", "#_unaffected", "mean_width", "#_unique_widths")
 
-for(i in unique(cumgFamily$gene)){    #i = cumgFamily$gene[1]
-     peeps <- subset(cumgFamily, cumgFamily$gene %in% i)
+for(i in unique(allGenesInG2CIND$gene)){    #i = cumgFamily$gene[1]
+     peeps <- subset(allGenesInG2CIND, allGenesInG2CIND$gene %in% i)
      k=0
      for(j in unique(peeps$CID)) {    #j=peeps$CID[1]
          if(length(which(peeps$CID %in% j))>1){ k=k+1 }
@@ -429,13 +427,13 @@ for(i in unique(cumgFamily$gene)){    #i = cumgFamily$gene[1]
                                          k, length(peeps$CIND), 
                                          length(which(peeps$diagnosis.of.lung.throat.pharynx.larynx.cancer)),
                                          length(which(peeps$diagnosis.of.lung.throat.pharynx.larynx.cancer==FALSE)),
-                                         round(mean(peeps$width), 1), length(unique(peeps$width))))
+                                         round(mean(as.numeric(peeps$GATKend)-as.numeric(peeps$GATKstart)), 1), length(unique(peeps$sample))))
      # this could be a great place to use a statistical test of association between Dx and cnv width, CID and CNV width, or                         
      
      cat(i, " has ",  length(unique(peeps$CID)), " CIDs and ", k, " families with > 2 CINDs with this CNV\n")   
      } # i
      colnames(geneSummary) <- c("gene", "#CIDs", "#CIDs.with.>2ind", "#CINDs", "#_affected", "#_unaffected", "mean_width", "#_unique_widths")
-write.table(geneSummary, file= "C:/Users/jwaldr/OneDrive - LSUHSC/GELCC/statsByGene.9.23.21.csv", row.names=FALSE, sep =",")                                         
+write.table(geneSummary, file= "C:/Users/4wald/OneDrive - LSUHSC/GELCC/statsByGene.10.1.21.csv", row.names=FALSE, sep =",")                                         
                                          
 
 # now screen out all genes where geneSummary[,2] < 3 | geneSummary[,3] < 3
