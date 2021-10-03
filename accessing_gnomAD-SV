@@ -38,24 +38,52 @@ apt-get install -y \
 python3.6 -m pip install hail
 
 ##########################################################################################################################
-C:\Users\4wald\Downloads\fbat_v204
 
-powershell-command "Expand-Archive C:\Users\4wald\Downloads\fbat_v204 C:\Users\4wald\OneDrive - LSUHSC\GELCC\FBAT"
-
-powershell -command "Expand-Archive C:\Users\4wald\Downloads\FBAT_Manual_3-2014.zip C:\Users\4wald\OneDrive - LSUHSC\GELCC\FBAT"
-
-Expand-Archive -LiteralPath 'C:\Users\4wald\Downloads\FBAT_Manual_3-2014.zip' -DestinationPath "C:\Users\4wald\OneDrive - LSUHSC\GELCC\FBAT"
-
-Expand-Archive -LiteralPath 'C:\Users\4wald\Downloads\fbat_v204\fbat204_win.zip' -DestinationPath "C:\Users\4wald\OneDrive - LSUHSC\GELCC\FBAT"
-
-Expand-Archive -LiteralPath 'C:\Users\4wald\Downloads\fbat_v204' -DestinationPath "C:\Users\4wald\OneDrive - LSUHSC\GELCC\FBAT"
-
-
-fbatxxx_win.zip
-
-fbat204_linux.tar.gz; gzcat <C:\Users\4wald\Downloads\fbat_v204> | tar xvf -
 
 
 # this stack exchange seeks a solution to run fbat with multiple files...
 https://unix.stackexchange.com/questions/165325/how-to-run-a-program-that-has-its-own-command-line-within-a-shell-script-program
+
+# necessary to change permissions to run fbat
+chmod +x fbat_v204
+
+
+#input data
+
+>>load map leprmap.txt
+
+read in 899 markers' info
+
+>>load ped leprped.txt
+
+read in: 899 markers from 16 pedigrees (338 nuclear families,1182 persons)
+
+>>load phe phe_dbpsim2e1.txt
+
+1 quantitative traits have been successfully read
+719 persons have been phenotyped
+
+>>trait resid
+
+affection resid** 
+
+>>fbat -v1 -e 
+
+# could potentionally run a script that automates input
+
+If fbat insists on getting its input from the terminal and you want to automate, the solution is to use expect (or pexpect). Here is an example of an expect script which might automate your program:
+
+To install expect on a debian-like sytem, run:
+
+apt-get install expect
+
+#!/usr/bin/expect -f
+spawn ./fbat
+expect ">>"
+send "load map leprmap.txt\r"
+expect ">>"
+send "load phe phe_dbpsim2e1.txt\r"
+expect ">>"
+send "trait resid\r"
+
 
