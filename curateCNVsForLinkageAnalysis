@@ -396,6 +396,7 @@ for (j in 1:length(genelistG2$gene)){    #j=1
          family[w,"CIND"] <- phenoFam[which(phenoFam$submitted.sample.id == family$sample[w]), "CIND"]
          family[w,"CF"] <- phenoFam[which(phenoFam$submitted.sample.id == family$sample[w]), "CF"]
          family[w,"CM"] <- phenoFam[which(phenoFam$submitted.sample.id == family$sample[w]), "CM"]
+         family[w, "SEX"] <- phenoFam[which(phenoFam$submitted.sample.id == family$sample[w]), "SEX"]
          family[w,"diagnosis.of.lung.throat.pharynx.larynx.cancer"] <- phenoFam[which(phenoFam$submitted.sample.id == family$sample[w]), "diagnosis.of.lung.throat.pharynx.larynx.cancer"]
          family[w,"Age.at.Onset.1o.cancer"] <- phenoFam[which(phenoFam$submitted.sample.id == family$sample[w]), "Age.at.Onset.1o.cancer"]
          } # w
@@ -405,7 +406,7 @@ for (j in 1:length(genelistG2$gene)){    #j=1
 allGenesInG2CIND <- rbind(allGenesInG2CIND, family)
             } # j 
 
-save(allGenesInG2CIND, overlappingCNVs, overlappingCNVsPostRemoved, GATKcnv, XHMMcnv, phenoFam, file="C:/Users/4wald/OneDrive - LSUHSC/GELCC/9.30.21.upToAllDataOrganizedByGene.rda")
+save(allGenesInG2CIND, overlappingCNVs, overlappingCNVsPostRemoved, GATKcnv, XHMMcnv, phenoFam, file="C:/Users/4wald/OneDrive - LSUHSC/GELCC/10.3.21.upToAllDataOrganizedByGene.rda")
 # load(file="C:/Users/4wald/OneDrive - LSUHSC/GELCC/9.30.21.upToAllDataOrganizedByGene.rda")
 #### Now time for branch point - all those genes in 3 families at least 2 individuals per family and those in < 3 families but > 4(3?) individuals per family
 # frankly, that (above line) should be easy to subset
@@ -441,6 +442,20 @@ write.table(geneSummary, file= "C:/Users/4wald/OneDrive - LSUHSC/GELCC/statsByGe
 G2FamiliesWithG2per <- subset(geneSummary, geneSummary[,3] > 2)
 
 write.table(G2FamiliesWithG2per, file= "C:/Users/jwaldr/OneDrive - LSUHSC/GELCC/G2FamiliesWithG2per.9.23.21.csv", row.names=FALSE, sep =",")  
+#####################################################################################################################
+# create FBAT input
+# load(file="C:/Users/4wald/OneDrive - LSUHSC/GELCC/10.3.21.upToAllDataOrganizedByGene.rda")
+# use allGenesInG2CIND for all pedigree and affected info (10/3/21 going back to add sex info
+#Layout: 
+# First line: names of all markers in the sequence of the genotype data
+# Remaining lines: pid id fid mid sex aff A11 A12 A21 A22
+
+
+#####################################################################################################################
+# remake and update pheno and pedigree file
+load(file = "C:/Users/4wald/OneDrive - LSUHSC/GELCC/CNVsFrom3AlgsAndPhenoAndPhenoFam.2.19.2021.rda")
+pheno <- read.csv(file="C:/Users/4wald/OneDrive - LSUHSC/GELCC/Pedigrees for WES for John - All Pedigrees.csv")
+
 
 removedCommonVariants <- gnomADgenelistG5noOverlap[which(gnomADgenelistG5noOverlap$AF1 > 0.05),c(1,2)]
 
