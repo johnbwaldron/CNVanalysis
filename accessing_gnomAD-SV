@@ -54,3 +54,8 @@ Expand-Archive -LiteralPath 'C:\Users\4wald\Downloads\fbat_v204' -DestinationPat
 fbatxxx_win.zip
 
 fbat204_linux.tar.gz; gzcat <C:\Users\4wald\Downloads\fbat_v204> | tar xvf -
+
+
+# this stack exchange seeks a solution to run fbat with multiple files...
+https://unix.stackexchange.com/questions/165325/how-to-run-a-program-that-has-its-own-command-line-within-a-shell-script-program
+
