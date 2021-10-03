@@ -449,7 +449,12 @@ write.table(G2FamiliesWithG2per, file= "C:/Users/jwaldr/OneDrive - LSUHSC/GELCC/
 #Layout: 
 # First line: names of all markers in the sequence of the genotype data
 # Remaining lines: pid id fid mid sex aff A11 A12 A21 A22
+# aff --> 2 = affected, 1 = unaffected, 0 = unknown
+# Alleles are represented by positive integers. Use 0 (zero) for missing alleles: allele j of marker i (j = 1, 2;i = 1, 2, . . .)
 
+allGenesInG2CIND$diagnosis.of.lung.throat.pharynx.larynx.cancer[which(allGenesInG2CIND$diagnosis.of.lung.throat.pharynx.larynx.cancer)] <- 2
+dex <- which(is_false(allGenesInG2CIND$diagnosis.of.lung.throat.pharynx.larynx.cancer))
+allGenesInG2CIND$diagnosis.of.lung.throat.pharynx.larynx.cancer[which(allGenesInG2CIND$diagnosis.of.lung.throat.pharynx.larynx.cancer==FALSE)][1:5] <- 1
 
 #####################################################################################################################
 # remake and update pheno and pedigree file
