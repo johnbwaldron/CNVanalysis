@@ -416,7 +416,7 @@ save(allGenesInG2CIND, overlappingCNVs, overlappingCNVsPostRemoved, GATKcnv, XHM
 ############################################################################################################################################################################
 # organize to determine how many per family 
 geneSummary <- as.data.frame(matrix(nrow=0, ncol=8))
-colnames(geneSummary) <- c("gene", "#CIDs", "#CIDs.with.>2ind", "#CINDs", "#_affected", "#_unaffected", "mean_width", "#_unique_widths")
+colnames(geneSummary) <- c("gene", "numCIDs", "numCIDs.with.>2ind", "numCINDs", "num_affected", "num_unaffected", "mean_width", "num_unique_widths")
 
 for(i in unique(allGenesInG2CIND$gene)){    #i = cumgFamily$gene[1]
      peeps <- subset(allGenesInG2CIND, allGenesInG2CIND$gene %in% i)
@@ -428,40 +428,122 @@ for(i in unique(allGenesInG2CIND$gene)){    #i = cumgFamily$gene[1]
                                          k, length(peeps$CIND), 
                                          length(which(peeps$diagnosis.of.lung.throat.pharynx.larynx.cancer)),
                                          length(which(peeps$diagnosis.of.lung.throat.pharynx.larynx.cancer==FALSE)),
-                                         round(mean(as.numeric(peeps$GATKend)-as.numeric(peeps$GATKstart)), 1), length(unique(peeps$sample))))
+                                         round(mean(as.numeric(peeps$GATKend)-as.numeric(peeps$GATKstart)), 1), 
+                                         length(unique(as.numeric(peeps$GATKend)-as.numeric(peeps$GATKstart)))))
      # this could be a great place to use a statistical test of association between Dx and cnv width, CID and CNV width, or                         
      
      cat(i, " has ",  length(unique(peeps$CID)), " CIDs and ", k, " families with > 2 CINDs with this CNV\n")   
      } # i
-     colnames(geneSummary) <- c("gene", "#CIDs", "#CIDs.with.>2ind", "#CINDs", "#_affected", "#_unaffected", "mean_width", "#_unique_widths")
-write.table(geneSummary, file= "C:/Users/4wald/OneDrive - LSUHSC/GELCC/statsByGene.10.1.21.csv", row.names=FALSE, sep =",")                                         
+     colnames(geneSummary) <- c("gene", "numCIDs", "numCIDs.with.>2ind", "numCINDs", "num_affected", "num_unaffected", "mean_width", "num_unique_widths")
+write.table(geneSummary, file= "C:/Users/jwaldr/OneDrive - LSUHSC/GELCC/statsByGene.10.1.21.csv", row.names=FALSE, sep =",")                                         
                                          
+# geneSummary <- read.csv(file= "C:/Users/jwaldr/OneDrive - LSUHSC/GELCC/statsByGene.10.1.21.csv")                                         
 
 # now screen out all genes where geneSummary[,2] < 3 | geneSummary[,3] < 3
 
 G2FamiliesWithG2per <- subset(geneSummary, geneSummary[,3] > 2)
+G2FamiliesWithG2per <- append(G2FamiliesWithG2per, geneSummary[which(geneSummary$gene=="SSX1"),])
 
-write.table(G2FamiliesWithG2per, file= "C:/Users/jwaldr/OneDrive - LSUHSC/GELCC/G2FamiliesWithG2per.9.23.21.csv", row.names=FALSE, sep =",")  
+write.table(G2FamiliesWithG2per, file= "C:/Users/jwaldr/OneDrive - LSUHSC/GELCC/G2FamiliesWithG2per.10.4.21.csv", row.names=FALSE, sep =",")  
 #####################################################################################################################
 # create FBAT input
-# load(file="C:/Users/4wald/OneDrive - LSUHSC/GELCC/10.3.21.upToAllDataOrganizedByGene.rda")
-# use allGenesInG2CIND for all pedigree and affected info (10/3/21 going back to add sex info
+# load(file="C:/Users/jwaldr/OneDrive - LSUHSC/GELCC/10.3.21.upToAllDataOrganizedByGene.rda")
+
+# use allGenesInG2CIND for all pedigree and affected info (10/3/21 wnt back to add sex info)
 #Layout: 
 # First line: names of all markers in the sequence of the genotype data
 # Remaining lines: pid id fid mid sex aff A11 A12 A21 A22
 # aff --> 2 = affected, 1 = unaffected, 0 = unknown
 # Alleles are represented by positive integers. Use 0 (zero) for missing alleles: allele j of marker i (j = 1, 2;i = 1, 2, . . .)
 
-allGenesInG2CIND$diagnosis.of.lung.throat.pharynx.larynx.cancer[which(allGenesInG2CIND$diagnosis.of.lung.throat.pharynx.larynx.cancer)] <- 2
-dex <- which(is_false(allGenesInG2CIND$diagnosis.of.lung.throat.pharynx.larynx.cancer))
-allGenesInG2CIND$diagnosis.of.lung.throat.pharynx.larynx.cancer[which(allGenesInG2CIND$diagnosis.of.lung.throat.pharynx.larynx.cancer==FALSE)][1:5] <- 1
+
+
+######### make the map file #############################################################################################################################
+# The map file uses the following format:
+# marker_name chr# genetic_pos physical_pos sex_link
+# The count of the markers and the order in which they are listed in the map file must be the same as in the ped file. Chr# is
+# set to 23 for an X-chromosome marker, and 24 for Y.
+# Sex_link = 1 if the marker is sex linked, 0 otherwise. If sex_link = 1, fbat will implement an analysis for an x-chromosome
+# marker. For autosomal markers, and for markers in the pseudoautosomal region of the x-marker, set sex-link to zero.
+
+# replace chr numbers with JUST numbers 23 for X, 24 for Y
+    l <- strsplit(overlappingCNVsPostRemoved$chr, "chr")
+    numb <- sapply(l, "[", 2)
+    numb[which(numb=="X")] <- 23
+    numb[which(numb=="Y")] <- 24
+    overlappingCNVsPostRemoved$chr <- as.numeric(numb)
+# necessary for "between()" function
+ library(dplyr)
+
+#change no.olaps chr# from NA to no.olaps
+overlappingCNVsPostRemoved <- overlappingCNVsPostRemoved[-which(is.na(overlappingCNVsPostRemoved$chr)),]
+
+map <- as.data.frame(matrix(nrow=0, ncol=5))
+colnames(map) <- c("marker_name", "chr", "genetic_pos", "physical_pos", "sex_link")
+for (i in unique(overlappingCNVsPostRemoved$chr)){ # i = unique(overlappingCNVsPostRemoved$chr)[10] #overlappingCNVsPostRemoved[which(is.na(overlappingCNVsPostRemoved$chr)),]
+    byChr <- subset(overlappingCNVsPostRemoved, overlappingCNVsPostRemoved$chr == i)
+    
+        for (j in unique(unlist(strsplit(byChr$XHMMgene, ", ")))) { # j = unique(unlist(strsplit(byChr$XHMMgene, ", ")))[2] 
+                Ustart <- byChr$GATKstart[grep(j, byChr$XHMMgene)] 
+                Uend <- byChr$GATKend[grep(j, byChr$XHMMgene)]
+                segs <- cbind(start = as.numeric(Ustart), end = as.numeric(Uend))
+                segs <- cbind(segs, physicalPos = rowMeans(segs)) 
+
+                # determine how many non-overlapping segments (alleles) exist for this gene
+                    for(g in 1:nrow(segs)){ # g = 1
+                        col <- data.frame(between(segs[,"start"], segs[g, "start"], segs[g, "end"]))
+                        colnames(col) <- paste("overlaps_", g, sep="")
+                        segs <- cbind(segs, col)
+                        }
+                # now use segs to determine how many unique segments/alleles exist to create map
+                
+                #initiate and clear imap for each j before running through k
+                imap <- as.data.frame(matrix(nrow=0, ncol=5))
+                colnames(map) <- c("marker_name", "chr", "genetic_pos", "physical_pos", "sex_link")    
+                for (k in 1:length(unique(physicalPos))){ # k = 1 ## intended to be unique non overlapping segments!!!!!!!!!!!!!!!!!
+                         imap <- rbind(imap, data.frame(marker_name = paste(j, k, sep="_"), 
+                                       chr = i,
+                                       genetic_pos = NA, 
+                                       physical_pos = unique(physicalPos)[k],
+                                       sex_link = 0))
+                   } # for k
+            if(i == 23 | i == 24) sl = 1 else sl = 0
+            imap$sex_link <- sl
+            map <- rbind(map, imap)
+            } # for j
+      
+       } # for i
+
+
+##
+#allGenesInG2CIND$diagnosis.of.lung.throat.pharynx.larynx.cancer[which(allGenesInG2CIND$diagnosis.of.lung.throat.pharynx.larynx.cancer)] <- 2
+#dex <- which(is_false(allGenesInG2CIND$diagnosis.of.lung.throat.pharynx.larynx.cancer))
+#allGenesInG2CIND$diagnosis.of.lung.throat.pharynx.larynx.cancer[which(allGenesInG2CIND$diagnosis.of.lung.throat.pharynx.larynx.cancer==FALSE)][1:5] <- 1
 
 #####################################################################################################################
 # remake and update pheno and pedigree file
 load(file = "C:/Users/4wald/OneDrive - LSUHSC/GELCC/CNVsFrom3AlgsAndPhenoAndPhenoFam.2.19.2021.rda")
-pheno <- read.csv(file="C:/Users/4wald/OneDrive - LSUHSC/GELCC/Pedigrees for WES for John - All Pedigrees.csv")
+pheno <- read.csv(file="C:/Users/jwaldr/OneDrive - LSUHSC/GELCC/Pedigrees for WES for John - All Pedigrees.csv")
+#####################################################################################################################
+Phenotype Data File 
+First line: names of all traits in the phenotype file
+Remaining lines: pid id trait 1 trait 2 ...
+# considerusing SRNA (self report nonaffected) and FRNA (fmaily report of nonaffected status) 
+# C1/2 --> cancer type 1 or 2 by age at diagnosis # AO1/2 means age at onset of C1/2
+phe <- subset(pheno, select = colnames(pheno) %in% c("CID", "CIND", "AFF_ANY_M", "AFF_LT_M1", "AFF-L", "C1", "C2", "SMOKE", "PY", "CYPR", "CC1", "CC2", "AO1", "AO2"))
+
+#####################################################################################################################
+# question number 1 - do deletions affected a specific gene overlap? if yes, they are one allele. If no, they are different alleles
 
 
+for (m in map$marker_name){
+    # allGenesInG2CIND has CID, CIND, CF, CM, Sex, Dx, afe at onset organized by gene) - can subset(allGenesInG2CIND by match to marker name strsplit by "_"
+    # allele j of marker i
+    # marker = gene name, allele = which unique physical_pos, for each individual 0 = don't have the deletion, 1 = have one copy of the deletion (copyNum = 1), 2 = copyNum=0
+
+
+
+#####################################################################################################################
 removedCommonVariants <- gnomADgenelistG5noOverlap[which(gnomADgenelistG5noOverlap$AF1 > 0.05),c(1,2)]
 
 gnomADgenelistG5noOverlapUncommon <- subset(genelistG5noOverlap, gnomADgenelistG5noOverlap$AF1 < 0.05)
