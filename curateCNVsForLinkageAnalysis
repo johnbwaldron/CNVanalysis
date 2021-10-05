@@ -590,6 +590,7 @@ for(s in unique(overlappingCNVsPostRemoved$sample)){ # s = unique(overlappingCNV
     
 colnames(ped) <- c("pid", "id", "fid", "mid", "sex", "aff", "HLA-DRB5_1", "HLA-DRB5_2")
 
+write.table(ped, file="C:/Users/4wald/OneDrive - LSUHSC/GELCC/10.5.21.ped", row.names=FALSE, sep="\t")
 
 
 #####################################################################################################################
