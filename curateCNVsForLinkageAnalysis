@@ -447,7 +447,7 @@ G2FamiliesWithG2per <- rbind(G2FamiliesWithG2per, geneSummary[which(geneSummary$
 write.table(G2FamiliesWithG2per, file= "C:/Users/4wald/OneDrive - LSUHSC/GELCC/G2FamiliesWithG2per.10.4.21.csv", row.names=FALSE, sep =",")  
 #####################################################################################################################
 # create FBAT input
-# load(file="C:/Users/4wald/OneDrive - LSUHSC/GELCC/10.3.21.upToAllDataOrganizedByGene.rda")
+# load(file="C:/Users/jwaldr/OneDrive - LSUHSC/GELCC/10.3.21.upToAllDataOrganizedByGene.rda")
 
 ######### make the map file #############################################################################################################################
 # The map file uses the following format:
@@ -506,7 +506,7 @@ for (i in unique(overlappingCNVsPostRemoved$chr)){ # i = unique(overlappingCNVsP
        } # for i
 
 write.table(map, file="C:/Users/4wald/OneDrive - LSUHSC/GELCC/10.5.21.map", row.names=FALSE, sep="\t")
-cat("a \tz")
+
 # l <- strsplit(map$marker_name, split="_")
 # #map[which(sapply(l,"[", 2)==2),]
 ##
@@ -516,53 +516,33 @@ cat("a \tz")
 
 #####################################################################################################################
 # use allGenesInG2CIND for all pedigree and affected info (10/3/21 wnt back to add sex info)
-#Layout: 
+#Layout: ".ped"
 # (optional)First line: names of all markers in the sequence of the genotype data
 # Remaining lines: pid id fid mid sex aff A11 A12 A21 A22
 # aff --> 2 = affected, 1 = unaffected, 0 = unknown
 # Alleles are represented by positive integers. Use 0 (zero) for missing alleles: allele j of marker i (j = 1, 2;i = 1, 2, . . .)
 
-#!!!!!!!!!!!!!!!!!!!!!!!!!!!! what follows is in progress for making ped with all genes 
+# load(file="C:/Users/jwaldr/OneDrive - LSUHSC/GELCC/10.3.21.upToAllDataOrganizedByGene.rda")
+# [1] "allGenesInG2CIND"           "GATKcnv"
+# [3] "overlappingCNVs"            "overlappingCNVsPostRemoved"
+# [5] "phenoFam"                   "XHMMcnv"
 
-# overlappingCNVsPostRemoved = info called per segment
-ped <- data.frame() 
+# length(G2FamiliesWithG2per$gene) # = 197
+# G2FamiliesWithG2per <- read.csv(file= "C:/Users/jwaldr/OneDrive - LSUHSC/GELCC/G2FamiliesWithG2per.10.4.21.csv")
+
+map <- read.delim(file="C:/Users/jwaldr/OneDrive - LSUHSC/GELCC/10.5.21.map")
+# nrow(map) # = 876
+# make vector for each marker and allele 
+###!!!!!!!!! This gene list is the 197 genes in > 2 families AND > 2 ind per family
     mapGeneList <- vector()
-    for(i in map$marker_name) { # i= map$marker[7]
-        mapGeneList <- append(mapGeneList, c(i, gsub("_1", "_2", i)))
+        for(i in G2FamiliesWithG2per$gene) { # i= G2FamiliesWithG2per$gene[7]
+            mapGeneList <- append(mapGeneList, c(paste(i, "_1", sep=""), paste(i, "_2", sep="")))
+            # mapGeneList <- append(mapGeneList, c(i, gsub("_1", "_2", i)))
         } # for i
-colnames(ped) <- c("pid", "fid", "mid", "sex", "aff", mapGeneList)
-for (j in 1:length(overlappingCNVsPostRemoved$sample)){    #j=1
-      loc <- vector()
-      for(i in 1:length(delCallsLCfamilies$XHMMgene)){ # i=1
-              if (genelistG2$gene[j] %in% strsplit(delCallsLCfamilies$XHMMgene, split = ", ")[[i]]){
-              loc <- c(loc, i)}
-                          
-              } # i
-      cat("working on ", as.vector(genelistG2$gene)[j], "\n")
 
-# match sample in delCallsLCfamilies (cnvs with only dels, minus married-ins) to sample in phenoFam: CID and CIND, "CF", "CM", "diagnosis.of.lung.throat.pharynx.larynx.cancer", "Age.at.Onset.1o.cancer"
-      family <- delCallsLCfamilies[loc,1:4] 
-      for(w in 1:length(family$sample)){    # w = 2
-         family[w,"CID"] <- phenoFam[which(phenoFam$submitted.sample.id == family$sample[w]), "CID"]
-         family[w,"CIND"] <- phenoFam[which(phenoFam$submitted.sample.id == family$sample[w]), "CIND"]
-         family[w,"CF"] <- phenoFam[which(phenoFam$submitted.sample.id == family$sample[w]), "CF"]
-         family[w,"CM"] <- phenoFam[which(phenoFam$submitted.sample.id == family$sample[w]), "CM"]
-         family[w, "SEX"] <- phenoFam[which(phenoFam$submitted.sample.id == family$sample[w]), "SEX"]
-         family[w,"diagnosis.of.lung.throat.pharynx.larynx.cancer"] <- phenoFam[which(phenoFam$submitted.sample.id == family$sample[w]), "diagnosis.of.lung.throat.pharynx.larynx.cancer"]
-         family[w,"Age.at.Onset.1o.cancer"] <- phenoFam[which(phenoFam$submitted.sample.id == family$sample[w]), "Age.at.Onset.1o.cancer"]
-         } # w
-   #label this information with the gene of interest
-   family$gene <- genelistG2$gene[j]
-
-allGenesInG2CIND <- rbind(allGenesInG2CIND, family)
-            } # j 
-
-#####################################################################################################################
-# make ped with one gene
-G2FamiliesWithG2per <- read.csv(file= "C:/Users/4wald/OneDrive - LSUHSC/GELCC/G2FamiliesWithG2per.10.4.21.csv")
-
-# G2FamiliesWithG2per[which(G2FamiliesWithG2per$num_affected == max(G2FamiliesWithG2per$num_affected)),]
-ped <- data.frame() 
+                            # G2FamiliesWithG2per[which(G2FamiliesWithG2per$num_affected == max(G2FamiliesWithG2per$num_affected)),] # =  "HLA-DRB5"
+ped <- data.frame(matrix(nrow = 0, ncol = 6 + length(mapGeneList)))
+colnames(ped) <- c("pid", "id", "fid", "mid", "sex", "aff", mapGeneList)
 g <- "HLA-DRB5" # g <- "GOLGA8B"
 i = 0
 for(s in unique(overlappingCNVsPostRemoved$sample)){ # s = unique(overlappingCNVsPostRemoved$sample)[1]
@@ -574,23 +554,28 @@ for(s in unique(overlappingCNVsPostRemoved$sample)){ # s = unique(overlappingCNV
     ped[i,5] <- phenoFam[which(phenoFam$submitted.sample.id == s), "SEX"]
         aff <- phenoFam[which(phenoFam$submitted.sample.id == s), "diagnosis.of.lung.throat.pharynx.larynx.cancer"]
         if(aff) ped[i,6] <- 2 else ped[i,6] <- 0 ### here i could use whether CIND is deceased for 1 if they did not have cancer
-        locate <- grepl(g, overlappingCNVsPostRemoved$XHMMgene[which(overlappingCNVsPostRemoved$sample == s)] )
-    present <- any(locate)
-    cn <- overlappingCNVsPostRemoved$GATKcall.copyNum[which(overlappingCNVsPostRemoved$sample == s)][which(locate)] 
-        if(present && cn == 0) ped[i,7] <- 2
-        if(present && cn == 1) ped[i,7] <- 1
-        # if(cn == 2) cat("something is wrong here\n")
-        if(!present) ped[i,7] <- 0
-        # now for gene_2 (the non-deletion allele)
-        if(present && cn == 0) ped[i,8] <- 0
-        if(present && cn == 1) ped[i,8] <- 1
-        if(!present) ped[i,8] <- 2
-   } # for s 
+        
+      # this is where to loop through all genes to fill in genotype information  
+      for(g in G2FamiliesWithG2per$gene){   # g =  G2FamiliesWithG2per$gene[6]
+                locate <- grepl(g, overlappingCNVsPostRemoved$XHMMgene[which(overlappingCNVsPostRemoved$sample == s)] )
+                present <- any(locate)
+                cn <- overlappingCNVsPostRemoved$GATKcall.copyNum[which(overlappingCNVsPostRemoved$sample == s)][which(locate)] 
+                  col1 <- paste(g, "_1", sep="")
+                  col2 <- paste(g, "_2", sep="")
+                  if(present && cn == 0) ped[i,col1] <- 2
+                  if(present && cn == 1) ped[i,col1] <- 1
+                   # if(cn == 2) cat("something is wrong here\n")
+                   if(!present) ped[i,col1] <- 0
+                   # now for gene_2 (the non-deletion allele)
+                   if(present && cn == 0) ped[i,col2] <- 0
+                   if(present && cn == 1) ped[i,col2] <- 1
+                   if(!present) ped[i,col2] <- 2
+                 } # for g   
+              cat("individual ", s, " is number ", i, "\n")      
+                    
+         } # for s 
     
-    
-colnames(ped) <- c("pid", "id", "fid", "mid", "sex", "aff", "HLA-DRB5_1", "HLA-DRB5_2")
-
-write.table(ped, file="C:/Users/4wald/OneDrive - LSUHSC/GELCC/10.5.21.ped", row.names=FALSE, sep="\t")
+write.table(ped, file="C:/Users/jwaldr/OneDrive - LSUHSC/GELCC/197genesG2FamG2per10.5.21.ped", row.names=FALSE, sep="\t")
 
 
 #####################################################################################################################
@@ -606,6 +591,12 @@ Remaining lines: pid id trait 1 trait 2 ...
 phe <- subset(pheno, select = colnames(pheno) %in% c("CID", "CIND", "AFF_ANY_M", "AFF_LT_M1", "AFF-L", "C1", "C2", "SMOKE", "PY", "CYPR", "CC1", "CC2", "AO1", "AO2"))
 colnames(phe) <- c("pid", "id", "anyMalignancy", "lungTracheaMalignancy", "C1", "C2", "CC1", "CC2", "ageOnset1", "ageOnset2", "packyears", "smoker")
 write.table(phe, file="C:/Users/4wald/OneDrive - LSUHSC/GELCC/10.5.21.phe", row.names=FALSE, sep="\t")
+
+#####################################################################################################################
+input for FBAT
+write.table(phe, file="C:/Users/4wald/OneDrive - LSUHSC/GELCC/10.5.21.phe", row.names=FALSE, sep="\t")
+write.table(ped, file="C:/Users/jwaldr/OneDrive - LSUHSC/GELCC/197genesG2FamG2per10.5.21.ped", row.names=FALSE, sep="\t")
+write.table(map, file="C:/Users/4wald/OneDrive - LSUHSC/GELCC/10.5.21.map", row.names=FALSE, sep="\t")
 
 #####################################################################################################################
 # question number 1 - do deletions affected a specific gene overlap? if yes, they are one allele. If no, they are different alleles
