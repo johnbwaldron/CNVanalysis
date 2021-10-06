@@ -6,6 +6,9 @@ load oneMarker197genesG2FamG2per10.6.21.map
 load oneMarkerPerTwoAlleles197genesG2FamG2per10.6.21.ped
 load ageOnsetOf200.10.6.21.phe
 
+#####################################
+# 
+
 fbat -v1
 
 # log five_pops_run
