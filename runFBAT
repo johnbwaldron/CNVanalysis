@@ -6,6 +6,10 @@ load TwoAlleles197genesG2FamG2per10.6.21.map
 load TwoAlleles197genesG2FamG2per10.6.21.ped
 load 10.6.21.phe
 
+
+load oneGene10.6.21.map
+load oneGene10.6.21.ped
+
 # or # load map 10.6.21.map
 # 6-9:30am 10/6/21 getting many errors for map file, going to try not using .map and inserting all markers into line 1 of ped file.
 
