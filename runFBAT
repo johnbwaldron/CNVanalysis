@@ -2,9 +2,17 @@
 
 #When using a map file, the map file should be read in first, before the ped file, 
 # and the ped file should not have marker names in the first line.
-load TwoAlleles197genesG2FamG2per10.6.21.map
-load TwoAlleles197genesG2FamG2per10.6.21.ped
-load 10.6.21.phe
+load oneMarker197genesG2FamG2per10.6.21.map
+load oneMarkerPerTwoAlleles197genesG2FamG2per10.6.21.ped
+load ageOnsetOf200.10.6.21.phe
+
+fbat -v1
+
+# log five_pops_run
+# setafftrait 1 0 0
+# run fbat_five_pops_commands_4-18-2017.txt
+# q
+# EOD
 
 
 load oneGene10.6.21.map
