@@ -447,7 +447,7 @@ G2FamiliesWithG2per <- rbind(G2FamiliesWithG2per, geneSummary[which(geneSummary$
 write.table(G2FamiliesWithG2per, file= "C:/Users/4wald/OneDrive - LSUHSC/GELCC/G2FamiliesWithG2per.10.4.21.csv", row.names=FALSE, sep =",")  
 #####################################################################################################################
 # create FBAT input
-# load(file="C:/Users/jwaldr/OneDrive - LSUHSC/GELCC/10.3.21.upToAllDataOrganizedByGene.rda")
+# load(file="C:/Users/4wald/OneDrive - LSUHSC/GELCC/10.3.21.upToAllDataOrganizedByGene.rda")
 
 ######### make the map file #############################################################################################################################
 # The map file uses the following format:
@@ -457,17 +457,24 @@ write.table(G2FamiliesWithG2per, file= "C:/Users/4wald/OneDrive - LSUHSC/GELCC/G
 # Sex_link = 1 if the marker is sex linked, 0 otherwise. If sex_link = 1, fbat will implement an analysis for an x-chromosome
 # marker. For autosomal markers, and for markers in the pseudoautosomal region of the x-marker, set sex-link to zero.
 
+# necessary for "between()" function
+ library(dplyr)
+
+#changing no.olaps chr# from NA to no.olaps creates an error for IRanges in loops below,
+# must remove the sample that had no XHMM and GATK overlaps from running through these loops
+overlappingCNVsPostRemoved <- overlappingCNVsPostRemoved[-grep("no.olaps", overlappingCNVsPostRemoved$chr),]
+
 # replace chr numbers with JUST numbers 23 for X, 24 for Y
     l <- strsplit(overlappingCNVsPostRemoved$chr, "chr")
     numb <- sapply(l, "[", 2)
     numb[which(numb=="X")] <- 23
     numb[which(numb=="Y")] <- 24
     overlappingCNVsPostRemoved$chr <- as.numeric(numb)
-# necessary for "between()" function
- library(dplyr)
 
-#change no.olaps chr# from NA to no.olaps
-overlappingCNVsPostRemoved <- overlappingCNVsPostRemoved[-which(is.na(overlappingCNVsPostRemoved$chr)),]
+mapGeneList <- vector()
+    for(i in map$marker_name) { # i= map$marker[7]
+        mapGeneList <- append(mapGeneList, c(i, gsub("_1", "_2", i)))
+        } # for i
 
 map <- as.data.frame(matrix(nrow=0, ncol=5))
 colnames(map) <- c("marker_name", "chr", "genetic_pos", "physical_pos", "sex_link")
@@ -494,9 +501,10 @@ for (i in unique(overlappingCNVsPostRemoved$chr)){ # i = unique(overlappingCNVsP
                          #if(!all(w)) {
                          imap <- rbind(imap, data.frame(marker_name = paste(j, p, sep="_"), 
                                        chr = i,
-                                       genetic_pos = segs$physicalPos[p], 
-                                       physical_pos = segs$physicalPos[p],
+                                       genetic_pos = round(segs$physicalPos[p]), 
+                                       physical_pos = round(segs$physicalPos[p]),
                                        sex_link = 0))
+                           # add a second row for marker_2 to be present in .map????????????
                    } # for p
             if(i == 23 | i == 24) sl = 1 else sl = 0
             imap$sex_link <- sl
@@ -505,7 +513,7 @@ for (i in unique(overlappingCNVsPostRemoved$chr)){ # i = unique(overlappingCNVsP
       
        } # for i
 
-write.table(map, file="C:/Users/4wald/OneDrive - LSUHSC/GELCC/10.5.21.map", row.names=FALSE, sep="\t")
+write.table(map, file="C:/Users/4wald/OneDrive - LSUHSC/GELCC/10.6.21.map", quote = FALSE, row.names = FALSE, sep = "\t")
 
 # l <- strsplit(map$marker_name, split="_")
 # #map[which(sapply(l,"[", 2)==2),]
