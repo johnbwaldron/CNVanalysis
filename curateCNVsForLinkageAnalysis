@@ -610,6 +610,8 @@ write.table(pedi, file="C:/Users/4wald/OneDrive - LSUHSC/GELCC/oneGene10.6.21.pe
 ped <- read.delim(file="C:/Users/4wald/OneDrive - LSUHSC/GELCC/197genesG2FamG2per10.6.21.ped")
 colnames(ped) <- c("pid", "id", "fid", "mid", "sex", "aff", map$marker_name)
 
+ped[which(ped$pid==12),c(1:6,grep("SSX1", colnames(ped)))]
+
 #####################################################################################################################
 # remake and update pheno and pedigree file
 load(file = "C:/Users/4wald/OneDrive - LSUHSC/GELCC/CNVsFrom3AlgsAndPhenoAndPhenoFam.2.19.2021.rda")
@@ -635,7 +637,7 @@ phe$lungTracheaMalignancy[grep(1, phe$lungTracheaMalignancy)] <- 0
 
 # replaceing "-" in packyears with 0
 phe$packyears[grep("-", phe$packyears)] <- 0
-phe$afeOnset1[grep("-", phe$ageOnset1)] <- 200
+phe$ageOnset1[grep("-", phe$ageOnset1)] <- 200
 
 # saving only columns with numbers as values
 phe <- phe[,c(1,2,3,4,9,11)]
