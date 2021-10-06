@@ -450,6 +450,8 @@ write.table(G2FamiliesWithG2per, file= "C:/Users/4wald/OneDrive - LSUHSC/GELCC/G
 # load(file="C:/Users/4wald/OneDrive - LSUHSC/GELCC/10.3.21.upToAllDataOrganizedByGene.rda")
 
 ######### make the map file #############################################################################################################################
+### 10/6/21 - after 7 hours of trying, FBAT ones two alleles listed, but only one marker
+
 # The map file uses the following format:
 # marker_name chr# genetic_pos physical_pos sex_link
 # The count of the markers and the order in which they are listed in the map file must be the same as in the ped file. Chr# is
@@ -500,15 +502,18 @@ for (i in unique(overlappingCNVsPostRemoved$chr)){ # i = unique(overlappingCNVsP
                 imap <- as.data.frame(matrix(nrow=0, ncol=5))
                 colnames(map) <- c("marker_name", "chr", "genetic_pos", "physical_pos", "sex_link")    
                 for (p in 1:(length(which(w))+1)){ # p = 1 ## intended to be unique non overlapping segments!!!!!!!!!!!!!!!!!
-                         #if(!all(w)) {
-                         imap <- rbind(imap, data.frame(marker_name = paste(j, c(p, p+1), sep="_"), 
-                                       chr = c(i,i),
-                                       genetic_pos = c(round(segs$physicalPos[p]), round(segs$physicalPos[p])), 
-                                       physical_pos = c(round(segs$physicalPos[p]),round(segs$physicalPos[p])),
-                                       sex_link = c(0,0)))
- ########################### previous # produces marker_1 only###############################################
-                         #imap <- rbind(imap, data.frame(marker_name = paste(j, p, sep="_"),  chr = i, genetic_pos = round(segs$physicalPos[p]), physical_pos = round(segs$physicalPos[p]), sex_link = 0))
- ############################################################################################################                          
+                         if(p > 1) n <- paste(j, p, sep="") else n <- j
+                         imap <- rbind(imap, data.frame(
+                                       marker_name = n, 
+                                       chr = i,
+                                       genetic_pos = round(segs$physicalPos[p]), 
+                                       physical_pos = round(segs$physicalPos[p]),
+                                       sex_link = 0))
+                                        ########################### previous # produces marker_1 only###############################################
+                                        #imap <- rbind(imap, data.frame(marker_name = paste(j, p, sep="_"),  chr = i, genetic_pos = round(segs$physicalPos[p]), physical_pos = round(segs$physicalPos[p]), sex_link = 0))
+                                        # previuos produces 2 markers
+                                        # imap <- rbind(imap, data.frame(marker_name = paste(j, c(p, p+1), sep="_"), chr = c(i,i), genetic_pos = c(round(segs$physicalPos[p]), round(segs$physicalPos[p])),  physical_pos = c(round(segs$physicalPos[p]),round(segs$physicalPos[p])), sex_link = c(0,0)))
+                                        ############################################################################################################                          
                    } # for p
             if(i == 23 | i == 24) sl = 1 else sl = 0
             imap$sex_link <- sl
@@ -520,14 +525,14 @@ for (i in unique(overlappingCNVsPostRemoved$chr)){ # i = unique(overlappingCNVsP
 # fbat does not want col.names, i was getting error for chr#, because it does not want col.names in input map
 colnames(map) <- c("marker_name", "chr#", "genetic_pos", "physical_pos", "sex_link")
 
-write.table(map, file="C:/Users/4wald/OneDrive - LSUHSC/GELCC/TwoAlleles197genesG2FamG2per10.6.21.map", quote = FALSE, col.names = FALSE, row.names = FALSE, sep = "\t")
+write.table(map, file="C:/Users/4wald/OneDrive - LSUHSC/GELCC/oneMarker197genesG2FamG2per10.6.21.map", quote = FALSE, col.names = FALSE, row.names = FALSE, sep = "\t")
 
-# l <- strsplit(map$marker_name, split="_")
-# #map[which(sapply(l,"[", 2)==2),]
-##
-#allGenesInG2CIND$diagnosis.of.lung.throat.pharynx.larynx.cancer[which(allGenesInG2CIND$diagnosis.of.lung.throat.pharynx.larynx.cancer)] <- 2
-#dex <- which(is_false(allGenesInG2CIND$diagnosis.of.lung.throat.pharynx.larynx.cancer))
-#allGenesInG2CIND$diagnosis.of.lung.throat.pharynx.larynx.cancer[which(allGenesInG2CIND$diagnosis.of.lung.throat.pharynx.larynx.cancer==FALSE)][1:5] <- 1
+################
+# for the sake of trying, make map and ped with just one gene "HLA-DRB5"
+# mapp <- map[grep("HLA-DRB5", map$marker_name),]
+# write.table(mapp, file="C:/Users/4wald/OneDrive - LSUHSC/GELCC/oneGene10.6.21.map", quote=FALSE, col.names =FALSE, row.names=FALSE, sep="\t")
+################
+
 
 #####################################################################################################################
 # use allGenesInG2CIND for all pedigree and affected info (10/3/21 wnt back to add sex info)
@@ -549,16 +554,16 @@ write.table(map, file="C:/Users/4wald/OneDrive - LSUHSC/GELCC/TwoAlleles197genes
 # nrow(map) # = 876
 # make vector for each marker and allele 
 ###!!!!!!!!! This gene list is the 197 genes in > 2 families AND > 2 ind per family
- #   mapGeneList <- vector()
- #       for(i in G2FamiliesWithG2per$gene) { # i= G2FamiliesWithG2per$gene[7]
- #           mapGeneList <- append(mapGeneList, c(paste(i, "_1", sep=""), paste(i, "_2", sep="")))
- #           # mapGeneList <- append(mapGeneList, c(i, gsub("_1", "_2", i)))
- #       } # for i
 
 # because .map and .ped must match in exact names and order, I am going to use the map$marker_name to create the .ped 
+# changed map to just be the marker, now making 2 allele columns for each marker in ped # this didn't work: alleles <- paste(map$marker_name, c("_1", "_2"), sep="")
+alleles <- vector()
+for(i in map$marker_name) { # i= map$marker_name[7]
+    alleles <- append(alleles, c(paste(i, "_1", sep=""), paste(i, "_2", sep="")))
+    } # for i
                             # G2FamiliesWithG2per[which(G2FamiliesWithG2per$num_affected == max(G2FamiliesWithG2per$num_affected)),] # =  "HLA-DRB5"
-ped <- data.frame(matrix(nrow = 0, ncol = 6 + length(map$marker_name)))
-colnames(ped) <- c("pid", "id", "fid", "mid", "sex", "aff", map$marker_name)
+ped <- data.frame(matrix(nrow = 0, ncol = 6 + length(alleles)))
+colnames(ped) <- c("pid", "id", "fid", "mid", "sex", "aff", alleles)
 # g <- "HLA-DRB5" # g <- "GOLGA8B"
 i = 0
 for(s in unique(overlappingCNVsPostRemoved$sample)){ # s = unique(overlappingCNVsPostRemoved$sample)[1]
@@ -594,7 +599,13 @@ for(s in unique(overlappingCNVsPostRemoved$sample)){ # s = unique(overlappingCNV
 max(as.numeric(ped$pid[-grep("New", ped$pid)])) # = 135
 ped$pid[grep("New", ped$pid)] <- 242
 
-write.table(ped, file="C:/Users/4wald/OneDrive - LSUHSC/GELCC/TwoAlleles197genesG2FamG2per10.6.21.ped", quote=FALSE, col.names =FALSE, row.names=FALSE, sep="\t")
+write.table(ped, file="C:/Users/4wald/OneDrive - LSUHSC/GELCC/oneMarkerPerTwoAlleles197genesG2FamG2per10.6.21.ped", quote=FALSE, col.names =FALSE, row.names=FALSE, sep="\t")
+
+################
+for the sake of trying, make ped with just one gene "HLA-DRB5"
+pedi <- ped[,c(1:6, grep("HLA-DRB5", colnames(ped)))]
+write.table(pedi, file="C:/Users/4wald/OneDrive - LSUHSC/GELCC/oneGene10.6.21.ped", quote=FALSE, col.names =FALSE, row.names=FALSE, sep="\t")
+################
 
 ped <- read.delim(file="C:/Users/4wald/OneDrive - LSUHSC/GELCC/197genesG2FamG2per10.6.21.ped")
 colnames(ped) <- c("pid", "id", "fid", "mid", "sex", "aff", map$marker_name)
@@ -624,6 +635,7 @@ phe$lungTracheaMalignancy[grep(1, phe$lungTracheaMalignancy)] <- 0
 
 # replaceing "-" in packyears with 0
 phe$packyears[grep("-", phe$packyears)] <- 0
+phe$afeOnset1[grep("-", phe$ageOnset1)] <- 200
 
 # saving only columns with numbers as values
 phe <- phe[,c(1,2,3,4,9,11)]
@@ -632,14 +644,11 @@ phe <- phe[,c(1,2,3,4,9,11)]
 # names prior to removing columns without number values: colnames(phe) <- c("anyMalignancy", "lungTracheaMalignancy", "C1", "C2", "CC1", "CC2", "ageOnset1", "ageOnset2", "packyears", "smoker","","")
 colnames(phe) <- c("anyMalignancy", "lungTracheaMalignancy", "ageOnset1", "packyears","","")
 
-write.table(phe, file="C:/Users/4wald/OneDrive - LSUHSC/GELCC/10.6.21.phe", quote=FALSE, row.names=FALSE, sep="\t")
+write.table(phe, file="C:/Users/4wald/OneDrive - LSUHSC/GELCC/ageOnsetOf200.10.6.21.phe", quote=FALSE, row.names=FALSE, sep="\t")
 
 
 #####################################################################################################################
 input for FBAT
-write.table(phe, file="C:/Users/4wald/OneDrive - LSUHSC/GELCC/10.6.21.phe", quote=FALSE, row.names=FALSE, sep="\t")
-write.table(ped, file="C:/Users/4wald/OneDrive - LSUHSC/GELCC/197genesG2FamG2per10.6.21.ped", quote=FALSE, col.names =FALSE, row.names=FALSE, sep="\t")
-write.table(map, file="C:/Users/4wald/OneDrive - LSUHSC/GELCC/197genesG2FamG2per10.6.21.map", quote = FALSE, col.names = FALSE, row.names = FALSE, sep = "\t")
 
 #####################################################################################################################
 # question number 1 - do deletions affected a specific gene overlap? if yes, they are one allele. If no, they are different alleles
