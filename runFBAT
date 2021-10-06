@@ -2,7 +2,10 @@
 
 #When using a map file, the map file should be read in first, before the ped file, 
 # and the ped file should not have marker names in the first line.
-load 10.5.21.map
+load 197genesG2FamG2per10.6.21.map
+load 197genesG2FamG2per10.6.21.ped
+load 10.5.21.phe
+
 # or # load map 10.6.21.map
 # 6-9:30am 10/6/21 getting many errors for map file, going to try not using .map and inserting all markers into line 1 of ped file.
 
