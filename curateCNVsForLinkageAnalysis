@@ -664,8 +664,80 @@ for (m in map$marker_name){
 
 
 #####################################################################################################################
+# use gnomAD deletions and AF to remove common
+gnomAD <- read.delim(file="C:/Users/4wald/OneDrive - LSUHSC/GELCC/hg19_gnomadSVs.txt")
+
+# limit gnomAD input to deletions
+gnomADdels <- gnomAD[grep("DEL", gnomAD$sv_type),] # ### length(grep("DEL", gnomAD$sv_type)) = 169635
+
+# load overlappingCNVs
+load(file="C:/Users/4wald/OneDrive - LSUHSC/GELCC/10.3.21.upToAllDataOrganizedByGene.rda")
+
+# this uses GATK calls that have overlap with XHMM (overlappingCNVs)
+# overlappingCNVs$GATKstart[which(is.na(as.numeric(overlappingCNVs$GATKstart)))]
+myDels <- overlappingCNVs[,c(1:4,11:16)]
+
+# need to make chr numbers only
+l <- strsplit(myDels$chr, "chr") 
+numb <- sapply(l, "[", 2)
+myDels$chr <- numb
+
+# one sample that had no overlaps between XHMM and GATK cannot be made into GRanges because of nonnumeric values. change that. myDeletions[which(!is.numeric(myDeletions$GATKstart)),] <- as.numeric(myDeletions[which(!is.numeric(myDeletions$GATKstart)),3])
+myDels[grep("no.olaps", myDels[,"GATKstart"]), c("chr","GATKstart", "GATKend")] <- 0 # myDels[4840,]
+
+A <- makeGRangesFromDataFrame(myDels, keep.extra.columns=TRUE) 
+
+# need to have seqnames for GRange object 3 GRanges does not recognize "X.chrom"
+colnames(gnomADdels)[1] <- "chr"
+
+B <- makeGRangesFromDataFrame(gnomADdels, keep.extra.columns=TRUE)
+
+    ABlaps <- findOverlaps(A, B)
+    ABsect <- pintersect(A[queryHits(ABlaps)], B[subjectHits(ABlaps)])
+  
+  !!!!!!!!!!!!!! working here to figure out how to organize myDels that overlap with deletions in gnomAD, there is a TON of overlap, esp because gnomAD has so many deletions!
+   'findOverlapPairs' 
+   'mergeByOverlaps' 
+   
+   B$allele_frequency[subjectHits(ABlaps)]
+   ##################################### SUBSET BY SAMPLE/INDIVIDUAL#####################################
+    gnomADoverlap <- data.frame(
+                sample = A$sample[queryHits(ABlaps)],
+                chr = as.data.frame(A)$seqnames[queryHits(ABlaps)],
+                GATKstart = as.data.frame(A)$start[queryHits(ABlaps)],
+                GATKend = as.data.frame(A)$end[queryHits(ABlaps)],
+                gnomADstart = as.data.frame(B)$start[subjectHits(ABlaps)],
+                gnomADend = as.data.frame(B)$end[subjectHits(ABlaps)],
+                query=queryHits(ABlaps), 
+                subject=subjectHits(ABlaps),
+                olap_width=width(ABsect), 
+                query_width=width(A)[queryHits(ABlaps)],
+                GATKcall.copyNum = as.data.frame(A)$copyNum[queryHits(ABlaps)],
+                GATKgene=A$gene[queryHits(ABlaps)],
+                XHMMgene = B$gene[subjectHits(ABlaps)],
+                GATKPhred = A$PhredMinOnePtAgrees[queryHits(ABlaps)],
+                XHMMPhred = B$PhredMinOnePtAgrees[subjectHits(ABlaps)],
+                #add PhredMinOnePtAgrees for both. add CDS or transcipt or EID? for both Algs?
+                )
+
+
+
 removedCommonVariants <- gnomADgenelistG5noOverlap[which(gnomADgenelistG5noOverlap$AF1 > 0.05),c(1,2)]
 
 gnomADgenelistG5noOverlapUncommon <- subset(genelistG5noOverlap, gnomADgenelistG5noOverlap$AF1 < 0.05)
 
 
+#####################################################################################################################
+# install.packages('kinship2')
+library(kinship2)
+
+pedigree(id, dadid, momid, sex, affected, status, relation, famid, missid)
+
+plot(x, id = x$id, status = x$status, affected =
+                 x$affected, cex = 1, col = 1, symbolsize = 1, branch =
+                 0.6, packed = TRUE, align = c(1.5,2), width = 8,
+                 density = c(-1, 35, 65, 20), mar = c(4.1, 1, 4.1, 1),
+                 angle = c(90, 65, 40, 0), keep.par = FALSE, subregion,
+                 pconnect= .5, …)
+legendPlot(x, id=x$id, affected=x$affected, affected.label=NULL,
+           col=1, col.label=NULL, symbolsize=.75, …)
