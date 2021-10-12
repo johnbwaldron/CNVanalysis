@@ -2,12 +2,26 @@
 
 #When using a map file, the map file should be read in first, before the ped file, 
 # and the ped file should not have marker names in the first line.
+log output
+
 load oneMarker197genesG2FamG2per10.6.21.map
 load oneMarkerPerTwoAlleles197genesG2FamG2per10.6.21.ped
 load ageOnsetOf200.10.6.21.phe
 
 #####################################
-# 
+
+log output876genes
+
+load oneMarker876genes10.7.21.map
+load oneMarkerPerTwoAlleles876genes10.7.21.ped
+
+#####################################
+# pedigree cleanup: 43 singleton nuclear families are removed
+# read in: 197 markers from 25 pedigrees (49 nuclear families,201 persons)
+# mendelian error: locus SSX1, pedigree 12 [29,10]
+# A total of 1 mendelian errors have been found
+# genotypes of families with mendelian error have been reset to 0
+
 
 fbat -v1
 
