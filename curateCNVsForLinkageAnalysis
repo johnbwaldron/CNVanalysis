@@ -527,6 +527,10 @@ colnames(map) <- c("marker_name", "chr#", "genetic_pos", "physical_pos", "sex_li
 
 write.table(map, file="C:/Users/4wald/OneDrive - LSUHSC/GELCC/oneMarker197genesG2FamG2per10.6.21.map", quote = FALSE, col.names = FALSE, row.names = FALSE, sep = "\t")
 
+# map <- read.delim(file="C:/Users/4wald/OneDrive - LSUHSC/GELCC/oneMarker197genesG2FamG2per10.6.21.map")
+# colnames(map) <- c("marker_name", "chr#", "genetic_pos", "physical_pos", "sex_link")
+
+
 ################
 # for the sake of trying, make map and ped with just one gene "HLA-DRB5"
 # mapp <- map[grep("HLA-DRB5", map$marker_name),]
@@ -542,13 +546,13 @@ write.table(map, file="C:/Users/4wald/OneDrive - LSUHSC/GELCC/oneMarker197genesG
 # aff --> 2 = affected, 1 = unaffected, 0 = unknown
 # Alleles are represented by positive integers. Use 0 (zero) for missing alleles: allele j of marker i (j = 1, 2;i = 1, 2, . . .)
 
-# load(file="C:/Users/jwaldr/OneDrive - LSUHSC/GELCC/10.3.21.upToAllDataOrganizedByGene.rda")
+# load(file="C:/Users/4wald/OneDrive - LSUHSC/GELCC/10.3.21.upToAllDataOrganizedByGene.rda")
 # [1] "allGenesInG2CIND"           "GATKcnv"
 # [3] "overlappingCNVs"            "overlappingCNVsPostRemoved"
 # [5] "phenoFam"                   "XHMMcnv"
 
 # length(G2FamiliesWithG2per$gene) # = 197
-# G2FamiliesWithG2per <- read.csv(file= "C:/Users/jwaldr/OneDrive - LSUHSC/GELCC/G2FamiliesWithG2per.10.4.21.csv")
+# G2FamiliesWithG2per <- read.csv(file= "C:/Users/4wald/OneDrive - LSUHSC/GELCC/G2FamiliesWithG2per.10.4.21.csv")
 
 # map <- read.delim(file="C:/Users/jwaldr/OneDrive - LSUHSC/GELCC/10.5.21.map")
 # nrow(map) # = 876
@@ -564,6 +568,10 @@ for(i in map$marker_name) { # i= map$marker_name[7]
                             # G2FamiliesWithG2per[which(G2FamiliesWithG2per$num_affected == max(G2FamiliesWithG2per$num_affected)),] # =  "HLA-DRB5"
 ped <- data.frame(matrix(nrow = 0, ncol = 6 + length(alleles)))
 colnames(ped) <- c("pid", "id", "fid", "mid", "sex", "aff", alleles)
+# find the row/CNV in family 12, CIND 38 with SSX1 deletion
+sam <- which(overlappingCNVsPostRemoved$sample == "H_NK-12GELCC38-12038")[which(which(overlappingCNVsPostRemoved$sample == "H_NK-12GELCC38-12038") %in% which( overlappingCNVsPostRemoved$XHMMgene %in% "SSX1"))]
+#change its copy number to 1 instead of 0 (2 deletions) because of medelian error/impossibility
+overlappingCNVsPostRemoved[sam, "GATKcall.copyNum"] <- 1
 # g <- "HLA-DRB5" # g <- "GOLGA8B"
 i = 0
 for(s in unique(overlappingCNVsPostRemoved$sample)){ # s = unique(overlappingCNVsPostRemoved$sample)[1]
@@ -599,18 +607,21 @@ for(s in unique(overlappingCNVsPostRemoved$sample)){ # s = unique(overlappingCNV
 max(as.numeric(ped$pid[-grep("New", ped$pid)])) # = 135
 ped$pid[grep("New", ped$pid)] <- 242
 
-write.table(ped, file="C:/Users/4wald/OneDrive - LSUHSC/GELCC/oneMarkerPerTwoAlleles197genesG2FamG2per10.6.21.ped", quote=FALSE, col.names =FALSE, row.names=FALSE, sep="\t")
+# write.table(ped, file="C:/Users/4wald/OneDrive - LSUHSC/GELCC/oneMarkerPerTwoAlleles197genesG2FamG2per10.6.21.ped", quote=FALSE, col.names =FALSE, row.names=FALSE, sep="\t")
+# write ped where SSX1 deletion in CID = 12, CIND = 38 copyNum is 1 instead of 2
+write.table(ped, file="C:/Users/4wald/OneDrive - LSUHSC/GELCC/ChangedSSX1IN12038oneMarkerPerTwoAlleles197genesG2FamG2per10.12.21.ped", quote=FALSE, col.names =FALSE, row.names=FALSE, sep="\t")
 
 ################
-for the sake of trying, make ped with just one gene "HLA-DRB5"
-pedi <- ped[,c(1:6, grep("HLA-DRB5", colnames(ped)))]
-write.table(pedi, file="C:/Users/4wald/OneDrive - LSUHSC/GELCC/oneGene10.6.21.ped", quote=FALSE, col.names =FALSE, row.names=FALSE, sep="\t")
+#for the sake of trying, make ped with just one gene "HLA-DRB5"
+#pedi <- ped[,c(1:6, grep("HLA-DRB5", colnames(ped)))]
+#write.table(pedi, file="C:/Users/4wald/OneDrive - LSUHSC/GELCC/oneGene10.6.21.ped", quote=FALSE, col.names =FALSE, row.names=FALSE, sep="\t")
 ################
 
-ped <- read.delim(file="C:/Users/4wald/OneDrive - LSUHSC/GELCC/197genesG2FamG2per10.6.21.ped")
-colnames(ped) <- c("pid", "id", "fid", "mid", "sex", "aff", map$marker_name)
+# ped <- read.delim(file="C:/Users/4wald/OneDrive - LSUHSC/GELCC/197genesG2FamG2per10.6.21.ped")
+# colnames(ped) <- c("pid", "id", "fid", "mid", "sex", "aff", alleles) # alleles made above by adding _1 & _2 to map_marker
 
 ped[which(ped$pid==12),c(1:6,grep("SSX1", colnames(ped)))]
+
 
 #####################################################################################################################
 # remake and update pheno and pedigree file
@@ -692,8 +703,16 @@ colnames(gnomADdels)[1] <- "chr"
 
 B <- makeGRangesFromDataFrame(gnomADdels, keep.extra.columns=TRUE)
 
+#### percent overlap between A and B defined by the ratio of the intersection of A and B to the union of A and B.
+
     ABlaps <- findOverlaps(A, B)
     ABsect <- pintersect(A[queryHits(ABlaps)], B[subjectHits(ABlaps)])
+    ABunion <- punion(A[queryHits(ABlaps)], B[subjectHits(ABlaps)])
+  
+    ABpairs <- findOverlapPairs(A, B)
+    pairs <- as.data.frame(ABpairs)
+    ABpairSect <- pintersect(ABpairs)
+    ABpairUnion <- punion
   
   !!!!!!!!!!!!!! working here to figure out how to organize myDels that overlap with deletions in gnomAD, there is a TON of overlap, esp because gnomAD has so many deletions!
    'findOverlapPairs' 
@@ -710,15 +729,38 @@ B <- makeGRangesFromDataFrame(gnomADdels, keep.extra.columns=TRUE)
                 gnomADend = as.data.frame(B)$end[subjectHits(ABlaps)],
                 query=queryHits(ABlaps), 
                 subject=subjectHits(ABlaps),
-                olap_width=width(ABsect), 
-                query_width=width(A)[queryHits(ABlaps)],
-                GATKcall.copyNum = as.data.frame(A)$copyNum[queryHits(ABlaps)],
-                GATKgene=A$gene[queryHits(ABlaps)],
-                XHMMgene = B$gene[subjectHits(ABlaps)],
-                GATKPhred = A$PhredMinOnePtAgrees[queryHits(ABlaps)],
-                XHMMPhred = B$PhredMinOnePtAgrees[subjectHits(ABlaps)],
-                #add PhredMinOnePtAgrees for both. add CDS or transcipt or EID? for both Algs?
-                )
+                intersection_width=width(ABsect), 
+                union_width=width(ABunion),
+                pctOverlap = round(width(ABsect)/width(ABunion), 2),
+                allele_frequency = as.data.frame(B)$allele_frequency[subjectHits(ABlaps)]
+                                )
+nrow(gnomADoverlap[which(gnomADoverlap$pctOverlap > .75),])
+
+#Add this information back to the overlappingCNVs
+    # need chr format to match between the two 
+    l <- strsplit(overlappingCNVs$chr, "chr") 
+    numb <- sapply(l, "[", 2)
+    overlappingCNVs$chr <- numb
+
+library(data.table)
+keys <- c("sample", "chr", "GATKstart", "GATKend")
+toverlappingCNVs <- data.table(overlappingCNVs, key=keys)
+tgnomADoverlap <- data.table(gnomADoverlap[,-which(colnames(gnomADoverlap) %in% c("query", "subject"))], key=keys)
+
+toverlappingCNVs <- toverlappingCNVs[tgnomADoverlap,  := 1L
+
+# overlappingCNVsWgnomAD <- merge(overlappingCNVs, gnomADoverlap[,-which(colnames(gnomADoverlap) %in% c("query", "subject"))], all.x = TRUE, no.dups = TRUE)
+# overlappingCNVsWgnomAD$pctOverlap
+
+keys <- c("Email", "Campaign")
+tData <- data.table(testData, key=keys)
+tBounce <- data.table(testBounce, key=keys)
+
+tData[tBounce, Bounced := 1L]
+
+# overlappingCNVsWgnomAD <- cbind(overlappingCNVs, data.frame(gnomADpctOverlap = NA, allele_frequency = NA))
+    for(i in unique(gnomADoverlap$sample)){ 
+        overlappingCNVsWgnomAD[overlappingCNVsWgnomAD$sample==i && 
 
 
 
