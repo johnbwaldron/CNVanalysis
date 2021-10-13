@@ -372,25 +372,148 @@ marriedInSampleName <- phenoFam[phenoFam$CID == 12 & phenoFam$CIND == 44 | pheno
 delCallsLCfamilies <- overlappingCNVsPostRemoved[-which(overlappingCNVsPostRemoved$sample %in% marriedInSampleName),]
 
 delCallsLCfamiliesgeneIDs <- unlist(strsplit(delCallsLCfamilies$XHMMgene, split = ", "))  # length(unique(delCallsLCfamiliesgeneIDs)) = now (9/30/21) 813, prior to 9/30/21 it was 566
+# save(delCallsLCfamilies, file="C:/Users/4wald/OneDrive - LSUHSC/GELCC/delCallsLCfamilies.rda")
+#####################################################################################################################
 
+# use gnomAD deletions and AF to remove common deletions
+gnomAD <- read.delim(file="C:/Users/4wald/OneDrive - LSUHSC/GELCC/hg19_gnomadSVs.txt")
+
+# limit gnomAD input to deletions
+gnomADdels <- gnomAD[grep("DEL", gnomAD$sv_type),] # ### length(grep("DEL", gnomAD$sv_type)) = 169635
+
+# could use load overlappingCNVs
+# load(file="C:/Users/4wald/OneDrive - LSUHSC/GELCC/10.3.21.upToAllDataOrganizedByGene.rda")
+
+# filter step to remove those with high AF using "delCallsLCfamilies" which excludes: 
+# married-in CINDs, multiple GATK calls for a single XHMM, calls not made by both XHMM and GATK, anything but deletions
+# load(file="C:/Users/4wald/OneDrive - LSUHSC/GELCC/delCallsLCfamilies.rda")
+
+# delCallsLCfamilies$GATKstart[which(is.na(as.numeric(delCallsLCfamilies$GATKstart)))]
+myDels <- delCallsLCfamilies
+
+# need to make chr numbers only
+l <- strsplit(myDels$chr, "chr") 
+numb <- sapply(l, "[", 2)
+myDels$chr <- numb
+
+# one sample that had no overlaps between XHMM and GATK cannot be made into GRanges because of nonnumeric values. change that. myDeletions[which(!is.numeric(myDeletions$GATKstart)),] <- as.numeric(myDeletions[which(!is.numeric(myDeletions$GATKstart)),3])
+myDels[grep("no.olaps", myDels[,"GATKstart"]), c("chr","GATKstart", "GATKend")] <- 0 # myDels[4840,]
+# change column name of XHMMstart and XHMMend to retain them, but not to pass them to GRanges as start and end values
+colnames(myDels)[5:6] <- c("XHMM.s", "XHMM.e")
+
+A <- makeGRangesFromDataFrame(myDels, keep.extra.columns=TRUE) 
+
+# need to have seqnames for GRange object 3 GRanges does not recognize "X.chrom"
+colnames(gnomADdels)[1] <- "chr"
+
+B <- makeGRangesFromDataFrame(gnomADdels, keep.extra.columns=TRUE)
+
+#### percent overlap between A and B defined by the ratio of the intersection of A and B to the union of A and B.
+
+    ABlaps <- findOverlaps(A, B)
+    ABsect <- pintersect(A[queryHits(ABlaps)], B[subjectHits(ABlaps)])
+    ABunion <- punion(A[queryHits(ABlaps)], B[subjectHits(ABlaps)])
+  
+    #ABpairs <- findOverlapPairs(A, B)
+    #pairs <- as.data.frame(ABpairs)
+    #ABpairSect <- pintersect(ABpairs)
+    #ABpairUnion <- punion
+    
+   B$allele_frequency[subjectHits(ABlaps)]
+##########################################################################
+    gnomADoverlap <- data.frame(
+                sample = A$sample[queryHits(ABlaps)],
+                chr = as.data.frame(A)$seqnames[queryHits(ABlaps)],
+                GATKstart = as.data.frame(A)$start[queryHits(ABlaps)],
+                GATKend = as.data.frame(A)$end[queryHits(ABlaps)],
+                gnomADstart = as.data.frame(B)$start[subjectHits(ABlaps)],
+                gnomADend = as.data.frame(B)$end[subjectHits(ABlaps)],
+                query=queryHits(ABlaps), 
+                subject=subjectHits(ABlaps),
+                intersection_width=width(ABsect), 
+                union_width=width(ABunion),
+                pctOverlap = round(width(ABsect)/width(ABunion), 2),
+                allele_frequency = as.data.frame(B)$allele_frequency[subjectHits(ABlaps)]
+                                )
+
+# now subset gnomADoverlap to only those with > 75% intersection/union
+G75pctGnomAD <- gnomADoverlap[which(gnomADoverlap$pctOverlap > .75),]
+
+#Add this information back to the overlappingCNVs
+    # need chr format to match between the two 
+    l <- strsplit(overlappingCNVs$chr, "chr") 
+    numb <- sapply(l, "[", 2)
+    overlappingCNVs$chr <- numb
+########################################################################## Failed effort to merge the tables ##########################################################################
+# library(data.table)
+# keys <- c("sample", "chr", "GATKstart", "GATKend")
+# toverlappingCNVs <- data.table(overlappingCNVs, key=keys)
+# tgnomADoverlap <- data.table(gnomADoverlap[,-which(colnames(G75pctGnomAD) %in% c("query", "subject"))], key=keys)
+# tgnomADoverlap$GATKstart <- as.character(tgnomADoverlap$GATKstart)
+# tgnomADoverlap$GATKend <- as.character(tgnomADoverlap$GATKend)
+# toverlappingCNVs <- toverlappingCNVs[tgnomADoverlap]
+# toverlappingCNVs[tgnomADoverlap, by=.EACHI]
+
+# overlappingCNVsWgnomAD <- merge(overlappingCNVs, gnomADoverlap[,-which(colnames(gnomADoverlap) %in% c("query", "subject"))], all.x = TRUE, no.dups = TRUE)
+# overlappingCNVsWgnomAD$pctOverlap
+####################################################################################################################################################
+
+# created new data table to fill in allele frequencies and pct overlap values for CNV/dels with at least 75% of intersection/union with gnomAD calls 
+x <- c()
+overlappingCNVsWgnomAD <- cbind(myDels, data.frame(gnomADpctOverlap = NA, allele_frequency = NA, gnomADpctOverlap2 = NA, allele_frequency2 = NA))
+    for(i in 1:nrow(overlappingCNVsWgnomAD)){ # i = 10
+        for(j in 1:nrow(G75pctGnomAD)){ # j = 4
+            if(overlappingCNVsWgnomAD$sample[i] == G75pctGnomAD$sample[j] &&
+               overlappingCNVsWgnomAD$chr[i] == G75pctGnomAD$chr[j] &&
+               overlappingCNVsWgnomAD$GATKstart[i] == G75pctGnomAD$GATKstart[j] &&
+               overlappingCNVsWgnomAD$GATKend[i] == G75pctGnomAD$GATKend[j]) {
+                    if(is.na(overlappingCNVsWgnomAD$gnomADpctOverlap[i]))overlappingCNVsWgnomAD$gnomADpctOverlap[i] <- G75pctGnomAD$pctOverlap[j] else {
+                        overlappingCNVsWgnomAD$gnomADpctOverlap2[i] <- G75pctGnomAD$pctOverlap[j]
+                        cat("found an overwrite at row", i, "\n")
+                        x <- c(x, i)
+                        } # else (not na)
+                    if(is.na(overlappingCNVsWgnomAD$allele_frequency[i])) overlappingCNVsWgnomAD$allele_frequency[i] <- G75pctGnomAD$allele_frequency[j] else overlappingCNVsWgnomAD$allele_frequency2[i] <- G75pctGnomAD$allele_frequency[j]
+                    # cat("G75pctGnomAD row #", j, "\n")
+                    } # if matches [,1:4]
+            } # for j (rows in G75pctGnomAD)
+      } # for i (rows in overlappingCNVsWgnomAD
+              
+                       
+removedCommonVariants <- overlappingCNVsWgnomAD[which(overlappingCNVsWgnomAD$AF1 > 0.05),c(1,2)]
+
+gnomADgenelistG5noOverlapUncommon <- subset(genelistG5noOverlap, gnomADgenelistG5noOverlap$AF1 < 0.05)
+
+# save (overlappingCNVsWgnomAD, file = "C:/Users/4wald/OneDrive - LSUHSC/GELCC/overlappingCNVsWgnomAD.10.13.21.rda")
+# load(file = "C:/Users/4wald/OneDrive - LSUHSC/GELCC/overlappingCNVsWgnomAD.10.13.21.rda")
+#####################################################################################################################
+
+# subset to those calls with AF < 0.05
+delBothCallsLCfamiliesUncommon <- overlappingCNVsWgnomAD[-which(overlappingCNVsWgnomAD$allele_frequency > 0.05),]
+
+################################ delBothCallsLCfamiliesUncommon  <- subset(overlappingCNVsWgnomAD, is.na(overlappingCNVsWgnomAD$allele_frequency) | overlappingCNVsWgnomAD$allele_frequency < 0.05)
+# nrow(overlappingCNVsWgnomAD) vs. nrow(delBothCallsLCfamiliesUncommon)::
+
+#####################################################################################################################
 # create table grouped by gene that includes deletions in genes that affect at least 3 individuals.
 
-freq <-table(delCallsLCfamiliesgeneIDs) # freq <-table(delCallsLCfamiliesgeneIDs[delCallsLCfamiliesgeneIDs != "NA"]) 
+delBothCallsLCfamiliesUncommonGeneIDs <- unlist(strsplit(delBothCallsLCfamiliesUncommon$XHMMgene, split = ", "))  # length(unique(delCallsLCfamiliesgeneIDs)) = now (9/30/21) 813, prior to 9/30/21 it was 566
+
+freq <-table(delBothCallsLCfamiliesUncommonGeneIDs) # freq <-table(delBothCallsLCfamiliesUncommonGeneIDs[delBothCallsLCfamiliesUncommonGeneIDs != "NA"]) 
 genelistG2 <- as.data.frame(freq)[as.data.frame(freq)[,2]>2,]
 colnames(genelistG2) <- c("gene", "Freq")
 
 allGenesInG2CIND <- data.frame() 
 for (j in 1:length(genelistG2$gene)){    #j=1
       loc <- vector()
-      for(i in 1:length(delCallsLCfamilies$XHMMgene)){ # i=1
-              if (genelistG2$gene[j] %in% strsplit(delCallsLCfamilies$XHMMgene, split = ", ")[[i]]){
+      for(i in 1:length(delBothCallsLCfamiliesUncommon$XHMMgene)){ # i=1
+              if (genelistG2$gene[j] %in% strsplit(delBothCallsLCfamiliesUncommon$XHMMgene, split = ", ")[[i]]){
               loc <- c(loc, i)}
                           
               } # i
       cat("working on ", as.vector(genelistG2$gene)[j], "\n")
 
-# match sample in delCallsLCfamilies (cnvs with only dels, minus married-ins) to sample in phenoFam: CID and CIND, "CF", "CM", "diagnosis.of.lung.throat.pharynx.larynx.cancer", "Age.at.Onset.1o.cancer"
-      family <- delCallsLCfamilies[loc,1:4] 
+# match sample in delBothCallsLCfamiliesUncommon (cnvs with only dels, minus married-ins, minus AF > 0.05) to sample in phenoFam: CID and CIND, "CF", "CM", "diagnosis.of.lung.throat.pharynx.larynx.cancer", "Age.at.Onset.1o.cancer"
+      family <- delBothCallsLCfamiliesUncommon[loc,c(1:4, 11,16:20)] 
       for(w in 1:length(family$sample)){    # w = 2
          family[w,"CID"] <- phenoFam[which(phenoFam$submitted.sample.id == family$sample[w]), "CID"]
          family[w,"CIND"] <- phenoFam[which(phenoFam$submitted.sample.id == family$sample[w]), "CIND"]
@@ -406,13 +529,23 @@ for (j in 1:length(genelistG2$gene)){    #j=1
 allGenesInG2CIND <- rbind(allGenesInG2CIND, family)
             } # j 
 
-save(allGenesInG2CIND, overlappingCNVs, overlappingCNVsPostRemoved, GATKcnv, XHMMcnv, phenoFam, file="C:/Users/4wald/OneDrive - LSUHSC/GELCC/10.3.21.upToAllDataOrganizedByGene.rda")
+
+save(allGenesInG2CIND, overlappingCNVs, genelistG2, overlappingCNVsPostRemoved, delBothCallsLCfamiliesUncommon,
+    GATKcnv, XHMMcnv, phenoFam, delBothCallsLCfamiliesUncommonGeneIDs, 
+    file="C:/Users/4wald/OneDrive - LSUHSC/GELCC/10.13.21.upToAllDataOrganizedByGeneWithGeneListsByFilterSteps.rda")
+
+### running through loops to organize by gene 10/13/21 11:00am - two hours in, still in the genes starting with the letter A.
+### closing the R gui window that had a help article sped up the process. 
+# def want to save this table to avoid running this again if possible.
+write.csv(allGenesInG2CIND, file= "C:/Users/4wald/OneDrive - LSUHSC/GELCC/10.13.21.allGenesInG2CIND.csv")
+
+# prior to first removing common (AF > 0.05) # save(allGenesInG2CIND, overlappingCNVs, overlappingCNVsPostRemoved, GATKcnv, XHMMcnv, phenoFam, file="C:/Users/4wald/OneDrive - LSUHSC/GELCC/10.3.21.upToAllDataOrganizedByGene.rda")
 # load(file="C:/Users/4wald/OneDrive - LSUHSC/GELCC/9.30.21.upToAllDataOrganizedByGene.rda")
 #### Now time for branch point - all those genes in 3 families at least 2 individuals per family and those in < 3 families but > 4(3?) individuals per family
 # frankly, that (above line) should be easy to subset
 
 ############################################################################################################################################################################
-
+delBothCallsLCfamiliesUncommon[which(delBothCallsLCfamiliesUncommon$sample=="H_NK-12GELCC37-12037"),]
 ############################################################################################################################################################################
 # organize to determine how many per family 
 geneSummary <- as.data.frame(matrix(nrow=0, ncol=8))
@@ -435,7 +568,8 @@ for(i in unique(allGenesInG2CIND$gene)){    #i = cumgFamily$gene[1]
      cat(i, " has ",  length(unique(peeps$CID)), " CIDs and ", k, " families with > 2 CINDs with this CNV\n")   
      } # i
      colnames(geneSummary) <- c("gene", "numCIDs", "numCIDs.with.>2ind", "numCINDs", "num_affected", "num_unaffected", "mean_width", "num_unique_widths")
-write.table(geneSummary, file= "C:/Users/jwaldr/OneDrive - LSUHSC/GELCC/statsByGene.10.1.21.csv", row.names=FALSE, sep =",")                                         
+
+# write.table(geneSummary, file= "C:/Users/jwaldr/OneDrive - LSUHSC/GELCC/statsByGene.10.1.21.csv", row.names=FALSE, sep =",")                                         
                                          
 # geneSummary <- read.csv(file= "C:/Users/4wald/OneDrive - LSUHSC/GELCC/statsByGene.10.1.21.csv")                                         
 
@@ -445,12 +579,15 @@ G2FamiliesWithG2per <- subset(geneSummary, geneSummary[,3] > 2)
 G2FamiliesWithG2per <- rbind(G2FamiliesWithG2per, geneSummary[which(geneSummary$gene=="SSX1"),])
 
 write.table(G2FamiliesWithG2per, file= "C:/Users/4wald/OneDrive - LSUHSC/GELCC/G2FamiliesWithG2per.10.4.21.csv", row.names=FALSE, sep =",")  
+# G2FamiliesWithG2per <- read.csv(file= "C:/Users/4wald/OneDrive - LSUHSC/GELCC/G2FamiliesWithG2per.10.4.21.csv")
+
+
 #####################################################################################################################
 # create FBAT input
 # load(file="C:/Users/4wald/OneDrive - LSUHSC/GELCC/10.3.21.upToAllDataOrganizedByGene.rda")
 
 ######### make the map file #############################################################################################################################
-### 10/6/21 - after 7 hours of trying, FBAT ones two alleles listed, but only one marker
+### 10/6/21 - after 7 hours of trying, FBAT wants two alleles listed, but only one marker
 
 # The map file uses the following format:
 # marker_name chr# genetic_pos physical_pos sex_link
@@ -674,102 +811,6 @@ for (m in map$marker_name){
 
 
 
-#####################################################################################################################
-# use gnomAD deletions and AF to remove common
-gnomAD <- read.delim(file="C:/Users/4wald/OneDrive - LSUHSC/GELCC/hg19_gnomadSVs.txt")
-
-# limit gnomAD input to deletions
-gnomADdels <- gnomAD[grep("DEL", gnomAD$sv_type),] # ### length(grep("DEL", gnomAD$sv_type)) = 169635
-
-# load overlappingCNVs
-load(file="C:/Users/4wald/OneDrive - LSUHSC/GELCC/10.3.21.upToAllDataOrganizedByGene.rda")
-
-# this uses GATK calls that have overlap with XHMM (overlappingCNVs)
-# overlappingCNVs$GATKstart[which(is.na(as.numeric(overlappingCNVs$GATKstart)))]
-myDels <- overlappingCNVs[,c(1:4,11:16)]
-
-# need to make chr numbers only
-l <- strsplit(myDels$chr, "chr") 
-numb <- sapply(l, "[", 2)
-myDels$chr <- numb
-
-# one sample that had no overlaps between XHMM and GATK cannot be made into GRanges because of nonnumeric values. change that. myDeletions[which(!is.numeric(myDeletions$GATKstart)),] <- as.numeric(myDeletions[which(!is.numeric(myDeletions$GATKstart)),3])
-myDels[grep("no.olaps", myDels[,"GATKstart"]), c("chr","GATKstart", "GATKend")] <- 0 # myDels[4840,]
-
-A <- makeGRangesFromDataFrame(myDels, keep.extra.columns=TRUE) 
-
-# need to have seqnames for GRange object 3 GRanges does not recognize "X.chrom"
-colnames(gnomADdels)[1] <- "chr"
-
-B <- makeGRangesFromDataFrame(gnomADdels, keep.extra.columns=TRUE)
-
-#### percent overlap between A and B defined by the ratio of the intersection of A and B to the union of A and B.
-
-    ABlaps <- findOverlaps(A, B)
-    ABsect <- pintersect(A[queryHits(ABlaps)], B[subjectHits(ABlaps)])
-    ABunion <- punion(A[queryHits(ABlaps)], B[subjectHits(ABlaps)])
-  
-    ABpairs <- findOverlapPairs(A, B)
-    pairs <- as.data.frame(ABpairs)
-    ABpairSect <- pintersect(ABpairs)
-    ABpairUnion <- punion
-  
-  !!!!!!!!!!!!!! working here to figure out how to organize myDels that overlap with deletions in gnomAD, there is a TON of overlap, esp because gnomAD has so many deletions!
-   'findOverlapPairs' 
-   'mergeByOverlaps' 
-   
-   B$allele_frequency[subjectHits(ABlaps)]
-   ##################################### SUBSET BY SAMPLE/INDIVIDUAL#####################################
-    gnomADoverlap <- data.frame(
-                sample = A$sample[queryHits(ABlaps)],
-                chr = as.data.frame(A)$seqnames[queryHits(ABlaps)],
-                GATKstart = as.data.frame(A)$start[queryHits(ABlaps)],
-                GATKend = as.data.frame(A)$end[queryHits(ABlaps)],
-                gnomADstart = as.data.frame(B)$start[subjectHits(ABlaps)],
-                gnomADend = as.data.frame(B)$end[subjectHits(ABlaps)],
-                query=queryHits(ABlaps), 
-                subject=subjectHits(ABlaps),
-                intersection_width=width(ABsect), 
-                union_width=width(ABunion),
-                pctOverlap = round(width(ABsect)/width(ABunion), 2),
-                allele_frequency = as.data.frame(B)$allele_frequency[subjectHits(ABlaps)]
-                                )
-nrow(gnomADoverlap[which(gnomADoverlap$pctOverlap > .75),])
-
-#Add this information back to the overlappingCNVs
-    # need chr format to match between the two 
-    l <- strsplit(overlappingCNVs$chr, "chr") 
-    numb <- sapply(l, "[", 2)
-    overlappingCNVs$chr <- numb
-
-library(data.table)
-keys <- c("sample", "chr", "GATKstart", "GATKend")
-toverlappingCNVs <- data.table(overlappingCNVs, key=keys)
-tgnomADoverlap <- data.table(gnomADoverlap[,-which(colnames(gnomADoverlap) %in% c("query", "subject"))], key=keys)
-
-toverlappingCNVs <- toverlappingCNVs[tgnomADoverlap,  := 1L
-
-# overlappingCNVsWgnomAD <- merge(overlappingCNVs, gnomADoverlap[,-which(colnames(gnomADoverlap) %in% c("query", "subject"))], all.x = TRUE, no.dups = TRUE)
-# overlappingCNVsWgnomAD$pctOverlap
-
-keys <- c("Email", "Campaign")
-tData <- data.table(testData, key=keys)
-tBounce <- data.table(testBounce, key=keys)
-
-tData[tBounce, Bounced := 1L]
-
-# overlappingCNVsWgnomAD <- cbind(overlappingCNVs, data.frame(gnomADpctOverlap = NA, allele_frequency = NA))
-    for(i in unique(gnomADoverlap$sample)){ 
-        overlappingCNVsWgnomAD[overlappingCNVsWgnomAD$sample==i && 
-
-
-
-removedCommonVariants <- gnomADgenelistG5noOverlap[which(gnomADgenelistG5noOverlap$AF1 > 0.05),c(1,2)]
-
-gnomADgenelistG5noOverlapUncommon <- subset(genelistG5noOverlap, gnomADgenelistG5noOverlap$AF1 < 0.05)
-
-
-#####################################################################################################################
 # install.packages('kinship2')
 library(kinship2)
 
