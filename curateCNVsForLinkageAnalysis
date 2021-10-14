@@ -489,7 +489,13 @@ gnomADgenelistG5noOverlapUncommon <- subset(genelistG5noOverlap, gnomADgenelistG
 
 # subset to those calls with AF < 0.05
 delBothCallsLCfamiliesUncommon <- overlappingCNVsWgnomAD[-which(overlappingCNVsWgnomAD$allele_frequency > 0.05),]
+#####################################################################################################################
+# trying out CNVannotator (https://bioinfo.uth.edu/CNVannotator/cnv_onestop.cgi)
+example: chr1:10001:87113;
+x <- paste("chr", delBothCallsLCfamiliesUncommon[1:500,2], ":", delBothCallsLCfamiliesUncommon[1:500,3], ":", delBothCallsLCfamiliesUncommon[1:500,4], ";", sep="")
+write(x, file = "C:/Users/4wald/OneDrive - LSUHSC/GELCC/1.14.21first500delBothCallsLCfamiliesUncommon.txt")#, quote=FALSE, sep="\t", row.names=FALSE)
 
+#####################################################################################################################
 ################################ delBothCallsLCfamiliesUncommon  <- subset(overlappingCNVsWgnomAD, is.na(overlappingCNVsWgnomAD$allele_frequency) | overlappingCNVsWgnomAD$allele_frequency < 0.05)
 # nrow(overlappingCNVsWgnomAD) vs. nrow(delBothCallsLCfamiliesUncommon)::
 
@@ -569,8 +575,9 @@ for(i in unique(allGenesInG2CIND$gene)){    #i = cumgFamily$gene[1]
      } # i
      colnames(geneSummary) <- c("gene", "numCIDs", "numCIDs.with.>2ind", "numCINDs", "num_affected", "num_unaffected", "mean_width", "num_unique_widths")
 
-# write.table(geneSummary, file= "C:/Users/jwaldr/OneDrive - LSUHSC/GELCC/statsByGene.10.1.21.csv", row.names=FALSE, sep =",")                                         
-                                         
+write.table(geneSummary, file= "C:/Users/4wald/OneDrive - LSUHSC/GELCC/statsByGene.10.13.21.csv", row.names=FALSE, sep =",")                                         
+
+# write.table(geneSummary, file= "C:/Users/jwaldr/OneDrive - LSUHSC/GELCC/statsByGene.10.1.21.csv", row.names=FALSE, sep =",")                                                                                  
 # geneSummary <- read.csv(file= "C:/Users/4wald/OneDrive - LSUHSC/GELCC/statsByGene.10.1.21.csv")                                         
 
 # now screen out all genes where geneSummary[,2] < 3 | geneSummary[,3] < 3
@@ -578,8 +585,9 @@ for(i in unique(allGenesInG2CIND$gene)){    #i = cumgFamily$gene[1]
 G2FamiliesWithG2per <- subset(geneSummary, geneSummary[,3] > 2)
 G2FamiliesWithG2per <- rbind(G2FamiliesWithG2per, geneSummary[which(geneSummary$gene=="SSX1"),])
 
-write.table(G2FamiliesWithG2per, file= "C:/Users/4wald/OneDrive - LSUHSC/GELCC/G2FamiliesWithG2per.10.4.21.csv", row.names=FALSE, sep =",")  
-# G2FamiliesWithG2per <- read.csv(file= "C:/Users/4wald/OneDrive - LSUHSC/GELCC/G2FamiliesWithG2per.10.4.21.csv")
+write.table(G2FamiliesWithG2per, file= "C:/Users/4wald/OneDrive - LSUHSC/GELCC/G2FamiliesWithG2per.10.13.21.csv", row.names=FALSE, sep =",") 
+# write.table(G2FamiliesWithG2per, file= "C:/Users/4wald/OneDrive - LSUHSC/GELCC/G2FamiliesWithG2per.10.4.21.csv", row.names=FALSE, sep =",")  
+# G2FamiliesWithG2per <- read.csv(file= "C:/Users/4wald/OneDrive - LSUHSC/GELCC/G2FamiliesWithG2per.10.13.21.csv")
 
 
 #####################################################################################################################
