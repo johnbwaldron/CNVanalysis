@@ -482,7 +482,6 @@ overlappingCNVsWgnomAD <- cbind(myDels, data.frame(gnomADpctOverlap = NA, allele
                        
 removedCommonVariants <- overlappingCNVsWgnomAD[which(overlappingCNVsWgnomAD$AF1 > 0.05),c(1,2)]
 
-gnomADgenelistG5noOverlapUncommon <- subset(genelistG5noOverlap, gnomADgenelistG5noOverlap$AF1 < 0.05)
 
 # save (overlappingCNVsWgnomAD, file = "C:/Users/4wald/OneDrive - LSUHSC/GELCC/overlappingCNVsWgnomAD.10.13.21.rda")
 # load(file = "C:/Users/4wald/OneDrive - LSUHSC/GELCC/overlappingCNVsWgnomAD.10.13.21.rda")
@@ -492,6 +491,14 @@ gnomADgenelistG5noOverlapUncommon <- subset(genelistG5noOverlap, gnomADgenelistG
 delBothCallsLCfamiliesUncommon <- overlappingCNVsWgnomAD[-which(overlappingCNVsWgnomAD$allele_frequency > 0.05),]
 ################################ delBothCallsLCfamiliesUncommon  <- subset(overlappingCNVsWgnomAD, is.na(overlappingCNVsWgnomAD$allele_frequency) | overlappingCNVsWgnomAD$allele_frequency < 0.05)
 # nrow(overlappingCNVsWgnomAD) vs. nrow(delBothCallsLCfamiliesUncommon)::
+
+# ID different objects at this point after filter steps
+        # overlappingCNVs # all those deletions called by both XHMM and GATK4.0 with any overlap
+        # overlappingCNVsPostRemoved # only CNVs common to both algorithms minus redundant GATK CNVs for single XHMM CNVs with lower phred score
+        # delCallsLCfamilies # overlappingCNVsPostRemoved minus married-in samples # nrow(delCallsLCfamilies) # = 3489
+        # myDels #  numeric chromosomes and removeal of no.olaps from delCallsLCfamilies
+        # overlappingCNVsWgnomAD # myDels table of individuals both calls and insertion of AF and percent overlap of calls from gnomad with greater 75% intersection/union (G75pctGnomAD)
+        # delBothCallsLCfamiliesUncommon # overlappingCNVsWgnomAD minus those with AF > 0.05 # nrow(delBothCallsLCfamiliesUncommon) #= 3211
 
 #####################################################################################################################
 # create table grouped by gene that includes deletions in genes that affect at least 3 individuals.
@@ -528,11 +535,6 @@ for (j in 1:length(genelistG2$gene)){    #j=1
 
 allGenesInG2CIND <- rbind(allGenesInG2CIND, family)
             } # j 
-
-
-save(allGenesInG2CIND, overlappingCNVs, genelistG2, overlappingCNVsPostRemoved, delBothCallsLCfamiliesUncommon,
-    GATKcnv, XHMMcnv, phenoFam, delBothCallsLCfamiliesUncommonGeneIDs, 
-    file="C:/Users/4wald/OneDrive - LSUHSC/GELCC/10.13.21.upToAllDataOrganizedByGeneWithGeneListsByFilterSteps.rda")
 
 ### running through loops to organize by gene 10/13/21 11:00am - two hours in, still in the genes starting with the letter A.
 ### closing the R gui window that had a help article sped up the process. 
@@ -592,18 +594,13 @@ write(x, file = "C:/Users/4wald/OneDrive - LSUHSC/GELCC/1.14.21first500delBothCa
 # trying CLinTAD
 # try multiple regions, single phenotype
 # HP: 0100526
-g <- grep(G5FamiliesWithG2perSSX1[15,1], delBothCallsLCfamiliesUncommon$XHMMgene)
-x <- paste(delBothCallsLCfamiliesUncommon[g,1], "\t", "Chr", delBothCallsLCfamiliesUncommon[g,2], ":",
-       delBothCallsLCfamiliesUncommon[g,3], "-", delBothCallsLCfamiliesUncommon[g,4], "\t0100526",
-       sep="")
- write(x, file = "C:/Users/4wald/OneDrive - LSUHSC/GELCC/1.14.21.SSX1.txt")#, quote=FALSE, sep="\t", row.names=FALSE)
+        g <- grep(G5FamiliesWithG2perSSX1[15,1], delBothCallsLCfamiliesUncommon$XHMMgene)
+        x <- paste(delBothCallsLCfamiliesUncommon[g,1], "\t", "Chr", delBothCallsLCfamiliesUncommon[g,2], ":",
+                delBothCallsLCfamiliesUncommon[g,3], "-", delBothCallsLCfamiliesUncommon[g,4], "\t0100526",
+                sep="")
+            write(x, file = "C:/Users/4wald/OneDrive - LSUHSC/GELCC/1.14.21.SSX1.txt")#, quote=FALSE, sep="\t", row.names=FALSE)
       
- 
- 
-
-
 # create gene list of ~100 to exam, include SSX1 
-G2FamiliesWithG2per <- subset(geneSummary, geneSummary[,3] > 2) # nrow = 176
 G3FamiliesWithG2per <- subset(geneSummary, geneSummary[,3] > 3) # nrow = 148
 G4FamiliesWithG2per <- subset(geneSummary, geneSummary[,3] > 4) # nrow = 119
 G5FamiliesWithG2per <- subset(geneSummary, geneSummary[,3] > 5) # nrow = 95
@@ -613,8 +610,24 @@ write(G5FamiliesWithG2perSSX1$gene, file = "C:/Users/4wald/OneDrive - LSUHSC/GEL
 
 
 #####################################################################################################################
-
-
+# ID different objects at this point after filter steps
+        # overlappingCNVs # all those deletions called by both XHMM and GATK4.0 with any overlap
+        # overlappingCNVsPostRemoved # only CNVs common to both algorithms minus redundant GATK CNVs for single XHMM CNVs with lower phred score
+        # delCallsLCfamilies # overlappingCNVsPostRemoved minus married-in samples # nrow(delCallsLCfamilies) # = 3489
+        # myDels #  numeric chromosomes and removeal of no.olaps from delCallsLCfamilies
+        # overlappingCNVsWgnomAD # myDels table of individuals both calls and insertion of AF and percent overlap of calls from gnomad with greater 75% intersection/union (G75pctGnomAD)
+        # delBothCallsLCfamiliesUncommon # overlappingCNVsWgnomAD minus those with AF > 0.05 # nrow(delBothCallsLCfamiliesUncommon) #= 3211
+        # allGenesInG2CIND # data frame as above but only including deletions that affect genes that are in at least 2 individuals # it has more rows because some sgements cover more than one gene and now each gene has its own row # nrow(allGenesInG2CIND) = 5976
+        # geneSummary # allGenesInG2CIND organized with one row per gene with the frequency that gene is affected in these LC families and how many families have 2 or more affected individuals
+        # 
+        # G3FamiliesWithG2per <- subset(geneSummary, geneSummary[,3] > 3) # nrow = 148
+        # G4FamiliesWithG2per <- subset(geneSummary, geneSummary[,3] > 4) # nrow = 119
+        # G5FamiliesWithG2per <- subset(geneSummary, geneSummary[,3] > 5) # nrow = 95
+        # G5FamiliesWithG2perSSX1 <- rbind(G5FamiliesWithG2per, geneSummary[which(geneSummary$gene=="SSX1"),])
+# save(allGenesInG2CIND, overlappingCNVs, genelistG2, overlappingCNVsPostRemoved, delBothCallsLCfamiliesUncommon,
+    GATKcnv, XHMMcnv, phenoFam, delBothCallsLCfamiliesUncommonGeneIDs, allGenesInG2CIND, geneSummary, G2FamiliesWithG2per,
+    file="C:/Users/4wald/OneDrive - LSUHSC/GELCC/10.15.21.upToAllDataOrganizedByGeneWithGeneListsByFilterSteps.rda")
+# load(file="C:/Users/4wald/OneDrive - LSUHSC/GELCC/10.15.21.upToAllDataOrganizedByGeneWithGeneListsByFilterSteps.rda")
 #####################################################################################################################
 # create FBAT input
 # load(file="C:/Users/4wald/OneDrive - LSUHSC/GELCC/10.3.21.upToAllDataOrganizedByGene.rda")
@@ -642,22 +655,21 @@ overlappingCNVsPostRemoved <- overlappingCNVsPostRemoved[-grep("no.olaps", overl
     numb[which(numb=="X")] <- 23
     numb[which(numb=="Y")] <- 24
     overlappingCNVsPostRemoved$chr <- as.numeric(numb)
-# did not use the mapGeneList below at this time, could use if need to use ped with marker_1 and marker_2, but going to just use marker_1 for now (10:30am on 10/6/21)
-mapGeneList <- vector()
-        for(i in G2FamiliesWithG2per$gene) { # i= G2FamiliesWithG2per$gene[7]
-            mapGeneList <- append(mapGeneList, c(paste(i, "_1", sep=""), paste(i, "_2", sep="")))
-        } # for i
 
+# use this variable to easily switch the df of segs from which the map file is created: must have segs and chr information
+    seg.df <- overlappingCNVsPostRemoved # the gene list is what really limits the map file, this is just for information like chr and coordinates corresponding the genes chosen from the list
+# use this variable to easily switch the filtered gene list to include in the map file
+    filteredGenes <- G2FamiliesWithG2per$gene
 map <- as.data.frame(matrix(nrow=0, ncol=5))
 colnames(map) <- c("marker_name", "chr", "genetic_pos", "physical_pos", "sex_link")
-for (i in unique(overlappingCNVsPostRemoved$chr)){ # i = unique(overlappingCNVsPostRemoved$chr)[10] #overlappingCNVsPostRemoved[which(is.na(overlappingCNVsPostRemoved$chr)),]
-    byChr <- subset(overlappingCNVsPostRemoved, overlappingCNVsPostRemoved$chr == i)
+for (i in unique(seg.df$chr)){ # i = unique(seg.df$chr)[10] #overlappingCNVsPostRemoved[which(is.na(overlappingCNVsPostRemoved$chr)),]
+    byChr <- subset(seg.df, seg.df$chr == i)
         # for each gene on chr i, determine how many nonoverlapping deletions have been identified. 
         # each nonoverlapping deletion will be listed as a different marker
         #clear segs
         segs <- vector()
-        # creat vector of genes in unique(unlist(strsplit(byChr$XHMMgene, ", "))) and in G2FamiliesWithG2per$gene # G2FamiliesWithG2per does not have chr info attached (future go back and add it, or now overlap with genes subset to this chr)
-        limitedGenesInThisChr <- G2FamiliesWithG2per$gene[which(G2FamiliesWithG2per$gene %in% unique(unlist(strsplit(byChr$XHMMgene, ", "))))]
+        # create vector of genes in unique(unlist(strsplit(byChr$XHMMgene, ", "))) and in G2FamiliesWithG2per$gene # G2FamiliesWithG2per does not have chr info attached (future go back and add it, or now overlap with genes subset to this chr)
+        limitedGenesInThisChr <- filteredGenes[which(filteredGenes %in% unique(unlist(strsplit(byChr$XHMMgene, ", "))))]
         for (j in limitedGenesInThisChr) { # j = limitedGenesInThisChr[5] 
                 Ustart <- byChr$GATKstart[grep(j, byChr$XHMMgene)] 
                 Uend <- byChr$GATKend[grep(j, byChr$XHMMgene)]
@@ -667,7 +679,7 @@ for (i in unique(overlappingCNVsPostRemoved$chr)){ # i = unique(overlappingCNVsP
                 A <- makeGRangesFromDataFrame(segs, keep.extra.columns=TRUE) 
                             # ABlaps <- findOverlaps(A, invert=TRUE)
                             # ABsect <- pintersect(A[queryHits(ABlaps)], B[subjectHits(ABlaps)])
-                w <- A %outside% A
+                w <- A %outside% A # %outside% is the inverse of overlapsAny() or the convenience wrapper %over% 
                 #initiate and clear imap for each j before running through k
                 imap <- as.data.frame(matrix(nrow=0, ncol=5))
                 colnames(map) <- c("marker_name", "chr", "genetic_pos", "physical_pos", "sex_link")    
@@ -695,18 +707,11 @@ for (i in unique(overlappingCNVsPostRemoved$chr)){ # i = unique(overlappingCNVsP
 # fbat does not want col.names, i was getting error for chr#, because it does not want col.names in input map
 colnames(map) <- c("marker_name", "chr#", "genetic_pos", "physical_pos", "sex_link")
 
-write.table(map, file="C:/Users/4wald/OneDrive - LSUHSC/GELCC/oneMarker197genesG2FamG2per10.6.21.map", quote = FALSE, col.names = FALSE, row.names = FALSE, sep = "\t")
+write.table(map, file="C:/Users/4wald/OneDrive - LSUHSC/GELCC/176.G2FamG2per10.15.21.map", quote = FALSE, col.names = FALSE, row.names = FALSE, sep = "\t")
+# previous interation to explain origin of file # write.table(map, file="C:/Users/4wald/OneDrive - LSUHSC/GELCC/oneMarker197genesG2FamG2per10.6.21.map", quote = FALSE, col.names = FALSE, row.names = FALSE, sep = "\t")
 
 # map <- read.delim(file="C:/Users/4wald/OneDrive - LSUHSC/GELCC/oneMarker197genesG2FamG2per10.6.21.map")
 # colnames(map) <- c("marker_name", "chr#", "genetic_pos", "physical_pos", "sex_link")
-
-
-################
-# for the sake of trying, make map and ped with just one gene "HLA-DRB5"
-# mapp <- map[grep("HLA-DRB5", map$marker_name),]
-# write.table(mapp, file="C:/Users/4wald/OneDrive - LSUHSC/GELCC/oneGene10.6.21.map", quote=FALSE, col.names =FALSE, row.names=FALSE, sep="\t")
-################
-
 
 #####################################################################################################################
 # use allGenesInG2CIND for all pedigree and affected info (10/3/21 wnt back to add sex info)
@@ -725,8 +730,6 @@ write.table(map, file="C:/Users/4wald/OneDrive - LSUHSC/GELCC/oneMarker197genesG
 # G2FamiliesWithG2per <- read.csv(file= "C:/Users/4wald/OneDrive - LSUHSC/GELCC/G2FamiliesWithG2per.10.4.21.csv")
 
                                     # map <- read.delim(file="C:/Users/jwaldr/OneDrive - LSUHSC/GELCC/10.5.21.map") # nrow(map) # = 876
-# make vector for each marker and allele 
-###!!!!!!!!! This gene list is the 197 genes in > 2 families AND > 2 ind per family
 
 # because .map and .ped must match in exact names and order, I am going to use the map$marker_name to create the .ped 
 # changed map to just be the marker, now making 2 allele columns for each marker in ped # this didn't work: alleles <- paste(map$marker_name, c("_1", "_2"), sep="")
@@ -739,7 +742,7 @@ for(i in map$marker_name) { # i= map$marker_name[7]
 ped <- data.frame(matrix(nrow = 0, ncol = 6 + length(alleles)))
 colnames(ped) <- c("pid", "id", "fid", "mid", "sex", "aff", alleles)                      
 # g <- "HLA-DRB5" # g <- "GOLGA8B"
-i = 0
+i = 0                                                           # s = "H_NK-12GELCC38-12038"
 for(s in unique(overlappingCNVsPostRemoved$sample)){ # s = overlappingCNVsPostRemoved$sample[grep(g , overlappingCNVsPostRemoved$XHMMgene)][1] # see g below
     i = i + 1
     ped[i,1] <- phenoFam[which(phenoFam$submitted.sample.id == s), "CID"]
@@ -751,7 +754,7 @@ for(s in unique(overlappingCNVsPostRemoved$sample)){ # s = overlappingCNVsPostRe
         if(aff) ped[i,6] <- 2 else ped[i,6] <- 0 ### here i could use whether CIND is deceased for 1 if they did not have cancer
         
       # this is where to loop through all genes to fill in genotype information  
-      for(g in G2FamiliesWithG2per$gene){   # g =  G2FamiliesWithG2per$gene[20]
+      for(g in G2FamiliesWithG2per$gene){   # g =  G2FamiliesWithG2per$gene[20] # i = 112 # g = "SSX1"
                 locate <- grepl(g, overlappingCNVsPostRemoved$XHMMgene[which(overlappingCNVsPostRemoved$sample == s)] )
                 present <- any(locate)
                 cn <- overlappingCNVsPostRemoved$GATKcall.copyNum[which(overlappingCNVsPostRemoved$sample == s)][which(locate)] 
@@ -760,7 +763,7 @@ for(s in unique(overlappingCNVsPostRemoved$sample)){ # s = overlappingCNVsPostRe
                   col2 <- paste(g, "_2", sep="")
                    if(present && cn == 0) ped[i,col1] <- 2
                     # for copy number = 0 in male x chr, he has just one allele
-                   if(present && cn == 0 && ped[i,5] == 1 && chr == "chrX") ped[i,col1] <- 1
+                        if(present && cn == 0 && ped[i,5] == 1 && chr == 23) ped[i,col1] <- 1
 
                    if(present && cn == 1) ped[i,col1] <- 1
                    # if(cn == 2) cat("something is wrong here\n")
@@ -770,7 +773,7 @@ for(s in unique(overlappingCNVsPostRemoved$sample)){ # s = overlappingCNVsPostRe
                    if(present && cn == 0) ped[i,col2] <- 0
                    if(present && cn == 1) ped[i,col2] <- 1
                    if(!present) ped[i,col2] <- 2                  
-                   if(!present && ped[i,5] == 1 && chr == "chrX") ped[i,col2] <- 1 
+                   if(!present && ped[i,5] == 1 && chr == 23) ped[i,col2] <- 1 
                  } # for g   
               cat("individual ", s, " is number ", i, "\n")      
                     
@@ -779,19 +782,14 @@ for(s in unique(overlappingCNVsPostRemoved$sample)){ # s = overlappingCNVsPostRe
 max(as.numeric(ped$pid[-grep("New", ped$pid)])) # = 135
 ped$pid[grep("New", ped$pid)] <- 242
 
-# write.table(ped, file="C:/Users/4wald/OneDrive - LSUHSC/GELCC/correctedXs197genesG2FamG2per10.15.21.ped", quote=FALSE, col.names =FALSE, row.names=FALSE, sep="\t")
+# write.table(ped, file="C:/Users/4wald/OneDrive - LSUHSC/GELCC/correctedX176genesG2FamG2per10.15.21.ped", quote=FALSE, col.names =FALSE, row.names=FALSE, sep="\t")
 
 # This won't work but to know where it came from: # wrote ped where SSX1 deletion in CID = 12, CIND = 38 copyNum is 1 instead of 2 # write.table(ped, file="C:/Users/4wald/OneDrive - LSUHSC/GELCC/ChangedSSX1IN12038oneMarkerPerTwoAlleles197genesG2FamG2per10.12.21.ped", quote=FALSE, col.names =FALSE, row.names=FALSE, sep="\t")
-################
-#for the sake of trying, make ped with just one gene "HLA-DRB5"
-#pedi <- ped[,c(1:6, grep("HLA-DRB5", colnames(ped)))]
-#write.table(pedi, file="C:/Users/4wald/OneDrive - LSUHSC/GELCC/oneGene10.6.21.ped", quote=FALSE, col.names =FALSE, row.names=FALSE, sep="\t")
-################
 
 # ped <- read.delim(file="C:/Users/4wald/OneDrive - LSUHSC/GELCC/197genesG2FamG2per10.6.21.ped")
 # colnames(ped) <- c("pid", "id", "fid", "mid", "sex", "aff", alleles) # alleles made above by adding _1 & _2 to map_marker
 
-ped[which(ped$pid==12),c(1:6,grep("SSX1", colnames(ped)))]
+#!!!!!!!!!!!!!!!!! ped[which(ped$pid==12),c(1:6,grep("SSX1", colnames(ped)))]
 
 
 #####################################################################################################################
