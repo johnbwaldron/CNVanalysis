@@ -710,7 +710,7 @@ write.table(map, file="C:/Users/4wald/OneDrive - LSUHSC/GELCC/oneMarker197genesG
 
 #####################################################################################################################
 # use allGenesInG2CIND for all pedigree and affected info (10/3/21 wnt back to add sex info)
-#Layout: ".ped"
+# Layout: ".ped"
 # (optional)First line: names of all markers in the sequence of the genotype data
 # Remaining lines: pid id fid mid sex aff A11 A12 A21 A22
 # aff --> 2 = affected, 1 = unaffected, 0 = unknown
@@ -724,8 +724,7 @@ write.table(map, file="C:/Users/4wald/OneDrive - LSUHSC/GELCC/oneMarker197genesG
 # length(G2FamiliesWithG2per$gene) # = 197
 # G2FamiliesWithG2per <- read.csv(file= "C:/Users/4wald/OneDrive - LSUHSC/GELCC/G2FamiliesWithG2per.10.4.21.csv")
 
-# map <- read.delim(file="C:/Users/jwaldr/OneDrive - LSUHSC/GELCC/10.5.21.map")
-# nrow(map) # = 876
+                                    # map <- read.delim(file="C:/Users/jwaldr/OneDrive - LSUHSC/GELCC/10.5.21.map") # nrow(map) # = 876
 # make vector for each marker and allele 
 ###!!!!!!!!! This gene list is the 197 genes in > 2 families AND > 2 ind per family
 
@@ -736,15 +735,12 @@ for(i in map$marker_name) { # i= map$marker_name[7]
     alleles <- append(alleles, c(paste(i, "_1", sep=""), paste(i, "_2", sep="")))
     } # for i
                             # G2FamiliesWithG2per[which(G2FamiliesWithG2per$num_affected == max(G2FamiliesWithG2per$num_affected)),] # =  "HLA-DRB5"
+
 ped <- data.frame(matrix(nrow = 0, ncol = 6 + length(alleles)))
-colnames(ped) <- c("pid", "id", "fid", "mid", "sex", "aff", alleles)
-# find the row/CNV in family 12, CIND 38 with SSX1 deletion
-sam <- which(overlappingCNVsPostRemoved$sample == "H_NK-12GELCC38-12038")[which(which(overlappingCNVsPostRemoved$sample == "H_NK-12GELCC38-12038") %in% which( overlappingCNVsPostRemoved$XHMMgene %in% "SSX1"))]
-#change its copy number to 1 instead of 0 (2 deletions) because of medelian error/impossibility
-overlappingCNVsPostRemoved[sam, "GATKcall.copyNum"] <- 1
+colnames(ped) <- c("pid", "id", "fid", "mid", "sex", "aff", alleles)                      
 # g <- "HLA-DRB5" # g <- "GOLGA8B"
 i = 0
-for(s in unique(overlappingCNVsPostRemoved$sample)){ # s = unique(overlappingCNVsPostRemoved$sample)[1]
+for(s in unique(overlappingCNVsPostRemoved$sample)){ # s = overlappingCNVsPostRemoved$sample[grep(g , overlappingCNVsPostRemoved$XHMMgene)][1] # see g below
     i = i + 1
     ped[i,1] <- phenoFam[which(phenoFam$submitted.sample.id == s), "CID"]
     ped[i,2] <- phenoFam[which(phenoFam$submitted.sample.id == s), "CIND"]
@@ -755,20 +751,26 @@ for(s in unique(overlappingCNVsPostRemoved$sample)){ # s = unique(overlappingCNV
         if(aff) ped[i,6] <- 2 else ped[i,6] <- 0 ### here i could use whether CIND is deceased for 1 if they did not have cancer
         
       # this is where to loop through all genes to fill in genotype information  
-      for(g in G2FamiliesWithG2per$gene){   # g =  G2FamiliesWithG2per$gene[6]
+      for(g in G2FamiliesWithG2per$gene){   # g =  G2FamiliesWithG2per$gene[20]
                 locate <- grepl(g, overlappingCNVsPostRemoved$XHMMgene[which(overlappingCNVsPostRemoved$sample == s)] )
                 present <- any(locate)
                 cn <- overlappingCNVsPostRemoved$GATKcall.copyNum[which(overlappingCNVsPostRemoved$sample == s)][which(locate)] 
+                chr <- overlappingCNVsPostRemoved$chr[grep(g, overlappingCNVsPostRemoved$XHMMgene)[1]]
                   col1 <- paste(g, "_1", sep="")
                   col2 <- paste(g, "_2", sep="")
-                  if(present && cn == 0) ped[i,col1] <- 2
-                  if(present && cn == 1) ped[i,col1] <- 1
+                   if(present && cn == 0) ped[i,col1] <- 2
+                    # for copy number = 0 in male x chr, he has just one allele
+                   if(present && cn == 0 && ped[i,5] == 1 && chr == "chrX") ped[i,col1] <- 1
+
+                   if(present && cn == 1) ped[i,col1] <- 1
                    # if(cn == 2) cat("something is wrong here\n")
                    if(!present) ped[i,col1] <- 0
+                   
                    # now for gene_2 (the non-deletion allele)
                    if(present && cn == 0) ped[i,col2] <- 0
                    if(present && cn == 1) ped[i,col2] <- 1
-                   if(!present) ped[i,col2] <- 2
+                   if(!present) ped[i,col2] <- 2                  
+                   if(!present && ped[i,5] == 1 && chr == "chrX") ped[i,col2] <- 1 
                  } # for g   
               cat("individual ", s, " is number ", i, "\n")      
                     
@@ -777,10 +779,9 @@ for(s in unique(overlappingCNVsPostRemoved$sample)){ # s = unique(overlappingCNV
 max(as.numeric(ped$pid[-grep("New", ped$pid)])) # = 135
 ped$pid[grep("New", ped$pid)] <- 242
 
-# write.table(ped, file="C:/Users/4wald/OneDrive - LSUHSC/GELCC/oneMarkerPerTwoAlleles197genesG2FamG2per10.6.21.ped", quote=FALSE, col.names =FALSE, row.names=FALSE, sep="\t")
-# write ped where SSX1 deletion in CID = 12, CIND = 38 copyNum is 1 instead of 2
-write.table(ped, file="C:/Users/4wald/OneDrive - LSUHSC/GELCC/ChangedSSX1IN12038oneMarkerPerTwoAlleles197genesG2FamG2per10.12.21.ped", quote=FALSE, col.names =FALSE, row.names=FALSE, sep="\t")
+# write.table(ped, file="C:/Users/4wald/OneDrive - LSUHSC/GELCC/correctedXs197genesG2FamG2per10.15.21.ped", quote=FALSE, col.names =FALSE, row.names=FALSE, sep="\t")
 
+# This won't work but to know where it came from: # wrote ped where SSX1 deletion in CID = 12, CIND = 38 copyNum is 1 instead of 2 # write.table(ped, file="C:/Users/4wald/OneDrive - LSUHSC/GELCC/ChangedSSX1IN12038oneMarkerPerTwoAlleles197genesG2FamG2per10.12.21.ped", quote=FALSE, col.names =FALSE, row.names=FALSE, sep="\t")
 ################
 #for the sake of trying, make ped with just one gene "HLA-DRB5"
 #pedi <- ped[,c(1:6, grep("HLA-DRB5", colnames(ped)))]
