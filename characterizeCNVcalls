@@ -1,0 +1,80 @@
+# Rterm.exe --vanilla
+
+library(Homo.sapiens) 
+
+load(file="C:/Users/jwaldr/OneDrive - LSUHSC/GELCC/XHMMcnvAndGATKcnvWithQAandQS.rda")
+
+GATKcnv <- GATKcnv[-which(GATKcnv$del_1.dup_2 == 0),] # nrow(GATKcnv[-which(GATKcnv$del_1.dup_2 == 0),])# = 48051 # which(GATKcnv$del_1.dup_2 == 0) = 41003
+
+# i have to separate based on del or dup otherwise overlap is called between deletion in one individual and duplication in another individual
+
+GATKcnvDel <- GATKcnv[which(GATKcnv$del_1.dup_2 == 1),] 
+
+A <- makeGRangesFromDataFrame(GATKcnvDel, keep.extra.columns=TRUE)
+
+Alaps <- findOverlaps(A, drop.self=TRUE)
+Asect <- pintersect(A[queryHits(Alaps)], A[subjectHits(Alaps)])
+Aunion <- punion(A[queryHits(Alaps)], A[subjectHits(Alaps)])
+
+m <- mergeByOverlaps(A, drop.self=TRUE)
+
+GATKcharacter <- data.frame(
+                sample = A$sample[queryHits(Alaps)],
+                chr = as.data.frame(A)$seqnames[queryHits(Alaps)],
+                queryStart = as.data.frame(A)$start[queryHits(Alaps)],
+                queryEnd = as.data.frame(A)$end[queryHits(Alaps)],
+                subjectStart = as.data.frame(A)$start[subjectHits(Alaps)],
+                subjectEnd = as.data.frame(A)$end[subjectHits(Alaps)],
+                query=queryHits(Alaps), 
+                subject=A$sample[subjectHits(Alaps)],
+                intersection_width=width(Asect), 
+                union_width=width(Aunion),
+                pctOverlap = round(width(Asect)/width(Aunion), 2),
+                query.del_1.dup_2 = as.data.frame(A)$del_1.dup_2[queryHits(Alaps)],
+                subject.del_1.dup_2 = as.data.frame(A)$del_1.dup_2[subjectHits(Alaps)],
+                queryPhredQA = as.data.frame(A)$PhredAllPtsAgree[queryHits(Alaps)],
+                subjectPhredQA = as.data.frame(A)$PhredAllPtsAgree[subjectHits(Alaps)],
+                queryPhredQS = as.data.frame(A)$PhredMinOnePtAgrees[queryHits(Alaps)],
+                subjectPhredQS = as.data.frame(A)$PhredMinOnePtAgrees[subjectHits(Alaps)] 
+                                )
+  freq <- table(GATKcharacter$pctOverlap)
+  
+  GATKcharacter[1:205,]
+  length(unique(GATKcharacter$query))
+  
+  uniqueCNV <- data.frame(matrix(nrow = 0, ncol=5))
+  colnames(uniqueCNV) = c("CNV", "del_1.dup_2", "numberOfIndividualsWithOverlappingCNVandType" 
+  for(i in 1:nrow(as.data.frame(A))) { # i = 2001
+      uniqueCNV$ <- 
+    
+ ######################################################################################################################
+ # separated based on del or dup so that overlaps called as one are not considered as the same in the other
+  
+  A <- makeGRangesFromDataFrame(GATKcnvDup, keep.extra.columns=TRUE)
+
+   Alaps <- findOverlaps(A, drop.self=TRUE)
+Asect <- pintersect(A[queryHits(Alaps)], A[subjectHits(Alaps)])
+Aunion <- punion(A[queryHits(Alaps)], A[subjectHits(Alaps)])
+
+m <- mergeByOverlaps(A, drop.self=TRUE)
+
+GATKcharacter_dup <- data.frame(
+                sample = A$sample[queryHits(Alaps)],
+                chr = as.data.frame(A)$seqnames[queryHits(Alaps)],
+                queryStart = as.data.frame(A)$start[queryHits(Alaps)],
+                queryEnd = as.data.frame(A)$end[queryHits(Alaps)],
+                subjectStart = as.data.frame(A)$start[subjectHits(Alaps)],
+                subjectEnd = as.data.frame(A)$end[subjectHits(Alaps)],
+                query=queryHits(Alaps), 
+                subject=A$sample[subjectHits(Alaps)],
+                intersection_width=width(Asect), 
+                union_width=width(Aunion),
+                pctOverlap = round(width(Asect)/width(Aunion), 2),
+                query.del_1.dup_2 = as.data.frame(A)$del_1.dup_2[queryHits(Alaps)],
+                subject.del_1.dup_2 = as.data.frame(A)$del_1.dup_2[subjectHits(Alaps)],
+                queryPhredQA = as.data.frame(A)$PhredAllPtsAgree[queryHits(Alaps)],
+                subjectPhredQA = as.data.frame(A)$PhredAllPtsAgree[subjectHits(Alaps)],
+                queryPhredQS = as.data.frame(A)$PhredMinOnePtAgrees[queryHits(Alaps)],
+                subjectPhredQS = as.data.frame(A)$PhredMinOnePtAgrees[subjectHits(Alaps)] 
+                                )
+                               
