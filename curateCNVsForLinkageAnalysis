@@ -300,7 +300,7 @@ for(i in unique(GATKcnv$sample)){                      #i = GATKcnv$sample[1]
 }
 
 write.table(overlappingCNVs, file=paste("C:/Users/4wald/OneDrive - LSUHSC/GELCC/9.30.21.compositeOfCNVsCalledByGATKandXHMM", ".csv", sep=""), row.names=FALSE, sep=",")
-# overlappingCNVs <- read.csv(file = "C:/Users/4wald/OneDrive - LSUHSC/GELCC/9.29.21.compositeOfCNVsCalledByGATKandXHMM.csv")
+# overlappingCNVs <- read.csv(file = "C:/Users/4wald/OneDrive - LSUHSC/GELCC/9.30.21.compositeOfCNVsCalledByGATKandXHMM.csv")
 
 # save(overlappingCNVs, phenoFam, XHMMcnv, GATKcnv, file = "C:/Users/4wald/OneDrive - LSUHSC/GELCC/overlappingCNVsBothAlgsPhenoFam.9.29.21.rda")  
 ####### characterize differences in GATK and XHMM calls
@@ -375,7 +375,7 @@ marriedInSampleName <- phenoFam[phenoFam$CID == 12 & phenoFam$CIND == 44 | pheno
 delCallsLCfamilies <- overlappingCNVsPostRemoved[-which(overlappingCNVsPostRemoved$sample %in% marriedInSampleName),]
 
 delCallsLCfamiliesgeneIDs <- unlist(strsplit(delCallsLCfamilies$XHMMgene, split = ", "))  # length(unique(delCallsLCfamiliesgeneIDs)) = now (9/30/21) 813, prior to 9/30/21 it was 566
-# save(delCallsLCfamilies, file="C:/Users/4wald/OneDrive - LSUHSC/GELCC/delCallsLCfamilies.rda")
+# save(delCallsLCfamilies, file="C:/Users/jwaldr/OneDrive - LSUHSC/GELCC/10.18.21.delCallsLCfamilies.rda")
 #####################################################################################################################
 
 # use gnomAD deletions and AF to remove common deletions
@@ -486,7 +486,7 @@ removedCommonVariants <- overlappingCNVsWgnomAD[which(overlappingCNVsWgnomAD$AF1
 
 
 # save (overlappingCNVsWgnomAD, file = "C:/Users/4wald/OneDrive - LSUHSC/GELCC/overlappingCNVsWgnomAD.10.13.21.rda")
-# load(file = "C:/Users/4wald/OneDrive - LSUHSC/GELCC/overlappingCNVsWgnomAD.10.13.21.rda")
+# load(file = "C:/Users/jwaldr/OneDrive - LSUHSC/GELCC/overlappingCNVsWgnomAD.10.13.21.rda")
 #####################################################################################################################
 
 # subset to those calls with AF < 0.05
@@ -850,7 +850,7 @@ library(kinship2) ## fixParents() # could be a helpful function (for all of us)
 # load phenoFam  # write.csv(phenoFam, file="C:/Users/4wald/OneDrive - LSUHSC/GELCC/phenoFam.csv", row.names=FALSE) # load(file="C:/Users/4wald/OneDrive - LSUHSC/GELCC/XHMMcnvAndGATKcnvWithQAandQS.rda")
    phenoFam <- read.csv(file="C:/Users/4wald/OneDrive - LSUHSC/GELCC/phenoFam.csv")
 # load all pedigree information
-    pheno <- read.csv(file="C:/Users/4wald/OneDrive - LSUHSC/GELCC/Pedigrees for WES for John - All Pedigrees.csv")
+    pheno <- read.csv(file="C:/Users/jwaldr/OneDrive - LSUHSC/GELCC/Pedigrees for WES for John - All Pedigrees.csv")
     
 
 # use fam variable to choose the family of interest # pheno[grep(fam, pheno$CID), 1:12] # 
@@ -888,6 +888,10 @@ library(kinship2) ## fixParents() # could be a helpful function (for all of us)
              dev.off()
 
             } # fam -loop for all families
+
+# family 12 for progeny
+pheno <- read.csv(file="C:/Users/jwaldr/OneDrive - LSUHSC/GELCC/Pedigrees for WES for John - All Pedigrees.csv")
+write.csv(pheno[which(pheno$CID==12),], file = "C:/Users/jwaldr/OneDrive - LSUHSC/GELCC/Family12PhenoFam.csv")
 
 ############################## format for pedigree ##############################
 pedigree(id, dadid, momid, sex, affected, status, relation, famid, missid)
