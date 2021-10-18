@@ -62,7 +62,7 @@ df <- rbind(freq1.1, freq2.1, freq3.1, freq4.1, freq5)
 # install.packages("car")
 library(car)
 
-pdf(file = "C:/Users/jwaldr/OneDrive - LSUHSC/GELCC/densityByFilterStep.pdf")
+png(file = "C:/Users/jwaldr/OneDrive - LSUHSC/GELCC/densityByFilterStep.png")
     plot(dens1, main = "Density of per gene calls for each filter step", col = 1,
      xlim = c(1, 60))
     lines(dens2, col = 2) 
