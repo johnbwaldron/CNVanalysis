@@ -14,6 +14,8 @@ GATKcnv <- GATKcnv[which(as.numeric(GATKcnv$PhredMinOnePtAgrees) > 20),] # nrow(
 
 GATKcnvDel <- GATKcnv[which(GATKcnv$del_1.dup_2 == 1),]  # nrow = 22745
 
+#################### 
+
 A <- makeGRangesFromDataFrame(GATKcnvDel, keep.extra.columns=TRUE)
 
 Alaps <- findOverlaps(A, drop.self=TRUE)
@@ -87,16 +89,15 @@ for(i in unique(GATKcharacter$query)) { # i = 1
                   width = GATKcharacter$queryEnd[which(GATKcharacter$query==i)][1] - GATKcharacter$queryStart[which(GATKcharacter$query==i)][1])
                   
          cat("CNV ", i, " with ", instance$numb_Overlap, "overlaps\n") 
-   # remove the queries from the data.frame that are covered as subject hits with an earlier query with at least 75% overlap
-    
-    # GATKcharacter <- GATKcharacter[-which(GATKcharacter$query %in% GATKcharacter$subject[which(GATKcharacter$query==i & GATKcharacter$pctOverlap > 0.75)]),]
+   # remove the queries from the data.frame that are covered as subject hits with an earlier query with at least 75% overlap 
+   GATKcharacter <- GATKcharacter[-which(GATKcharacter$query %in% GATKcharacter$subject[which(GATKcharacter$query==i & GATKcharacter$pctOverlap > 0.75)]),]
     
     uniqueCNV <- rbind(uniqueCNV, instance)
       } # if i in GATKcharacter$query
     } # for i
 
     
-    write.csv(uniqueCNV, file="C:/Users/jwaldr/OneDrive - LSUHSC/GELCC/GATKdeletionsSelfOverlap.csv")
+    write.csv(uniqueCNV, file="C:/Users/jwaldr/OneDrive - LSUHSC/GELCC/10.19.21.GATKdeletionsSelfOverlap.csv")
  ######################################################################################################################
  # separated based on del or dup so that overlaps called as one are not considered as the same in the other
  # GATK duplications
@@ -137,7 +138,7 @@ GATKcharacter <- data.frame(
  # set up to loop through GATKcharacter and exatract matches just one time per genomic cooridinates by eliminating queries once they are recorded as subjects
   
 uniqueCNV <- data.frame(matrix(nrow = 0, ncol=8))
-  colnames(uniqueCNV) = c("chr", "start", "end", "del_1.dup_2", "numb_G75pctOverlap", "numb_G90pctOverlap", "numb_G95pctOverlap", "width") 
+  colnames(uniqueCNV) = c("chr", "start", "end", "del_1.dup_2", "numb_Overlap", "numb_0to25pctOverlap", "numb_25to50pctOverlap","numb_50to75pctOverlap", "numb_G75pctOverlap", "numb_G90pctOverlap", "numb_G95pctOverlap", "width") 
   
   for(i in unique(GATKcharacter$query)) { # i = 1
       if(i %in% GATKcharacter$query){
@@ -147,26 +148,129 @@ uniqueCNV <- data.frame(matrix(nrow = 0, ncol=8))
                   del_1.dup_2 = GATKcharacter$query.del_1.dup_2[which(GATKcharacter$query==i)][1], 
                   # add 1 to number of overlaps to identify the number of segments with those coordinates including self
                   numb_Overlap = length(which(GATKcharacter$query==i))+1,
-                  numb_G0pctOverlap = length(which(GATKcharacter$pctOverlap[which(GATKcharacter$query==i)] <= 0.25)),
-                  numb_G25pctOverlap = length(which(GATKcharacter$pctOverlap[which(GATKcharacter$query==i)] > 0.25 & GATKcharacter$pctOverlap[which(GATKcharacter$query==i)] <= 0.50)),
-                  numb_G50pctOverlap = length(which(GATKcharacter$pctOverlap[which(GATKcharacter$query==i)] > 0.50 & GATKcharacter$pctOverlap[which(GATKcharacter$query==i)] <= 0.75)),
-                  numb_G75pctOverlap = length(which(GATKcharacter$pctOverlap[which(GATKcharacter$query==i)] > 0.75 & GATKcharacter$pctOverlap[which(GATKcharacter$query==i)] <= 0.90)),
-                  numb_G90pctOverlap = length(which(GATKcharacter$pctOverlap[which(GATKcharacter$query==i)]>0.90 && GATKcharacter$pctOverlap[which(GATKcharacter$query==i)] <= 0.95)),
+                  numb_0to25pctOverlap = length(which(GATKcharacter$pctOverlap[which(GATKcharacter$query==i)] <= 0.25)),
+                  numb_25to50pctOverlap = length(which(GATKcharacter$pctOverlap[which(GATKcharacter$query==i)] > 0.25 & GATKcharacter$pctOverlap[which(GATKcharacter$query==i)] <= 0.50)),
+                  numb_50to75pctOverlap = length(which(GATKcharacter$pctOverlap[which(GATKcharacter$query==i)] > 0.50 & GATKcharacter$pctOverlap[which(GATKcharacter$query==i)] <= 0.75)),
+                  numb_G75pctOverlap = length(which(GATKcharacter$pctOverlap[which(GATKcharacter$query==i)] > 0.75 )),
+                  numb_G90pctOverlap = length(which(GATKcharacter$pctOverlap[which(GATKcharacter$query==i)]>0.90 )),
                   numb_G95pctOverlap = length(which(GATKcharacter$pctOverlap[which(GATKcharacter$query==i)]>0.95))+1,
                   width = GATKcharacter$queryEnd[which(GATKcharacter$query==i)][1] - GATKcharacter$queryStart[which(GATKcharacter$query==i)][1])
                   
          cat("CNV ", i, " with ", instance$numb_Overlap, "overlaps\n") 
    # remove the queries from the data.frame that are covered as subject hits with an earlier query with at least 75% overlap
+   GATKcharacter <- GATKcharacter[-which(GATKcharacter$query %in% GATKcharacter$subject[which(GATKcharacter$query==i & GATKcharacter$pctOverlap > 0.75)]),]
     
-    # GATKcharacter <- GATKcharacter[-which(GATKcharacter$query %in% GATKcharacter$subject[which(GATKcharacter$query==i & GATKcharacter$pctOverlap > 0.75)]),]
-    
+    # GATKcharacter[which(GATKcharacter$query==i),]
     uniqueCNV <- rbind(uniqueCNV, instance)
       } # if i in GATKcharacter$query
     } # for i
     
-    write.csv(uniqueCNV, file="C:/Users/jwaldr/OneDrive - LSUHSC/GELCC/GATKDuplicationsSelfOverlap.csv")
+    write.csv(uniqueCNV, file="C:/Users/jwaldr/OneDrive - LSUHSC/GELCC/10.19.21.GATKDuplicationsSelfOverlap.csv")
 
 # now findOverlaps with original file to identify all of those singleton calls?
 
 ######################################################################################################################
 ###### XHMM characterization
+
+
+
+
+
+
+
+
+
+
+
+##########################################################################################################################
+#########characterizing the XHMM and GATK overlap
+# find overlaps between XHMM and GATK, BUT first subset to only deletions to avoid a CNV called as deletion in one is classed as duplication in the other.
+# subset for deletions only: 
+GATKcnv <- subset(GATKcnv, GATKcnv$del_1.dup_2 == 1) # nrow(GATKcnv) = 89054 --> 29206
+XHMMcnv <- subset(XHMMcnv, XHMMcnv$del_1.dup_2 ==1) # nrow(XHMMcnv) = 11550 --> 5673
+
+
+for(i in unique(GATKcnv$sample)){                      #i = GATKcnv$sample[1]
+A <- FALSE
+B <- FALSE
+
+A <- makeGRangesFromDataFrame(subset(GATKcnv, GATKcnv$sample == i), keep.extra.columns=TRUE) 
+if(any(XHMMcnv$sample == i)){
+B <- makeGRangesFromDataFrame(subset(XHMMcnv, XHMMcnv$sample == i), keep.extra.columns=TRUE)
+
+    ABlaps <- findOverlaps(A, B)
+    ABsect <- pintersect(A[queryHits(ABlaps)], B[subjectHits(ABlaps)])
+    ABunion <- punion(A[queryHits(ABlaps)], B[subjectHits(ABlaps)])
+
+   ##################################### GATK vs. XHMM CALLS TO SUBSET BY SAMPLE/INDIVIDUAL#####################################
+    GATKandXHMM <- data.frame(
+                sample = A$sample[queryHits(ABlaps)],
+                chr = as.data.frame(A)$seqnames[queryHits(ABlaps)],
+                GATKstart = as.data.frame(A)$start[queryHits(ABlaps)],
+                GATKend = as.data.frame(A)$end[queryHits(ABlaps)],
+                XHMMstart = as.data.frame(B)$start[subjectHits(ABlaps)],
+                XHMMend = as.data.frame(B)$end[subjectHits(ABlaps)],
+                query = queryHits(ABlaps), 
+                subject = subjectHits(ABlaps),
+                intersection_width = width(ABsect), 
+                union_width = width(ABunion),
+                pctOverlap = round(width(ABsect)/width(ABunion), 2),
+                GATKcall.copyNum = as.data.frame(A)$copyNum[queryHits(ABlaps)],
+                GATKPhred = A$PhredMinOnePtAgrees[queryHits(ABlaps)],
+                XHMMPhred = B$PhredMinOnePtAgrees[subjectHits(ABlaps)])
+                
+    write.table(GATKandXHMM, file=paste("C:/Users/jwaldr/OneDrive - LSUHSC/GELCC/callsInCommonGATKandXHMMpluScopyNum/10.19.21.GATKandXHMM.", i, ".csv", sep=""), row.names=FALSE, sep=",") #quote=c(1:3)???
+    } else {
+        cat("no.olaps in ", i)
+        GATKandXHMM <- data.frame(
+                sample ="no.olaps",
+                chr = "no.olaps",
+                GATKstart = "no.olaps",
+                GATKend = "no.olaps",
+                XHMMstart = "no.olaps",
+                XHMMend = "no.olaps",
+                query = "no.olaps",
+                subject = "no.olaps",
+                intersection_width = "no.olaps",
+                union_width = "no.olaps",
+                pctOverlap = "no.olaps",
+                GATKcall.copyNum = "no.olaps",
+                GATKPhred = "no.olaps",
+                XHMMPhred = "no.olaps")
+            write.table(GATKandXHMM, file=paste("C:/Users/jwaldr/OneDrive - LSUHSC/GELCC/callsInCommonGATKandXHMMpluScopyNum/10.19.21.GATKandXHMM.", i, ".csv", sep=""), row.names=FALSE, sep=",")           
+            } # else
+
+} # end of loop
+
+##create new data.frame with overlapping cnvs + copyNum
+
+overlappingCNVs <- matrix(nrow=0, ncol=17)
+overlappingCNVs <- as.data.frame(overlappingCNVs)
+colnames(overlappingCNVs) <- c("sample", "chr", "GATKstart", "GATKend", "XHMMstart", "XHMMend", 
+                                "query", "subject", "intersection_width", "union_width", "pctOverlap",
+                                "GATKcall.copyNum", "GATKPhred", "XHMMPhred")
+i=0
+for(i in unique(GATKcnv$sample)){                      #i = GATKcnv$sample[1]
+  
+  GATKandXHMM <- read.csv(file = paste("C:/Users/jwaldr/OneDrive - LSUHSC/GELCC/callsInCommonGATKandXHMMpluScopyNum/10.19.21.GATKandXHMM.", i, ".csv", sep=""))
+  cat(GATKandXHMM[1,1], "\n")
+  overlappingCNVs <- rbind(overlappingCNVs, GATKandXHMM)
+}
+
+write.table(overlappingCNVs, file=paste("C:/Users/jwaldr/OneDrive - LSUHSC/GELCC/10.19.21.compositeOfCNVsCalledByGATKandXHMM", ".csv", sep=""), row.names=FALSE, sep=",")
+overlappingCNVs <- read.csv(file = "C:/Users/4wald/OneDrive - LSUHSC/GELCC/10.19.21.compositeOfCNVsCalledByGATKandXHMM.csv")
+
+overlappingCNVs
+
+hist(as.numeric(overlappingCNVs$pctOverlap), main= "Percent Overlap between deletion calls in XHMM and GATK4 by sample", 
+      xlab = "percent overlap", ylab = "frequency",
+      col = 5, border = 1, breaks = 4)
+
+
+
+
+
+
+
+
+
