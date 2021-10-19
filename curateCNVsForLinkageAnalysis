@@ -542,6 +542,7 @@ allGenesInG2CIND <- rbind(allGenesInG2CIND, family)
 ### closing the R gui window that had a help article sped up the process. 
 # def want to save this table to avoid running this again if possible.
 write.csv(allGenesInG2CIND, file= "C:/Users/4wald/OneDrive - LSUHSC/GELCC/10.13.21.allGenesInG2CIND.csv")
+# allGenesInG2CIND <- read.csv(file= "C:/Users/jwaldr/OneDrive - LSUHSC/GELCC/10.13.21.allGenesInG2CIND.csv")
 
 # prior to first removing common (AF > 0.05) # save(allGenesInG2CIND, overlappingCNVs, overlappingCNVsPostRemoved, GATKcnv, XHMMcnv, phenoFam, file="C:/Users/4wald/OneDrive - LSUHSC/GELCC/10.3.21.upToAllDataOrganizedByGene.rda")
 # load(file="C:/Users/4wald/OneDrive - LSUHSC/GELCC/9.30.21.upToAllDataOrganizedByGene.rda")
@@ -609,6 +610,101 @@ G5FamiliesWithG2per <- subset(geneSummary, geneSummary[,3] > 5) # nrow = 95
 G5FamiliesWithG2perSSX1 <- rbind(G5FamiliesWithG2per, geneSummary[which(geneSummary$gene=="SSX1"),])
 
 write(G5FamiliesWithG2perSSX1$gene, file = "C:/Users/4wald/OneDrive - LSUHSC/GELCC/1.14.21.delBothCallsLCfamiliesUncommonG5FamiliesWithG2perSSX1.txt")#, quote=FALSE, sep="\t", row.names=FALSE)
+####################################################################################################################
+
+# compare with DGV # form download at http://dgv.tcag.ca/dgv/app/downloads?ref= link to hg19/GRCh37 curated 2020-02-25
+DGV <- read.delim(file="C:/Users/jwaldr/OneDrive - LSUHSC/GELCC/DGV_GRCh37_hg19_variants_2020-02-25.txt")
+
+# CNVs appear to be primarily classified as "gain" or "loss" despite the following options: 
+# unique(DGV$varianttype) returns [1] "CNV"   "OTHER"
+
+# unique(DGV$variantsubtype)
+# [1] "loss"                     "duplication"
+# [3] "gain+loss"                "complex"
+# [5] "deletion"                 "gain"
+# [7] "insertion"                "alu insertion"
+# [9] "sequence alteration"      "mobile element insertion"
+# [11] "line1 deletion"           "novel sequence insertion"
+# [13] "sva insertion"            "tandem duplication"
+# [15] "alu deletion"             "line1 insertion"
+# [17] "inversion"                "mobile element deletion"
+# [19] "sva deletion"             "herv deletion"
+# [21] "herv insertion"
+
+# limit input to deletions # nrow(DGV) = 826661; nrow(DGVloss) = 130930
+DGVloss <- DGV[grep("loss", DGV$variantsubtype),] # ### length(grep("DEL", gnomAD$sv_type)) = 169635
+
+
+#  step to ID those segments in allGenesInG2CIND which excludes: 
+# married-in CINDs, multiple GATK calls for a single XHMM, calls not made by both XHMM and GATK, anything but deletions, 
+# gnomAD AF > 0.05, and present in less than 2 individuals
+allGenesInG2CIND <- read.csv(file= "C:/Users/jwaldr/OneDrive - LSUHSC/GELCC/10.13.21.allGenesInG2CIND.csv")
+
+A <- makeGRangesFromDataFrame(allGenesInG2CIND, keep.extra.columns=TRUE) 
+B <- makeGRangesFromDataFrame(DGVloss, keep.extra.columns=TRUE)
+
+#### percent overlap between A and B defined by the ratio of the intersection of A and B to the union of A and B.
+
+    ABlaps <- findOverlaps(A, B)
+    ABsect <- pintersect(A[queryHits(ABlaps)], B[subjectHits(ABlaps)])
+    ABunion <- punion(A[queryHits(ABlaps)], B[subjectHits(ABlaps)])
+      
+###########################
+    DGVoverlap <- data.frame(
+                sample = A$sample[queryHits(ABlaps)],
+                chr = as.data.frame(A)$seqnames[queryHits(ABlaps)],
+                GATKstart = as.data.frame(A)$start[queryHits(ABlaps)],
+                GATKend = as.data.frame(A)$end[queryHits(ABlaps)],
+                DGVstart = as.data.frame(B)$start[subjectHits(ABlaps)],
+                DGVend = as.data.frame(B)$end[subjectHits(ABlaps)],
+                query=queryHits(ABlaps), 
+                subject=subjectHits(ABlaps),
+                intersection_width=width(ABsect), 
+                union_width=width(ABunion),
+                pctOverlap = round(width(ABsect)/width(ABunion), 2),
+                GELCC_genes = as.data.frame(A)$gene[queryHits(ABlaps)],
+                DGV_genes = as.data.frame(B)$genes[subjectHits(ABlaps)],
+                DGV_variantaccession = as.data.frame(B)$variantaccession[subjectHits(ABlaps)],
+                allele_frequency = as.data.frame(B)$frequency[subjectHits(ABlaps)])
+
+
+# now subset DGVoverlap to only those with > 75% intersection/union
+pctDGVoverlap <- DGVoverlap[which(DGVoverlap$pctOverlap > .25),] # nrow(G75pctDGVoverlap) = 5458
+
+# order by percent overlap
+pctDGVoverlap <- pctDGVoverlap[order(-pctDGVoverlap$pctOverlap), ]
+
+# created new data table to fill in allele frequencies and pct overlap values for CNV/dels with at least 75% of intersection/union with DGV calls 
+x <- c()
+overlappingCNVsWithDGV <- cbind(allGenesInG2CIND, data.frame(DGVoverlap = NA, DGV_variantaccession = NA, DGVoverlap2 = NA, DGV_variantaccession2 = NA, DGVoverlap3 = NA, DGV_variantaccession3 = NA, DGVoverlap4 = NA, DGV_variantaccession4 = NA))
+    for(i in 1:nrow(overlappingCNVsWithDGV)){ # i = 10
+        for(j in 1:nrow(pctDGVoverlap)){ # j = 4
+            if(overlappingCNVsWithDGV$sample[i] == pctDGVoverlap$sample[j] &&
+               overlappingCNVsWithDGV$chr[i] == pctDGVoverlap$chr[j] &&
+               overlappingCNVsWithDGV$GATKstart[i] == pctDGVoverlap$GATKstart[j] &&
+               overlappingCNVsWithDGV$GATKend[i] == pctDGVoverlap$GATKend[j]) {
+                    if(is.na(overlappingCNVsWithDGV$DGVoverlap[i])) { 
+                                overlappingCNVsWithDGV$DGVoverlap[i] <- pctDGVoverlap$pctOverlap[j]
+                                overlappingCNVsWithDGV$DGV_variantaccession[i] <- pctDGVoverlap$DGV_variantaccession[j]
+                                } else if(is.na(overlappingCNVsWithDGV$DGVoverlap2[i])) {
+                                overlappingCNVsWithDGV$DGVoverlap2[i] <- pctDGVoverlap$pctOverlap[j]
+                                overlappingCNVsWithDGV$DGV_variantaccession2[i] <- pctDGVoverlap$DGV_variantaccession[j]
+                                } else if(is.na(overlappingCNVsWithDGV$DGVoverlap3[i])) {
+                                overlappingCNVsWithDGV$DGVoverlap3[i] <- pctDGVoverlap$pctOverlap[j]
+                                overlappingCNVsWithDGV$DGV_variantaccession3[i] <- pctDGVoverlap$DGV_variantaccession[j]
+                                } else {
+                                overlappingCNVsWithDGV$DGVoverlap4[i] <- pctDGVoverlap$pctOverlap[j]
+                                overlappingCNVsWithDGV$DGV_variantaccession4[i] <- pctDGVoverlap$DGV_variantaccession[j]
+                                cat("found an overwrite at row", i, "\n")
+                                x <- c(x, i) # tracking which rows get to 4th overlap
+                                } # else (not na @ 1-3 )
+                    
+                    } # if matches [,1:4]
+            } # for j (rows in pctDGVoverlap)
+      } # for i (rows in overlappingCNVsWithDGV
+              
+      
+write.csv(overlappingCNVsWithDGV, file ="C:/Users/jwaldr/OneDrive - LSUHSC/GELCC/10.19.21.overlappingCNVsWithDGV.csv")
 
 
 #####################################################################################################################
