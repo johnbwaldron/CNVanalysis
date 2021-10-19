@@ -5,10 +5,14 @@ library(Homo.sapiens)
 load(file="C:/Users/jwaldr/OneDrive - LSUHSC/GELCC/XHMMcnvAndGATKcnvWithQAandQS.rda")
 
 GATKcnv <- GATKcnv[-which(GATKcnv$del_1.dup_2 == 0),] # nrow(GATKcnv[-which(GATKcnv$del_1.dup_2 == 0),])# = 48051 # which(GATKcnv$del_1.dup_2 == 0) = 41003
+# remove segment with QS Phred < 20
+
+GATKcnv <- GATKcnv[which(as.numeric(GATKcnv$PhredMinOnePtAgrees) > 20),] # nrow(GATKcnv[-which(GATKcnv$del_1.dup_2 == 0),])# = 48051 # length(which(GATKcnv$PhredMinOnePtAgrees > 20)) = 34259
+# nrow(GATKcnv) after above steps = 28191
 
 # i have to separate based on del or dup otherwise overlap is called between deletion in one individual and duplication in another individual
 
-GATKcnvDel <- GATKcnv[which(GATKcnv$del_1.dup_2 == 1),] 
+GATKcnvDel <- GATKcnv[which(GATKcnv$del_1.dup_2 == 1),]  # nrow = 22745
 
 A <- makeGRangesFromDataFrame(GATKcnvDel, keep.extra.columns=TRUE)
 
@@ -16,7 +20,7 @@ Alaps <- findOverlaps(A, drop.self=TRUE)
 Asect <- pintersect(A[queryHits(Alaps)], A[subjectHits(Alaps)])
 Aunion <- punion(A[queryHits(Alaps)], A[subjectHits(Alaps)])
 
-m <- mergeByOverlaps(A, drop.self=TRUE)
+# mergeByOverlaps may be a function worth trying... mergeByOverlaps(A)
 
 GATKcharacter <- data.frame(
                 sample = A$sample[queryHits(Alaps)],
@@ -26,7 +30,8 @@ GATKcharacter <- data.frame(
                 subjectStart = as.data.frame(A)$start[subjectHits(Alaps)],
                 subjectEnd = as.data.frame(A)$end[subjectHits(Alaps)],
                 query=queryHits(Alaps), 
-                subject=A$sample[subjectHits(Alaps)],
+                subject= subjectHits(Alaps),
+                subjectSample = A$sample[subjectHits(Alaps)],
                 intersection_width=width(Asect), 
                 union_width=width(Aunion),
                 pctOverlap = round(width(Asect)/width(Aunion), 2),
@@ -35,30 +40,78 @@ GATKcharacter <- data.frame(
                 queryPhredQA = as.data.frame(A)$PhredAllPtsAgree[queryHits(Alaps)],
                 subjectPhredQA = as.data.frame(A)$PhredAllPtsAgree[subjectHits(Alaps)],
                 queryPhredQS = as.data.frame(A)$PhredMinOnePtAgrees[queryHits(Alaps)],
-                subjectPhredQS = as.data.frame(A)$PhredMinOnePtAgrees[subjectHits(Alaps)] 
-                                )
-  freq <- table(GATKcharacter$pctOverlap)
+                subjectPhredQS = as.data.frame(A)$PhredMinOnePtAgrees[subjectHits(Alaps)])
   
-  GATKcharacter[1:205,]
-  length(unique(GATKcharacter$query))
+  # freq <- table(GATKcharacter$pctOverlap)
+  # dens5 <- density(freq5$Freq,  kernel = c("gaussian", "epanechnikov", "rectangular", "triangular", "biweight", "cosine", "optcosine")[1])
+  # df <- rbind(freq1.1, freq2.1, freq3.1, freq4.1, freq5)
+
+# install.packages("car")
+library(car)
+png(file = "C:/Users/jwaldr/OneDrive - LSUHSC/GELCC/densityByFilterStep.png")
+  plot(freq, main = "Density of per gene calls for each filter step", col = 1)
+    lines(dens2, col = 2) 
+    legend("topright", legend = c("Deletions from Both Callers", 
+                                 "Exluding Married-Ins",
+                                 "gnomAD AF < 0.05",
+                                 "Greater than 2 Indidivuduals",
+                                 "Greater than 2 Families with 2 per Family"),
+                                  lty = 1, col = 1:5)
+                                  
+  # just looking at the data.frame
+  # GATKcharacter[1:205,]
+  # length(unique(GATKcharacter$query))
+  # Alapsframe <- as.data.frame(Alaps)
+ 
+ # change GATKcharacter to gchar so I can easily refresh it after the loop screws it up
+ gchar <- GATKcharacter
+ # GATKcharacter <- gchar
+ # set up to loop through GATKcharacter and exatract matches just one time per genomic cooridinates by eliminating queries once they are recorded as subjects
   
-  uniqueCNV <- data.frame(matrix(nrow = 0, ncol=5))
-  colnames(uniqueCNV) = c("CNV", "del_1.dup_2", "numberOfIndividualsWithOverlappingCNVandType" 
-  for(i in 1:nrow(as.data.frame(A))) { # i = 2001
-      uniqueCNV$ <- 
+  uniqueCNV <- data.frame(matrix(nrow = 0, ncol=8))
+  colnames(uniqueCNV) = c("chr", "start", "end", "del_1.dup_2", "numb_G75pctOverlap", "numb_G90pctOverlap", "numb_G95pctOverlap", "width") 
+for(i in unique(GATKcharacter$query)) { # i = 1
+      if(i %in% GATKcharacter$query){
+      instance <- data.frame(chr = GATKcharacter$chr[which(GATKcharacter$query==i)][1],  #as.data.frame(A)
+                  start = GATKcharacter$queryStart[which(GATKcharacter$query==i)][1],
+                  end = GATKcharacter$queryEnd[which(GATKcharacter$query==i)][1],
+                  del_1.dup_2 = GATKcharacter$query.del_1.dup_2[which(GATKcharacter$query==i)][1], 
+                  # add 1 to number of overlaps to identify the number of segments with those coordinates including self
+                  numb_Overlap = length(which(GATKcharacter$query==i))+1,
+                  numb_G0pctOverlap = length(which(GATKcharacter$pctOverlap[which(GATKcharacter$query==i)] <= 0.25)),
+                  numb_G25pctOverlap = length(which(GATKcharacter$pctOverlap[which(GATKcharacter$query==i)] > 0.25 & GATKcharacter$pctOverlap[which(GATKcharacter$query==i)] <= 0.50)),
+                  numb_G50pctOverlap = length(which(GATKcharacter$pctOverlap[which(GATKcharacter$query==i)] > 0.50 & GATKcharacter$pctOverlap[which(GATKcharacter$query==i)] <= 0.75)),
+                  numb_G75pctOverlap = length(which(GATKcharacter$pctOverlap[which(GATKcharacter$query==i)] > 0.75 & GATKcharacter$pctOverlap[which(GATKcharacter$query==i)] <= 0.90)),
+                  numb_G90pctOverlap = length(which(GATKcharacter$pctOverlap[which(GATKcharacter$query==i)]>0.90 && GATKcharacter$pctOverlap[which(GATKcharacter$query==i)] <= 0.95)),
+                  numb_G95pctOverlap = length(which(GATKcharacter$pctOverlap[which(GATKcharacter$query==i)]>0.95))+1,
+                  width = GATKcharacter$queryEnd[which(GATKcharacter$query==i)][1] - GATKcharacter$queryStart[which(GATKcharacter$query==i)][1])
+                  
+         cat("CNV ", i, " with ", instance$numb_Overlap, "overlaps\n") 
+   # remove the queries from the data.frame that are covered as subject hits with an earlier query with at least 75% overlap
     
+    # GATKcharacter <- GATKcharacter[-which(GATKcharacter$query %in% GATKcharacter$subject[which(GATKcharacter$query==i & GATKcharacter$pctOverlap > 0.75)]),]
+    
+    uniqueCNV <- rbind(uniqueCNV, instance)
+      } # if i in GATKcharacter$query
+    } # for i
+
+    
+    write.csv(uniqueCNV, file="C:/Users/jwaldr/OneDrive - LSUHSC/GELCC/GATKdeletionsSelfOverlap.csv")
  ######################################################################################################################
  # separated based on del or dup so that overlaps called as one are not considered as the same in the other
-  
-  A <- makeGRangesFromDataFrame(GATKcnvDup, keep.extra.columns=TRUE)
+ # GATK duplications
+ 
+ GATKcnvDup <- GATKcnv[which(GATKcnv$del_1.dup_2 == 2),] 
 
-   Alaps <- findOverlaps(A, drop.self=TRUE)
+A <- makeGRangesFromDataFrame(GATKcnvDup, keep.extra.columns=TRUE)
+
+Alaps <- findOverlaps(A, drop.self=TRUE)
 Asect <- pintersect(A[queryHits(Alaps)], A[subjectHits(Alaps)])
 Aunion <- punion(A[queryHits(Alaps)], A[subjectHits(Alaps)])
 
-m <- mergeByOverlaps(A, drop.self=TRUE)
+# mergeByOverlaps may be a function worth trying... mergeByOverlaps(A)
 
-GATKcharacter_dup <- data.frame(
+GATKcharacter <- data.frame(
                 sample = A$sample[queryHits(Alaps)],
                 chr = as.data.frame(A)$seqnames[queryHits(Alaps)],
                 queryStart = as.data.frame(A)$start[queryHits(Alaps)],
@@ -66,7 +119,8 @@ GATKcharacter_dup <- data.frame(
                 subjectStart = as.data.frame(A)$start[subjectHits(Alaps)],
                 subjectEnd = as.data.frame(A)$end[subjectHits(Alaps)],
                 query=queryHits(Alaps), 
-                subject=A$sample[subjectHits(Alaps)],
+                subject= subjectHits(Alaps),
+                subjectSample = A$sample[subjectHits(Alaps)],
                 intersection_width=width(Asect), 
                 union_width=width(Aunion),
                 pctOverlap = round(width(Asect)/width(Aunion), 2),
@@ -75,6 +129,44 @@ GATKcharacter_dup <- data.frame(
                 queryPhredQA = as.data.frame(A)$PhredAllPtsAgree[queryHits(Alaps)],
                 subjectPhredQA = as.data.frame(A)$PhredAllPtsAgree[subjectHits(Alaps)],
                 queryPhredQS = as.data.frame(A)$PhredMinOnePtAgrees[queryHits(Alaps)],
-                subjectPhredQS = as.data.frame(A)$PhredMinOnePtAgrees[subjectHits(Alaps)] 
-                                )
-                               
+                subjectPhredQS = as.data.frame(A)$PhredMinOnePtAgrees[subjectHits(Alaps)])
+  
+# change GATKcharacter to gchar so I can easily refresh it after the loop screws it up
+ gchar <- GATKcharacter
+ # GATKcharacter <- gchar
+ # set up to loop through GATKcharacter and exatract matches just one time per genomic cooridinates by eliminating queries once they are recorded as subjects
+  
+uniqueCNV <- data.frame(matrix(nrow = 0, ncol=8))
+  colnames(uniqueCNV) = c("chr", "start", "end", "del_1.dup_2", "numb_G75pctOverlap", "numb_G90pctOverlap", "numb_G95pctOverlap", "width") 
+  
+  for(i in unique(GATKcharacter$query)) { # i = 1
+      if(i %in% GATKcharacter$query){
+      instance <- data.frame(chr = GATKcharacter$chr[which(GATKcharacter$query==i)][1],  #as.data.frame(A)
+                  start = GATKcharacter$queryStart[which(GATKcharacter$query==i)][1],
+                  end = GATKcharacter$queryEnd[which(GATKcharacter$query==i)][1],
+                  del_1.dup_2 = GATKcharacter$query.del_1.dup_2[which(GATKcharacter$query==i)][1], 
+                  # add 1 to number of overlaps to identify the number of segments with those coordinates including self
+                  numb_Overlap = length(which(GATKcharacter$query==i))+1,
+                  numb_G0pctOverlap = length(which(GATKcharacter$pctOverlap[which(GATKcharacter$query==i)] <= 0.25)),
+                  numb_G25pctOverlap = length(which(GATKcharacter$pctOverlap[which(GATKcharacter$query==i)] > 0.25 & GATKcharacter$pctOverlap[which(GATKcharacter$query==i)] <= 0.50)),
+                  numb_G50pctOverlap = length(which(GATKcharacter$pctOverlap[which(GATKcharacter$query==i)] > 0.50 & GATKcharacter$pctOverlap[which(GATKcharacter$query==i)] <= 0.75)),
+                  numb_G75pctOverlap = length(which(GATKcharacter$pctOverlap[which(GATKcharacter$query==i)] > 0.75 & GATKcharacter$pctOverlap[which(GATKcharacter$query==i)] <= 0.90)),
+                  numb_G90pctOverlap = length(which(GATKcharacter$pctOverlap[which(GATKcharacter$query==i)]>0.90 && GATKcharacter$pctOverlap[which(GATKcharacter$query==i)] <= 0.95)),
+                  numb_G95pctOverlap = length(which(GATKcharacter$pctOverlap[which(GATKcharacter$query==i)]>0.95))+1,
+                  width = GATKcharacter$queryEnd[which(GATKcharacter$query==i)][1] - GATKcharacter$queryStart[which(GATKcharacter$query==i)][1])
+                  
+         cat("CNV ", i, " with ", instance$numb_Overlap, "overlaps\n") 
+   # remove the queries from the data.frame that are covered as subject hits with an earlier query with at least 75% overlap
+    
+    # GATKcharacter <- GATKcharacter[-which(GATKcharacter$query %in% GATKcharacter$subject[which(GATKcharacter$query==i & GATKcharacter$pctOverlap > 0.75)]),]
+    
+    uniqueCNV <- rbind(uniqueCNV, instance)
+      } # if i in GATKcharacter$query
+    } # for i
+    
+    write.csv(uniqueCNV, file="C:/Users/jwaldr/OneDrive - LSUHSC/GELCC/GATKDuplicationsSelfOverlap.csv")
+
+# now findOverlaps with original file to identify all of those singleton calls?
+
+######################################################################################################################
+###### XHMM characterization
