@@ -950,32 +950,37 @@ library(kinship2) ## fixParents() # could be a helpful function (for all of us)
     
 
 # use fam variable to choose the family of interest # pheno[grep(fam, pheno$CID), 1:12] # 
-    for(fam in unique(phenoFam$CID)) { # e.g. fam <- 131
+    for(fam in unique(phenoFam$CID)) { # e.g. fam <- 12 fam <- 131
         
         # define values for pedigree function
-        i <- pheno[grep(fam, pheno$CID),"CIND"]
-        dad <- pheno[grep(fam, pheno$CID),"CF"]
-        mom <- pheno[grep(fam, pheno$CID),"CM"]
-        s <- pheno[grep(fam, pheno$CID),"SEX"]
+        i <- pheno[which(pheno$CID==fam),"CIND"]
+        dad <- pheno[which(pheno$CID==fam),"CF"]
+        mom <- pheno[which(pheno$CID==fam),"CM"]
+        s <- pheno[which(pheno$CID==fam),"SEX"]
         # pedigree just straight-up won't take 1 or 2 for male or female, numeric or string, just won't do it.
             s <- gsub(1, "male", s)
             s <- gsub(2, "female", s)
 
-            aff <- pheno[grep(fam, pheno$CID),"AFF_ANY_M"] # affected by any malignancy for now, CAN HAVE UP TO 4 COLUMNS
-
-            p <- pedigree(id = i, dadid = dad, momid = mom, sex = s, affected = aff, missid = 0)
-
-            WES <- pheno[grep(fam, pheno$CID), "CIND"] %in% phenoFam[grep(fam, phenoFam$CID), "CIND"]
-            WES <- gsub(TRUE, 2, WES)
-            WES <- gsub(FALSE, 1, WES)
+            aff <- pheno[which(pheno$CID==fam),"AFF_ANY_M"] # affected by any malignancy for now, CAN HAVE UP TO 4 COLUMNS
+                 WES <- pheno[which(pheno$CID==fam), "CIND"] %in% phenoFam[which(phenoFam$CID==fam), "CIND"]
+                 WES <- gsub(TRUE, 2, WES)
+                 WES <- gsub(FALSE, 1, WES)\
             aff <- as.matrix(cbind(as.numeric(aff), as.numeric(WES)))
+                        
+                        pdf <- data.frame(id = i, dadid = dad, momid = mom, sex = s, affected = aff, missid = 0)
+                        # subset pdf to only those ID that need to be included
+                        pdf <- subset(pdf, pdf$id %in% c(37, 38, 43, 11, 22, 7, 44, 20, 45, 6, 10, 29, 9, 6, 7, 44, 20, 18, 19, 13, 12))
+            p <- pedigree(id = pdf$id, dadid = pdf$dadid, momid = pdf$momid, sex = pdf$sex, affected = as.matrix(pdf[,5:6]), missid = 0)
+                       
+    # shrink1 <- pedigree.shrink(ped=p, affected = aff, avail=aff[,2], maxBits=25)
+    # plot(shrink1)
     
     # pdf device is best for resizing. printing plot to devide will be necessary to save images.
             pdf(file=paste("C:/Users/4wald/OneDrive - LSUHSC/GELCC/pedigree", fam, ".pdf", sep=""), title = paste("Family", fam))
 
-                plot(p, id = p$id, affected = aff, 
-                                 cex = .5, col = c(2), symbolsize = .8, branch =
-                                 0.6, packed = TRUE, align = c(1.5,2), width = 8,
+                plot(p, id = p$id, affected = as.matrix(pdf[,5:6]), 
+                                 cex = 1, col = c(2), symbolsize = 1, branch =
+                                 0.9, packed = TRUE, align = c(1.5,2), width = 8,
                                  density = c(-1, 35, 65, 20), mar = c(4.1, 1, 4.1, 1),
                                  angle = c(90, 65, 40, 0), keep.par = FALSE, 
                                  pconnect= .5)
