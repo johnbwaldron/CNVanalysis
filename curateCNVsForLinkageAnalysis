@@ -708,7 +708,10 @@ write.csv(overlappingCNVsWithDGV, file ="C:/Users/jwaldr/OneDrive - LSUHSC/GELCC
 
 ####################################################################################################################
 # identify other CNVs in family 12 (applicable to any family or individual)
-allGenesInG2CIND <- read.csv(file= "C:/Users/jwaldr/OneDrive - LSUHSC/GELCC/10.13.21.allGenesInG2CIND.csv", row.names=FALSE)
+allGenesInG2CIND <- read.csv(file= "C:/Users/jwaldr/OneDrive - LSUHSC/GELCC/10.13.21.allGenesInG2CIND.csv")
+write.csv(allGenesInG2CIND[,2:ncol(allGenesInG2CIND)], file= "C:/Users/jwaldr/OneDrive - LSUHSC/GELCC/10.20.21.allGenesInG2CIND.csv", row.names=FALSE)
+allGenesInG2CIND <- read.csv(file= "C:/Users/jwaldr/OneDrive - LSUHSC/GELCC/10.20.21.allGenesInG2CIND.csv")
+
 # for overlappingCNVsWgnomAD # which includes nomad data for >75% intersection/union from delCallsLCfamilies
 load(file = "C:/Users/jwaldr/OneDrive - LSUHSC/GELCC/overlappingCNVsWgnomAD.10.13.21.rda")
 head(allGenesInG2CIND)
@@ -724,6 +727,35 @@ write.csv(t, file = "C:/Users/jwaldr/OneDrive - LSUHSC/GELCC/tableAffectedGenesI
 tdf <- as.data.frame(t)
 colnames(tdf) <- c("gene", "freqency")
 write.csv(tdf[which(tdf[,2] > 2),], file = "C:/Users/jwaldr/OneDrive - LSUHSC/GELCC/tableAffectedGenesInFamily12inMoreThan2CINDs.csv", row.names=FALSE)
+# create table of sample name, CID, CIND, GATKstart, GATKend, geneStartcodon, geneStopCodon 
+cols <- c("CID", "CIND", "diagnosis.of.lung.throat.pharynx.larynx.cancer", 
+        "Age.at.Onset.1o.cancer", "chr", "GATKstart", "GATKend", "GATKcall.copyNum", "gene")
+g <- allGenesInG2CIND[which(allGenesInG2CIND$CID==12), cols]
+g <- g[which(g$gene %in% tdf[which(tdf[,2] > 2),1]),]
+
+write.csv(g, file = "C:/Users/jwaldr/OneDrive - LSUHSC/GELCC/tableAffectedGenesFamily12inMoreThan2CINDsCoordinates.csv", row.names=FALSE)
+
+
+# find gene stop and start codon locations
+gns = geneRanges(Homo.sapiens, column="SYMBOL")
+
+t <- transcripts(Homo.sapiens)
+g <- genes(Homo.sapiens)
+
+# splitByOverlap genes, transcripts, CDS by GATKcnvGranges
+gns_symInCnv = splitByOverlap(gns, GATKcnvGranges, "SYMBOL")
+trnscrpts_symInCnv = splitByOverlap(trnscrpts, GATKcnvGranges, "SYMBOL")
+coding_symInCnv = splitByOverlap(coding, GATKcnvGranges, "SYMBOL")
+entrez_symInCnv = splitByOverlap(EID, GATKcnvGranges, "ENTREZID")
+
+# GATK - loop through each CNV listed in each table from each algorithm
+for(i in 1:nrow(GATKcnv)){
+cat("GATKcnv #", i, " covers ", paste(gns_symInCnv[[i]][!is.na(gns_symInCnv[[i]])], collapse=", "), "\n")
+GATKcnv$gene[i] <-  paste(gns_symInCnv[[i]][!is.na(gns_symInCnv[[i]])], collapse=", ")
+           }
+
+write.csv(g, file = "C:/Users/jwaldr/OneDrive - LSUHSC/GELCC/tableAffectedGenesFamily12inMoreThan2CINDsCoordinates.csv", row.names=FALSE)
+
 #####################################################################################################################
 # ID different objects at this point after filter steps
         # overlappingCNVs # all those deletions called by both XHMM and GATK4.0 with any overlap
