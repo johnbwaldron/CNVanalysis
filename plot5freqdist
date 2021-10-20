@@ -11,12 +11,12 @@
 # genelistG5noOverlap (screened out deletions also called in non-blood relatives) length(genelistG5noOverlap$gene) = 51 --> 
 # gnomADgenelistG5noOverlapUncommon (screened out deletions with gnomAD AF > 0.05)
 
-#(require) #  load(file="C:/Users/4wald/OneDrive - LSUHSC/GELCC/9.30.21.upToAllDataOrganizedByGene.rda") or # load(file="C:/Users/4wald/OneDrive - LSUHSC/GELCC/9.30.21.callsPhenoRemovedRedundant.rda")
+#(require) #  load(file="C:/Users/jwaldr/OneDrive - LSUHSC/GELCC/9.30.21.upToAllDataOrganizedByGene.rda") # or # load(file="C:/Users/4wald/OneDrive - LSUHSC/GELCC/9.30.21.callsPhenoRemovedRedundant.rda")
 
 *1* genesBothCallersAllDeletions <- unlist(strsplit(overlappingCNVsPostRemoved$XHMMgene, split = ", ")) # length(genesBothCallersAllDeletions) = 8070 
   # # load(file="C:/Users/jwaldr/OneDrive - LSUHSC/GELCC/10.18.21.delCallsLCfamilies.rda")
 *2* delCallsLCfamiliesgeneIDs <- unlist(strsplit(delCallsLCfamilies$XHMMgene, split = ", ")) # length(delCallsLCfamiliesgeneIDs) = 7499
-    # load(file = "C:/Users/4wald/OneDrive - LSUHSC/GELCC/overlappingCNVsWgnomAD.10.13.21.rda") # overlappingCNVsWgnomAD
+    # load(file = "C:/Users/jwaldr/OneDrive - LSUHSC/GELCC/overlappingCNVsWgnomAD.10.13.21.rda") # overlappingCNVsWgnomAD
     delBothCallsLCfamiliesUncommon <- overlappingCNVsWgnomAD[-which(overlappingCNVsWgnomAD$allele_frequency > 0.05),] #
 *3* delBothCallsLCfamiliesUncommonGeneIDs <- unlist(strsplit(delBothCallsLCfamiliesUncommon$XHMMgene, split = ", ")) # length(delBothCallsLCfamiliesUncommonGeneIDs) =6578
     allGenesInG2CIND <- read.csv(file= "C:/Users/jwaldr/OneDrive - LSUHSC/GELCC/10.13.21.allGenesInG2CIND.csv")
@@ -62,8 +62,8 @@ df <- rbind(freq1.1, freq2.1, freq3.1, freq4.1, freq5)
 # install.packages("car")
 library(car)
 
-png(file = "C:/Users/jwaldr/OneDrive - LSUHSC/GELCC/densityByFilterStep.png")
-    plot(dens1, main = "Density of per gene calls for each filter step", col = 1,
+png(file = "C:/Users/jwaldr/OneDrive - LSUHSC/GELCC/10.19.21.densityByFilterStep.png")
+    plot(dens1, main = "Fig. 2 density of per gene calls for each filter step", col = 1,
      xlim = c(1, 60))
     lines(dens2, col = 2) 
     lines(dens3, col = 3)
