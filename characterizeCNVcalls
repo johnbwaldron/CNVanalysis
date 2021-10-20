@@ -184,10 +184,17 @@ uniqueCNV <- data.frame(matrix(nrow = 0, ncol=8))
 
 ##########################################################################################################################
 #########characterizing the XHMM and GATK overlap
+
+load(file="C:/Users/jwaldr/OneDrive - LSUHSC/GELCC/XHMMcnvAndGATKcnvWithQAandQS.rda")
+
 # find overlaps between XHMM and GATK, BUT first subset to only deletions to avoid a CNV called as deletion in one is classed as duplication in the other.
 # subset for deletions only: 
 GATKcnv <- subset(GATKcnv, GATKcnv$del_1.dup_2 == 1) # nrow(GATKcnv) = 89054 --> 29206
 XHMMcnv <- subset(XHMMcnv, XHMMcnv$del_1.dup_2 ==1) # nrow(XHMMcnv) = 11550 --> 5673
+
+GATKcnv <- subset(GATKcnv, as.numeric(GATKcnv$PhredMinOnePtAgrees) > 19) # nrow(GATKcnv):nrow( subset(GATKcnv, GATKcnv$PhredAllPtsAgree >19)) = 29206 --> 11217
+XHMMcnv <- subset(XHMMcnv, as.numeric(XHMMcnv$PhredMinOnePtAgrees) > 19) # nrow(XHMMcnv) = 5673 --> ???? 2311
+
 
 
 for(i in unique(GATKcnv$sample)){                      #i = GATKcnv$sample[1]
@@ -258,19 +265,83 @@ for(i in unique(GATKcnv$sample)){                      #i = GATKcnv$sample[1]
 }
 
 write.table(overlappingCNVs, file=paste("C:/Users/jwaldr/OneDrive - LSUHSC/GELCC/10.19.21.compositeOfCNVsCalledByGATKandXHMM", ".csv", sep=""), row.names=FALSE, sep=",")
-overlappingCNVs <- read.csv(file = "C:/Users/4wald/OneDrive - LSUHSC/GELCC/10.19.21.compositeOfCNVsCalledByGATKandXHMM.csv")
+# overlappingCNVs <- read.csv(file = "C:/Users/4wald/OneDrive - LSUHSC/GELCC/10.19.21.compositeOfCNVsCalledByGATKandXHMM.csv")
 
-overlappingCNVs
+G75pctOverlapCNVs <- subset(overlappingCNVs, overlappingCNVs$pctOVerlap > .75)
+# nrow( subset(overlappingCNVs, as.numeric(overlappingCNVs$pctOverlap) > .75))
 
 hist(as.numeric(overlappingCNVs$pctOverlap), main= "Percent Overlap between deletion calls in XHMM and GATK4 by sample", 
       xlab = "percent overlap", ylab = "frequency",
-      col = 5, border = 1, breaks = 4)
+      col = "blue", border = 1, breaks = 5)
+
+hist(as.numeric(G75pctOverlapCNVs$pctOverlap), main= "Percent Overlap between deletion calls in XHMM and GATK4 by sample", 
+      xlab = "percent overlap", ylab = "frequency",
+      col = "blue", border = 1, breaks = 5)
+
+overlappingCNVs <- overlappingCNVs[which(!is.na(as.numeric(overlappingCNVs$XHMMend))),]
+
+# since XHMM calls are larger and are repeated for multiple GATK overlapping calls, Im gonig to cyle through unique subject to create a new, nonrepetitive list of XHMM calls
+end <- c()
+start <- c()
+for(i in unique(overlappingCNVs$subject)){ # i = unique(overlappingCNVs$subject)[1]
+    end <- c(end,as.numeric(overlappingCNVs$XHMMend[which(overlappingCNVs$subject==i)][1]))
+    start <- c(start, as.numeric(overlappingCNVs$XHMMstart[which(overlappingCNVs$subject==i)][1]))
+    }
+
+XHMMsize <- end -  start
+XHMMsizekb <- XHMMsize/1000
+
+GATKsize <- as.numeric(overlappingCNVs$GATKend) - as.numeric(overlappingCNVs$GATKstart)
+GATKsizekb <- GATKsize/1000
+
+aG <- length(which(GATKsize < 1000))/length(GATKsize)
+aX <- length(which(XHMMsize < 1000))/length(XHMMsize)
+
+bG <- length(which(GATKsize < 100000 & GATKsize > 1000))/length(GATKsize)
+bX <- length(which(XHMMsize < 100000 & XHMMsize > 1000))/length(XHMMsize)
+
+cG <- length(which(GATKsize > 100000 & GATKsize < 1000000))/length(GATKsize)
+cX <- length(which(XHMMsize > 100000 & XHMMsize < 1000000))/length(XHMMsize)
+
+dG <- length(which(GATKsize > 1000000))/length(GATKsize)
+dX <- length(which(XHMMsize > 1000000))/length(XHMMsize)
 
 
+stars <- matrix(nrow = 2, ncol = 4, data = c(aX, bX, cX, dX, aG, bG, cG, dG), byrow = TRUE,
+          dimnames = list(rows=c("XHMM", "GATK4"), columns = c("< 1kb", "1 - 100kb", "100kb - 1Mb", "> 1Mb")))
+png(file= "C:/Users/jwaldr/OneDrive - LSUHSC/GELCC/10.19.21.callSizeComparison.png")
+barplot (stars, main = "Fig. 1 size distribution of XHMM and GATK inferred deletions", space = c(0,.1),
+            col = c("light blue", "blue"), beside=TRUE, legend.text = TRUE)
+ dev.off()
+ mean(XHMMsizekb) # = 133.91 kb
+ sd(XHMMsizekb) # = 397.08 
+ mean(GATKsizekb) # = 17.69 kb 
+ sd(GATKsizekb) # = 68.59         
+          
+             
+             # names.arg = c("< 1kb", "1 - 100kb", "100kb - 1Mb", "> 1Mb", "< 1kb", "1 - 100kb", "100kb - 1Mb", "> 1Mb"), 
+            #col = c("red", "red", "red", "red", "blue", "blue", "blue", "blue") 
+            #  legend.text = c("XHMM", "","","","GATK4"))
+# bars <- data.frame(XHMM = c(aX, bX, cX, dX), GATK4 = c(aG, bG, cG, dG))
+# row.names(bars) <- c("< 1kb", "1 - 100kb", "100kb - 1Mb", "> 1Mb")
+# bars <- as.matrix(bars)
+# barplot (bars, main = "Size distribution of XHMM and GATK inferred deletions", 
+#             names.arg = c("< 1kb", "1 - 100kb", "100kb - 1Mb", "> 1Mb", "< 1kb", "1 - 100kb", "100kb - 1Mb", "> 1Mb"), 
+#             col = c("red", "red", "red", "red", "blue", "blue", "blue", "blue"), beside=TRUE, legend.text = TRUE) 
+#             #  legend.text = c("XHMM", "","","","GATK4"))
+# bard <- c(aG, aX, bG, bX, cG, cX, dG, dX)
+# barplot (bard, main = "Size distribution of XHMM and GATK inferred deletions", 
+#            names.arg = c("< 1kb","< 1kb", "1 - 100kb", "1 - 100kb", "100kb - 1Mb", "100kb - 1Mb", "> 1Mb", "> 1Mb"), 
+#             col = c("blue", "red"), beside=TRUE) #  
+# bardy <- c(aX, bX, cX, dX, aG, bG, cG, dG)
+# barplot (bardy, main = "Size distribution of XHMM and GATK inferred deletions", 
+#             names.arg = c("< 1kb", "1 - 100kb", "100kb - 1Mb", "> 1Mb", "< 1kb", "1 - 100kb", "100kb - 1Mb", "> 1Mb"), 
+#             col = c("red", "red", "red", "red", "blue", "blue", "blue", "blue"), beside=TRUE, legend.text = c("XHMM", "GATK4")) #  
 
+# hist(XHMMsize, main= "Size distribution of XHMM and GATK inferred deletions", 
+#       xlab = "width (kb)", ylab = "frequency", xlim = c(min(XHMMsize), max(XHMMsize)),
+#       col = "blue", border = 1, breaks = 5)
 
-
-
-
+overlappingCNVs
 
 
