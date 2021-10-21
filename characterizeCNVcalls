@@ -353,4 +353,12 @@ write.csv(f, file= "C:/Users/jwaldr/OneDrive - LSUHSC/GELCC/10.21.21.ListBAMfile
 
 compare with list uploaded and downloaded on PC
 
+######################################################################################################################
+# visulaize!
+overlappingCNVs <- read.csv(file = "C:/Users/jwaldr/OneDrive - LSUHSC/GELCC/10.19.21.compositeOfCNVsCalledByGATKandXHMM.csv")
+load(file="C:/Users/jwaldr/OneDrive - LSUHSC/GELCC/XHMMcnvAndGATKcnvWithQAandQS.rda")
+
+name = phenoFam[grep("3c785", phenoFam$file.path),1]
+
+overlappingCNVs[which(overlappingCNVs$sample== name),c(1:6,9:12)]
 
