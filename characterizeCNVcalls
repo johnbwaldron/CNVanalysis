@@ -345,3 +345,12 @@ barplot (stars, main = "Fig. 1 size distribution of XHMM and GATK inferred delet
 overlappingCNVs
 
 
+######################################################################################################################
+# .bam files
+
+f <- list.files(path = "E:/GELCC_WES_RAW_Data/2_GELCC_bam_files", pattern = "^.*(.bam)$")
+write.csv(f, file= "C:/Users/jwaldr/OneDrive - LSUHSC/GELCC/10.21.21.ListBAMfiles.csv")
+
+compare with list uploaded and downloaded on PC
+
+
