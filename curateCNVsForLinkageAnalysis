@@ -710,10 +710,10 @@ write.csv(overlappingCNVsWithDGV, file ="C:/Users/jwaldr/OneDrive - LSUHSC/GELCC
 # identify other CNVs in family 12 (applicable to any family or individual)
 allGenesInG2CIND <- read.csv(file= "C:/Users/jwaldr/OneDrive - LSUHSC/GELCC/10.13.21.allGenesInG2CIND.csv")
 write.csv(allGenesInG2CIND[,2:ncol(allGenesInG2CIND)], file= "C:/Users/jwaldr/OneDrive - LSUHSC/GELCC/10.20.21.allGenesInG2CIND.csv", row.names=FALSE)
-allGenesInG2CIND <- read.csv(file= "C:/Users/jwaldr/OneDrive - LSUHSC/GELCC/10.20.21.allGenesInG2CIND.csv")
+allGenesInG2CIND <- read.csv(file= "C:/Users/4wald/OneDrive - LSUHSC/GELCC/10.20.21.allGenesInG2CIND.csv")
 
 # for overlappingCNVsWgnomAD # which includes nomad data for >75% intersection/union from delCallsLCfamilies
-load(file = "C:/Users/jwaldr/OneDrive - LSUHSC/GELCC/overlappingCNVsWgnomAD.10.13.21.rda")
+# load(file = "C:/Users/jwaldr/OneDrive - LSUHSC/GELCC/overlappingCNVsWgnomAD.10.13.21.rda")
 head(allGenesInG2CIND)
 cols <- c("CID", "CIND", "CF", "CM", "SEX", "diagnosis.of.lung.throat.pharynx.larynx.cancer", 
         "Age.at.Onset.1o.cancer", "chr", "GATKstart", "GATKend", "GATKcall.copyNum", "gene")
@@ -727,17 +727,70 @@ write.csv(t, file = "C:/Users/jwaldr/OneDrive - LSUHSC/GELCC/tableAffectedGenesI
 tdf <- as.data.frame(t)
 colnames(tdf) <- c("gene", "freqency")
 write.csv(tdf[which(tdf[,2] > 2),], file = "C:/Users/jwaldr/OneDrive - LSUHSC/GELCC/tableAffectedGenesInFamily12inMoreThan2CINDs.csv", row.names=FALSE)
+
 # create table of sample name, CID, CIND, GATKstart, GATKend, geneStartcodon, geneStopCodon 
 cols <- c("CID", "CIND", "diagnosis.of.lung.throat.pharynx.larynx.cancer", 
         "Age.at.Onset.1o.cancer", "chr", "GATKstart", "GATKend", "GATKcall.copyNum", "gene")
+        # , "CDSstart", "CDSend"
 g <- allGenesInG2CIND[which(allGenesInG2CIND$CID==12), cols]
 g <- g[which(g$gene %in% tdf[which(tdf[,2] > 2),1]),]
 
-write.csv(g, file = "C:/Users/jwaldr/OneDrive - LSUHSC/GELCC/tableAffectedGenesFamily12inMoreThan2CINDsCoordinates.csv", row.names=FALSE)
+CDS = genes(Homo.sapiens, columns=c("CDSSTART", "CDSEND", "SYMBOL"))
+cdsdf <- as.data.frame(CDS)
+
+# because there are multiple start and end for CDSs, I'll choose min star and max end?
+CDSstart <- c()
+CDSend <- c()
+strnd <- character()
+# cdsdf[which(cdsdf$SYMBOL==g$gene[i]),]
+for(i in 1:nrow(g)){ # i = 37
+    CDSstart <- c(CDSstart, min(cdsdf$CDSSTART[which(cdsdf$SYMBOL==g$gene[i])][[1]]))
+    CDSend <- c(CDSend, max(cdsdf$CDSEND[which(cdsdf$SYMBOL==g$gene[i])][[1]]))
+    strnd <-  c(strnd, as.character(cdsdf$strand[which(cdsdf$SYMBOL==g$gene[i])]))
+} # for i
+
+# df <- cbind(CDSstart, CDSend, strnd)
+# CDSstart[is.na(CDSstart)] <- "noncoding"
+
+gb <- cbind(g, strnd, CDSstart, CDSend)
+
+write.csv(gb, file = "C:/Users/4wald/OneDrive - LSUHSC/GELCC/tableAffectedGenesFamily12inMoreThan2CINDsCoordinatesBySample.csv", row.names=FALSE)
+
+b <- data.frame()
+for(i in unique(gb$gene)){ # i = unique(gb$gene)[1]
+    CIND <- paste(gb$CIND[which(gb$gene == i)], collapse=",")
+    chr <- gb$chr[which(gb$gene == i)][1]
+    GATKstartMin <- min(gb$GATKstart[which(gb$gene == i)])
+    GATKendMax <- max(gb$GATKend[which(gb$gene == i)])
+    gene <- i
+    strnd <- gb$strnd[which(gb$gene == i)][1]
+    CDSstart <- gb$CDSstart[which(gb$gene == i)][1]
+    CDSend <- gb$CDSend[which(gb$gene == i)][1]
+    b <- rbind (b, cbind(CIND, chr, GATKstartMin, GATKendMax, gene, strnd, CDSstart, CDSend))
+} # for i in unique genes
+
+write.csv(b, file = "C:/Users/4wald/OneDrive - LSUHSC/GELCC/summaryTableAffectedGenesFamily12inMoreThan2CINDs.csv", row.names=FALSE)
 
 
+#Rterm.exe --vanilla
+library(Homo.sapiens) 
+geneRanges <- 
+    function(db, column="ENTREZID")
+{
+    g <- genes(db, columns=column) #, single.strand.genes.only=ss) # No matter what I do, including single.strand.genes.only= FALSE returns: Error in .local(x, ...) : unused argument (single.strand.genes.only = FALSE)
+    col <- mcols(g)[[column]]
+    genes <- granges(g)[rep(seq_along(g), elementNROWS(col))]
+    mcols(genes)[[column]] <- as.character(unlist(col))
+    genes
+}
+# what columns are available?
+# columns(Homo.sapiens)
 # find gene stop and start codon locations
 gns = geneRanges(Homo.sapiens, column="SYMBOL")
+CDSstart = geneRanges(Homo.sapiens, column="CDSSTART")
+
+
+cdsByOVerlaps
 
 t <- transcripts(Homo.sapiens)
 g <- genes(Homo.sapiens)
