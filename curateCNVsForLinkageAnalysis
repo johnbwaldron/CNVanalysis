@@ -577,7 +577,7 @@ for(i in unique(allGenesInG2CIND$gene)){    #i = cumgFamily$gene[1]
 write.table(geneSummary, file= "C:/Users/4wald/OneDrive - LSUHSC/GELCC/statsByGene.10.13.21.csv", row.names=FALSE, sep =",")                                         
 
 # write.table(geneSummary, file= "C:/Users/jwaldr/OneDrive - LSUHSC/GELCC/statsByGene.10.1.21.csv", row.names=FALSE, sep =",")                                                                                  
-# geneSummary <- read.csv(file= "C:/Users/4wald/OneDrive - LSUHSC/GELCC/statsByGene.10.1.21.csv")                                         
+# geneSummary <- read.csv(file= "C:/Users/jwaldr/OneDrive - LSUHSC/GELCC/statsByGene.10.1.21.csv")                                         
 
 # now screen out all genes where geneSummary[,2] < 3 | geneSummary[,3] < 3
 
@@ -586,7 +586,7 @@ G2FamiliesWithG2per <- rbind(G2FamiliesWithG2per, geneSummary[which(geneSummary$
 
 write.table(G2FamiliesWithG2per, file= "C:/Users/4wald/OneDrive - LSUHSC/GELCC/G2FamiliesWithG2per.10.13.21.csv", row.names=FALSE, sep =",") 
 # write.table(G2FamiliesWithG2per, file= "C:/Users/4wald/OneDrive - LSUHSC/GELCC/G2FamiliesWithG2per.10.4.21.csv", row.names=FALSE, sep =",")  
-# G2FamiliesWithG2per <- read.csv(file= "C:/Users/4wald/OneDrive - LSUHSC/GELCC/G2FamiliesWithG2per.10.13.21.csv")
+# G2FamiliesWithG2per <- read.csv(file= "C:/Users/jwaldr/OneDrive - LSUHSC/GELCC/G2FamiliesWithG2per.10.13.21.csv")
 
 #####################################################################################################################
 # trying out CNVannotator (https://bioinfo.uth.edu/CNVannotator/cnv_onestop.cgi) ##!!! FAILURE - no output even with their example input
@@ -604,12 +604,15 @@ write(x, file = "C:/Users/4wald/OneDrive - LSUHSC/GELCC/1.14.21first500delBothCa
             write(x, file = "C:/Users/4wald/OneDrive - LSUHSC/GELCC/1.14.21.SSX1.txt")#, quote=FALSE, sep="\t", row.names=FALSE)
       
 # create gene list of ~100 to exam, include SSX1 
+geneSummary <- read.csv(file= "C:/Users/jwaldr/OneDrive - LSUHSC/GELCC/statsByGene.10.1.21.csv")                                         
+# G2FamiliesWithG2per <- read.csv(file= "C:/Users/jwaldr/OneDrive - LSUHSC/GELCC/G2FamiliesWithG2per.10.13.21.csv")
+
 G3FamiliesWithG2per <- subset(geneSummary, geneSummary[,3] > 3) # nrow = 148
 G4FamiliesWithG2per <- subset(geneSummary, geneSummary[,3] > 4) # nrow = 119
 G5FamiliesWithG2per <- subset(geneSummary, geneSummary[,3] > 5) # nrow = 95 
 G5FamiliesWithG2perSSX1 <- rbind(G5FamiliesWithG2per, geneSummary[which(geneSummary$gene=="SSX1"),])
-
-write(G5FamiliesWithG2perSSX1$gene, file = "C:/Users/4wald/OneDrive - LSUHSC/GELCC/1.14.21.delBothCallsLCfamiliesUncommonG5FamiliesWithG2perSSX1.txt")#, quote=FALSE, sep="\t", row.names=FALSE)
+# create table to use for and add information from SORVO
+write.csv(G5FamiliesWithG2perSSX1, file = "C:/Users/jwaldr/OneDrive - LSUHSC/GELCC/SORVOtable.csv")#, quote=FALSE, sep="\t", row.names=FALSE)
 ####################################################################################################################
 
 # compare with DGV # form download at http://dgv.tcag.ca/dgv/app/downloads?ref= link to hg19/GRCh37 curated 2020-02-25
