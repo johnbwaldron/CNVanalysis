@@ -1038,11 +1038,151 @@ write.table(phe, file="C:/Users/4wald/OneDrive - LSUHSC/GELCC/ageOnsetOf200.10.6
 
 
 #####################################################################################################################
+# linkage analysis
+
+###############################
+# create SSX1 genotypes as bi allelic to combine with SNP data
+# this is written so a linkage analysis input can quickly be made from any list of genes (not just SSX1) related to the data set. 
+
+# load(file="C:/Users/jwaldr/OneDrive - LSUHSC/GELCC/10.3.21.upToAllDataOrganizedByGene.rda")
+# G2FamiliesWithG2per <- read.csv(file= "C:/Users/4wald/OneDrive - LSUHSC/GELCC/G2FamiliesWithG2per.10.4.21.csv")
+
+# The map file uses the following format:
+# marker_name chr# genetic_pos physical_pos sex_link
+# The count of the markers and the order in which they are listed in the map file must be the same as in the ped file. 
+
+# Chr# is set to 23 for an X-chromosome marker, and 24 for Y.
+# Sex_link = 1 if the marker is sex linked, 0 otherwise. If sex_link = 1, fbat will implement an analysis for an x-chromosome
+# marker. For autosomal markers, and for markers in the pseudoautosomal region of the x-marker, set sex-link to zero.
+
+# necessary for "between()" function
+ library(dplyr)
+
+#changing no.olaps chr# from NA to no.olaps creates an error for IRanges in loops below,
+# must remove the sample that had no XHMM and GATK overlaps from running through these loops
+overlappingCNVsPostRemoved <- overlappingCNVsPostRemoved[-grep("no.olaps", overlappingCNVsPostRemoved$chr),]
+
+# replace chr numbers with JUST numbers 23 for X, 24 for Y
+    l <- strsplit(overlappingCNVsPostRemoved$chr, "chr")
+    numb <- sapply(l, "[", 2)
+    numb[which(numb=="X")] <- 23
+    numb[which(numb=="Y")] <- 24
+    overlappingCNVsPostRemoved$chr <- as.numeric(numb)
+########################### create map ############################################
+# use this variable to easily switch the df of segs from which the map file is created: must have segs and chr information
+    seg.df <- overlappingCNVsPostRemoved # the gene list is what really limits the map file, this is just for information like chr and coordinates corresponding the genes chosen from the list
+
+# use this variable to easily switch the filtered gene list to include in the map file
+    filteredGenes <- "SSX1" ########## G2FamiliesWithG2per$gene
+
+map <- as.data.frame(matrix(nrow=0, ncol=5))
+colnames(map) <- c("marker_name", "chr", "genetic_pos", "physical_pos", "sex_link")
+
+for (i in unique(seg.df$chr)){ # i = unique(seg.df$chr)[10] #overlappingCNVsPostRemoved[which(is.na(overlappingCNVsPostRemoved$chr)),]
+    byChr <- subset(seg.df, seg.df$chr == i)
+        # for each gene on chr i, determine how many nonoverlapping deletions have been identified. 
+        # each nonoverlapping deletion will be listed as a different marker
+        #clear segs
+        segs <- vector()
+        # create vector of genes in unique(unlist(strsplit(byChr$XHMMgene, ", "))) and in G2FamiliesWithG2per$gene # G2FamiliesWithG2per does not have chr info attached (future go back and add it, or now overlap with genes subset to this chr)
+        limitedGenesInThisChr <- filteredGenes[which(filteredGenes %in% unique(unlist(strsplit(byChr$XHMMgene, ", "))))]
+        for (j in limitedGenesInThisChr) { # j = limitedGenesInThisChr[5] 
+                Ustart <- byChr$GATKstart[grep(j, byChr$XHMMgene)] 
+                Uend <- byChr$GATKend[grep(j, byChr$XHMMgene)]
+                sample <- byChr$sample[grep(j, byChr$XHMMgene)]
+                segs <- cbind(start = as.numeric(Ustart), end = as.numeric(Uend))
+                segs <- data.frame(sample = sample, chr = i, start = segs[,1], end = segs[,2], physicalPos = rowMeans(segs)) 
+                A <- makeGRangesFromDataFrame(segs, keep.extra.columns=TRUE) 
+                            # ABlaps <- findOverlaps(A, invert=TRUE)
+                            # ABsect <- pintersect(A[queryHits(ABlaps)], B[subjectHits(ABlaps)])
+                w <- A %outside% A # %outside% is the inverse of overlapsAny() or the convenience wrapper %over% 
+                #initiate and clear imap for each j before running through k
+                imap <- as.data.frame(matrix(nrow=0, ncol=5))
+                colnames(map) <- c("marker_name", "chr", "genetic_pos", "physical_pos", "sex_link")    
+                for (p in 1:(length(which(w))+1)){ # p = 1 ## intended to be unique non overlapping segments!!!!!!!!!!!!!!!!!
+                         if(p > 1) n <- paste(j, p, sep="") else n <- j
+                         imap <- rbind(imap, data.frame(
+                                       marker_name = n, 
+                                       chr = i,
+                                       genetic_pos = round(segs$physicalPos[p]), 
+                                       physical_pos = round(segs$physicalPos[p]),
+                                       sex_link = 0))
+                                        ########################### previous # produces marker_1 only###############################################
+                                        #imap <- rbind(imap, data.frame(marker_name = paste(j, p, sep="_"),  chr = i, genetic_pos = round(segs$physicalPos[p]), physical_pos = round(segs$physicalPos[p]), sex_link = 0))
+                                        # previuos produces 2 markers
+                                        # imap <- rbind(imap, data.frame(marker_name = paste(j, c(p, p+1), sep="_"), chr = c(i,i), genetic_pos = c(round(segs$physicalPos[p]), round(segs$physicalPos[p])),  physical_pos = c(round(segs$physicalPos[p]),round(segs$physicalPos[p])), sex_link = c(0,0)))
+                                        ############################################################################################################                          
+                   } # for p
+            if(i == 23 | i == 24) sl = 1 else sl = 0
+            imap$sex_link <- sl
+            map <- rbind(map, imap)
+            } # for j
+      
+       } # for i
+
+write.table(SSX1map, file="C:/Users/jwaldr/OneDrive - LSUHSC/GELCC/SSX1.map", quote = FALSE, col.names = FALSE, row.names = FALSE, sep = "\t")
+##########################################################################################################################
+# linkage analysis input
+# because .map and .ped must match in exact names and order, I am going to use the map$marker_name to create the .ped 
+# Need 2 allele columns for each marker = bi allelic
+alleles <- vector()
+for(i in map$marker_name) { # i= map$marker_name[7]
+    alleles <- append(alleles, c(paste(i, "_1", sep=""), paste(i, "_2", sep="")))
+    } # for i
+                            
+#temporarily subsetting phenoFam to only family 12
+phenoFam <- subset(phenoFam, phenoFam$CID == 12)
+# temporarily subsetting overlappingCNVsPostRemoved to family 12
+overlappingCNVsPostRemoved <- subset(overlappingCNVsPostRemoved,  overlappingCNVsPostRemoved$sample %in% phenoFam$submitted.sample.id)
 
 
-#####################################################################################################################
-# question number 1 - do deletions affected a specific gene overlap? if yes, they are one allele. If no, they are different alleles
-# answer, all the segments affecting a given gene overlap, see creation of map and %outside% above
+ped <- data.frame(matrix(nrow = 0, ncol = 6 + length(alleles)))
+colnames(ped) <- c("pid", "id", "fid", "mid", "sex", "aff", alleles)                      
+# g <- "HLA-DRB5" # g <- "GOLGA8B"
+i = 0                                                           # s = "H_NK-12GELCC38-12038"
+for(s in unique(overlappingCNVsPostRemoved$sample)){ # s = overlappingCNVsPostRemoved$sample[grep(g , overlappingCNVsPostRemoved$XHMMgene)][1] # see g below
+    i = i + 1
+    ped[i,1] <- phenoFam[which(phenoFam$submitted.sample.id == s), "CID"]
+    ped[i,2] <- phenoFam[which(phenoFam$submitted.sample.id == s), "CIND"]
+    ped[i,3] <- phenoFam[which(phenoFam$submitted.sample.id == s), "CF"]
+    ped[i,4] <- phenoFam[which(phenoFam$submitted.sample.id == s), "CM"]
+    ped[i,5] <- phenoFam[which(phenoFam$submitted.sample.id == s), "SEX"]
+        aff <- phenoFam[which(phenoFam$submitted.sample.id == s), "diagnosis.of.lung.throat.pharynx.larynx.cancer"]
+        if(aff) ped[i,6] <- 2 else ped[i,6] <- 0 ### here i could use whether CIND is deceased for 1 if they did not have cancer
+        
+      # this is where to loop through all genes to fill in genotype information  
+      for(g in filteredGenes){   # g =  G2FamiliesWithG2per$gene[20] # i = 112 # g = "SSX1"
+                locate <- grepl(g, overlappingCNVsPostRemoved$XHMMgene[which(overlappingCNVsPostRemoved$sample == s)] )
+                present <- any(locate)
+                cn <- overlappingCNVsPostRemoved$GATKcall.copyNum[which(overlappingCNVsPostRemoved$sample == s)][which(locate)] 
+                chr <- overlappingCNVsPostRemoved$chr[grep(g, overlappingCNVsPostRemoved$XHMMgene)[1]]
+                  col1 <- paste(g, "_1", sep="")
+                  col2 <- paste(g, "_2", sep="")
+                   if(present && cn == 0) ped[i,col1] <- 2
+                    # for copy number = 0 in male x chr, he has just one allele
+                        if(present && cn == 0 && ped[i,5] == 1 && chr == 23) ped[i,col1] <- 1
+
+                   if(present && cn == 1) ped[i,col1] <- 1
+                   # if(cn == 2) cat("something is wrong here\n")
+                   if(!present) ped[i,col1] <- 0
+                   
+                   # now for gene_2 (the non-deletion allele)
+                   if(present && cn == 0) ped[i,col2] <- 0
+                   if(present && cn == 1) ped[i,col2] <- 1
+                   if(!present) ped[i,col2] <- 2                  
+                   if(!present && ped[i,5] == 1 && chr == 23) ped[i,col2] <- 1 
+                 } # for g   
+              cat("individual ", s, " is number ", i, "\n")      
+                    
+         } # for s 
+
+# write.table(ped, file="C:/Users/jwaldr/OneDrive - LSUHSC/GELCC/SSX1biallelic.txt", quote=FALSE, col.names = TRUE, row.names=FALSE, sep="\t")
+
+
+###########################################################################################################
+
+
+###############################################################################################################################
 
 Make pedigree for family 131
 # install.packages('kinship2')
