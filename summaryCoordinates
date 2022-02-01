@@ -1,0 +1,42 @@
+#Rterm.exe --vanilla
+
+library(Homo.sapiens) 
+
+# find coordinates for genes listed here: "C:/Users/4wald/OneDrive - LSUHSC/GELCC/G2FamiliesWithG2per.10.13.21.csv"
+load(file = "C:/Users/4wald/OneDrive - LSUHSC/GELCC/overlappingCNVsWgnomAD.10.13.21.rda")
+G2FamiliesWithG2per <- read.csv(file= "C:/Users/jwaldr/OneDrive - LSUHSC/GELCC/G2FamiliesWithG2per.10.13.21.csv")
+
+## see line 561 in "https://github.com/johnbwaldron/CNVanalysis/blob/main/curateCNVsForLinkageAnalysis"
+
+G2FamiliesWithG2perByGeneWithCoords <- G2FamiliesWithG2per
+
+# initialize the vectors for storing column information collected by looping through genes
+chromosomes <- vector()
+minStart <- vector()
+maxEnd <- vector()
+maxStart <- vector()
+minEnd <- vector()
+meanStart <- vector()
+meanEnd <- vector()
+SDlength <- vector()
+
+for(g in G2FamiliesWithG2per$gene){ # g<- G2FamiliesWithG2per$gene[1]
+  i <- grep(g, overlappingCNVsWgnomAD$GATKgene)
+    chr <-  as.numeric(overlappingCNVsWgnomAD[i, "chr"])    
+      chromosomes <- c(chromosomes, max(chr))
+    mins <- min(as.numeric(overlappingCNVsWgnomAD[i, "GATKstart"])) 
+        minStart <- c(minStart, ms)
+    maxe <- max(as.numeric(overlappingCNVsWgnomAD[i, "GATKend"]))
+        maxEnd <- c(maxEnd, me)
+    maxs <- max(as.numeric(overlappingCNVsWgnomAD[i, "GATKstart"])) 
+        maxStart <- c(maxStart, ms)
+    mine <- min(as.numeric(overlappingCNVsWgnomAD[i, "GATKend"]))
+        minEnd <- c(minEnd, me)
+    means <- mean(as.numeric(overlappingCNVsWgnomAD[i, "GATKstart"])) 
+        meanStart <- c(meanStart, means)
+    meane <- mean(as.numeric(overlappingCNVsWgnomAD[i, "GATKend"]))
+        meanEnd <- c(meanEnd, meane)
+    SDlength   
+    } # for g
+
+G2FamiliesWithG2perByGeneWithCoords 
