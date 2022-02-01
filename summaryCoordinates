@@ -11,7 +11,7 @@ G2FamiliesWithG2per <- read.csv(file= "C:/Users/jwaldr/OneDrive - LSUHSC/GELCC/G
 G2FamiliesWithG2perByGeneWithCoords <- G2FamiliesWithG2per
 
 # initialize the vectors for storing column information collected by looping through genes
-chromosomes <- vector()
+chr <- vector()
 minStart <- vector()
 maxEnd <- vector()
 maxStart <- vector()
@@ -20,23 +20,30 @@ meanStart <- vector()
 meanEnd <- vector()
 SDlength <- vector()
 
-for(g in G2FamiliesWithG2per$gene){ # g<- G2FamiliesWithG2per$gene[1]
-  i <- grep(g, overlappingCNVsWgnomAD$GATKgene)
-    chr <-  as.numeric(overlappingCNVsWgnomAD[i, "chr"])    
-      chromosomes <- c(chromosomes, max(chr))
+for(g in G2FamiliesWithG2per$gene){ # g<- G2FamiliesWithG2per$gene[42]
+  i <- grep(g, overlappingCNVsWgnomAD$GATKgene) # 
+  if(length(i)<2) i <- grep(g, overlappingCNVsWgnomAD$XHMMgene)
+    
+    chromosomes <-  as.numeric(overlappingCNVsWgnomAD[i, "chr"])    
+        chr <- c(chr, max(chromosomes))
     mins <- min(as.numeric(overlappingCNVsWgnomAD[i, "GATKstart"])) 
-        minStart <- c(minStart, ms)
+        minStart <- c(minStart, mins)
     maxe <- max(as.numeric(overlappingCNVsWgnomAD[i, "GATKend"]))
-        maxEnd <- c(maxEnd, me)
+        maxEnd <- c(maxEnd, maxe)
     maxs <- max(as.numeric(overlappingCNVsWgnomAD[i, "GATKstart"])) 
-        maxStart <- c(maxStart, ms)
+        maxStart <- c(maxStart, maxs)
     mine <- min(as.numeric(overlappingCNVsWgnomAD[i, "GATKend"]))
-        minEnd <- c(minEnd, me)
+        minEnd <- c(minEnd, mine)
     means <- mean(as.numeric(overlappingCNVsWgnomAD[i, "GATKstart"])) 
         meanStart <- c(meanStart, means)
     meane <- mean(as.numeric(overlappingCNVsWgnomAD[i, "GATKend"]))
         meanEnd <- c(meanEnd, meane)
-    SDlength   
+    stanDevLong <- sd(as.numeric(overlappingCNVsWgnomAD[i, "GATKend"])- as.numeric(overlappingCNVsWgnomAD[i, "GATKstart"]))
+        SDlength <- c(SDlength, stanDevLong)   
     } # for g
 
-G2FamiliesWithG2perByGeneWithCoords 
+# as.numeric function coerces "X" chr into "NA", replace with "X" prior to building table
+chromosomes[which(is.na(chromosomes))] <- "X"
+
+G2FamiliesWithG2perByGeneWithCoords <- cbind(G2FamiliesWithG2perByGeneWithCoords, chr)
+
