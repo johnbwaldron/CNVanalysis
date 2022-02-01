@@ -43,7 +43,18 @@ for(g in G2FamiliesWithG2per$gene){ # g<- G2FamiliesWithG2per$gene[42]
     } # for g
 
 # as.numeric function coerces "X" chr into "NA", replace with "X" prior to building table
-chromosomes[which(is.na(chromosomes))] <- "X"
+chr[which(is.na(chr))] <- "X"
 
-G2FamiliesWithG2perByGeneWithCoords <- cbind(G2FamiliesWithG2perByGeneWithCoords, chr)
+G2FamiliesWithG2perByGeneWithCoords <- cbind(G2FamiliesWithG2perByGeneWithCoords, 
+                                              chr, 
+                                               minStart, 
+                                               maxEnd,
+                                               maxStart,
+                                               minEnd,
+                                               meanStart,
+                                               meanEnd,
+                                               SDlength)
+
+write.table(G2FamiliesWithG2perByGeneWithCoords, file= "C:/Users/4wald/OneDrive - LSUHSC/GELCC/geneListwithCoordinates1.31.22.csv", row.names=FALSE, sep =",") 
+
 
