@@ -57,4 +57,73 @@ G2FamiliesWithG2perByGeneWithCoords <- cbind(G2FamiliesWithG2perByGeneWithCoords
 
 write.table(G2FamiliesWithG2perByGeneWithCoords, file= "C:/Users/4wald/OneDrive - LSUHSC/GELCC/geneListwithCoordinates1.31.22.csv", row.names=FALSE, sep =",") 
 
+#########################################################################################################################################
+allGenesInG2CIND <- read.csv(file= "C:/Users/jwaldr/OneDrive - LSUHSC/GELCC/10.20.21.allGenesInG2CIND.csv")
+
+# subset "allGenesInG2CIND" to only those genes in ### G2FamiliesWithG2per <- read.csv(file= "C:/Users/jwaldr/OneDrive - LSUHSC/GELCC/G2FamiliesWithG2per.10.13.21.csv")
+
+g <- G2FamiliesWithG2per$gene
+
+r <- allGenesInG2CIND$gene %in% g 
+
+geneCINDtable <- allGenesInG2CIND[which(r), c("gene", "CID", "CIND", "diagnosis.of.lung.throat.pharynx.larynx.cancer", "GATKstart", "GATKend")] # geneCINDtable[1:30,]
+
+ordered <- geneCINDtable[order(geneCINDtable$gene, geneCINDtable$CID, geneCINDtable$CIND), ] # ordered[1:30,]
+
+write.csv(ordered, file = "C:/Users/jwaldr/OneDrive - LSUHSC/GELCC/geneByFamilyByIndividual2.2.22.csv", row.names=FALSE)
+
+
+#########################################################################################################################################
+
+
+# i don't think I want to use this right now.
+##### load(file="C:/Users/jwaldr/OneDrive - LSUHSC/GELCC/10.15.21.upToAllDataOrganizedByGeneWithGeneListsByFilterSteps.rda")
+
+#########################################################################################################################################
+# this is just for family 12 # see lines 740-~780 in curateCNVsForLinkageAnalysis #### tableAffectedGenesFamily12inMoreThan2CINDsCoordinates <- read.csv(file = "C:/Users/jwaldr/OneDrive - LSUHSC/GELCC/tableAffectedGenesFamily12inMoreThan2CINDsCoordinates.csv")
+
+# create table of sample name, CID, CIND, GATKstart, GATKend, geneStartcodon, geneStopCodon 
+cols <- c("CID", "CIND", "diagnosis.of.lung.throat.pharynx.larynx.cancer", 
+        "Age.at.Onset.1o.cancer", "chr", "GATKstart", "GATKend", "GATKcall.copyNum", "gene")
+        # , "CDSstart", "CDSend"
+g <- allGenesInG2CIND[, cols]
+g <- g[which(g$gene %in% tdf[which(tdf[,2] > 2),1]),]
+
+CDS = genes(Homo.sapiens, columns=c("CDSSTART", "CDSEND", "SYMBOL"))
+cdsdf <- as.data.frame(CDS)
+
+# because there are multiple start and end for CDSs, I'll choose min star and max end?
+CDSstart <- c()
+CDSend <- c()
+strnd <- character()
+# cdsdf[which(cdsdf$SYMBOL==g$gene[i]),]
+for(i in 1:nrow(g)){ # i = 37
+    CDSstart <- c(CDSstart, min(cdsdf$CDSSTART[which(cdsdf$SYMBOL==g$gene[i])][[1]]))
+    CDSend <- c(CDSend, max(cdsdf$CDSEND[which(cdsdf$SYMBOL==g$gene[i])][[1]]))
+    strnd <-  c(strnd, as.character(cdsdf$strand[which(cdsdf$SYMBOL==g$gene[i])]))
+} # for i
+
+# df <- cbind(CDSstart, CDSend, strnd)
+# CDSstart[is.na(CDSstart)] <- "noncoding"
+
+gb <- cbind(g, strnd, CDSstart, CDSend)
+
+write.csv(gb, file = "C:/Users/4wald/OneDrive - LSUHSC/GELCC/tableAffectedGenesFamily12inMoreThan2CINDsCoordinatesBySample.csv", row.names=FALSE)
+
+b <- data.frame()
+for(i in unique(gb$gene)){ # i = unique(gb$gene)[1]
+    CIND <- paste(gb$CIND[which(gb$gene == i)], collapse=",")
+    chr <- gb$chr[which(gb$gene == i)][1]
+    GATKstartMin <- min(gb$GATKstart[which(gb$gene == i)])
+    GATKendMax <- max(gb$GATKend[which(gb$gene == i)])
+    gene <- i
+    strnd <- gb$strnd[which(gb$gene == i)][1]
+    CDSstart <- gb$CDSstart[which(gb$gene == i)][1]
+    CDSend <- gb$CDSend[which(gb$gene == i)][1]
+    b <- rbind (b, cbind(CIND, chr, GATKstartMin, GATKendMax, gene, strnd, CDSstart, CDSend))
+} # for i in unique genes
+
+write.csv(b, file = "C:/Users/4wald/OneDrive - LSUHSC/GELCC/summaryTableAffectedGenesFamily12inMoreThan2CINDs.csv", row.names=FALSE)
+
+
 
