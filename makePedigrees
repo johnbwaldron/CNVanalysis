@@ -4,33 +4,45 @@
 library(kinship2) ## fixParents() # could be a helpful function (for all of us)
 
 # load phenoFam  # location for my purposes: write.csv(phenoFam, file="C:/Users/4wald/OneDrive - LSUHSC/GELCC/phenoFam.csv", row.names=FALSE) # load(file="C:/Users/4wald/OneDrive - LSUHSC/GELCC/XHMMcnvAndGATKcnvWithQAandQS.rda")
-   phenoFam <- read.csv(file = "phenoFam.csv")
+# (3/14/22)  phenoFam <- read.csv(file = "C:/Users/4wald/OneDrive - LSUHSC/GELCC/phenoFam.csv")
 # load all pedigree information # location for my purposes: file="C:/Users/4wald/OneDrive - LSUHSC/GELCC/Pedigrees for WES for John - All Pedigrees.csv"
-    pheno <- read.csv(file="Pedigrees for WES for John - All Pedigrees.csv")
-    
+#
+pheno <- read.csv(file="C:/Users/4wald/OneDrive - LSUHSC/GELCC/Pedigrees for WES for John - All Pedigrees.csv")
+
+# this has updated familyPhenotype, but not necessary to load as relationships remain the same and only affection status changed: 
+
+load(file="C:/Users/4wald/OneDrive - LSUHSC/GELCC/12.28.21.callsPhenoRemovedRedundant.rda") # familyPhenotypes only includes individuals with WES data, not all family members and relaitonships  
+
+# I need pedigrees for the following CIDs: "103" "105" "25"  "11"  "127" "135" "26"  "31"  "33" "34" "42"  "44" "59"  "62"  "69" "90"  "94" "New"
+
+CIDs <- c("103", "105", "25",  "11",  "127", "135", "26",  "31",  "33", "34", "42",  "44", "59",  "62",  "69", "90", "94", "New")
+
+
 # use fam variable to choose the family of interest # pheno[grep(fam, pheno$CID), 1:12] # 
-    for(fam in unique(phenoFam$CID)) { # e.g. fam <- 131
+    for(fam in unique(CIDs)){ # unique(familyPhenotypes$CID)) { # e.g. fam <- "103"
         
         # define values for pedigree function
-        i <- pheno[grep(fam, pheno$CID),"CIND"]
-        dad <- pheno[grep(fam, pheno$CID),"CF"]
-        mom <- pheno[grep(fam, pheno$CID),"CM"]
-        s <- pheno[grep(fam, pheno$CID),"SEX"]
+        dex <- which(pheno$CID == fam)       # i <- pheno[grep(fam, pheno$CID),"CIND"] # problem created by match like 31 matches 31 and 131, so "which" works better than grep: i <- pheno[which(pheno$CID == fam), c("CID","CIND")]
+        i <- pheno[dex, "CIND"]         
+        dad <- pheno[dex,"CF"]
+        mom <- pheno[dex,"CM"]
+        s <- pheno[dex,"SEX"]
         # pedigree just straight-up won't take 1 or 2 for male or female, numeric or string, just won't do it.
             s <- gsub(1, "male", s)
             s <- gsub(2, "female", s)
 
-            aff <- pheno[grep(fam, pheno$CID),"AFF_ANY_M"] # affected by any malignancy for now, CAN HAVE UP TO 4 COLUMNS
-
+            aff <- pheno[dex,"AFF_ANY_M"] # affected by any malignancy for now, CAN HAVE UP TO 4 COLUMNS
+            aff <- as.numeric(gsub(0, 1, aff)) # all "0" = unkown --> "1" = unaffected
+            
             p <- pedigree(id = i, dadid = dad, momid = mom, sex = s, affected = aff, missid = 0)
-
-            WES <- pheno[grep(fam, pheno$CID), "CIND"] %in% phenoFam[grep(fam, phenoFam$CID), "CIND"]
+      cat("working on family", fam, "\n") 
+            WES <- pheno[dex, "CIND"] %in% familyPhenotypes[which(familyPhenotypes$CID == fam), "CIND"]
             WES <- gsub(TRUE, 2, WES)
             WES <- gsub(FALSE, 1, WES)
             aff <- as.matrix(cbind(as.numeric(aff), as.numeric(WES)))
-    
-    # pdf device is best for resizing. printing plot to devide will be necessary to save images.
-            # pdf(file=paste("C:/Users/4wald/OneDrive - LSUHSC/GELCC/pedigree", fam, ".pdf", sep=""), title = paste("Family", fam))
+            colnames(aff) <- c("affected", "WES")
+         # pdf device is best for resizing. printing plot to divide will be necessary to save images.
+            pdf(file=paste("C:/Users/4wald/OneDrive - LSUHSC/GELCC/pedigree", fam, ".pdf", sep=""), title = paste("Family", fam))
 
                 plot(p, id = p$id, affected = aff, 
                                  cex = .5, col = c(2), symbolsize = .8, branch =
@@ -40,8 +52,9 @@ library(kinship2) ## fixParents() # could be a helpful function (for all of us)
                                  pconnect= .5)
                 # right now, legendPlot isn't plotting both affecteds, just the first one in the matrix
                 # legendPlot(p, id=p$id, affected=aff, affected.label=c("malignancy", "WES"), col=1, col.label=NULL, symbolsize=.75)
-            } # fam -loop for all families
+            dev.off() # will be necessary to turn off after printing e.i. pdf()
             
-            # dev.off() # will be necessary to turn off after printing e.i. pdf()
-
+     } # fam -loop for all families
+            
+          
             
