@@ -128,7 +128,7 @@ XHMMcnv <- data.frame("sample"= as.character(df$SAMPLE),
 familyPhenotypes <- read.csv(file="C:/Users/jwaldr/OneDrive - LSUHSC/GELCC/update-12.2021-phenoFam-DecodingGELCC - MatchAllInfoToSamples.csv")
 
 # save(XHMMcnv, GATKcnv, familyPhenotypes, file="C:/Users/jwaldr/OneDrive - LSUHSC/GELCC/XHMMcnvAndGATKcnvWithQAandQSwithFamilyPhenotypeUpdate12.28.21.rda")
-load(file="C:/Users/jwaldr/OneDrive - LSUHSC/GELCC/XHMMcnvAndGATKcnvWithQAandQSwithFamilyPhenotypeUpdate12.28.21.rda")
+load(file="C:/Users/4wald/OneDrive - LSUHSC/GELCC/XHMMcnvAndGATKcnvWithQAandQSwithFamilyPhenotypeUpdate12.28.21.rda")
 
 # find overlaps between XHMM and GATK, BUT first subset to only deletions to avoid a CNV called as deletion in one is classed as duplication in the other.
 # subset for deletions only: 
@@ -306,7 +306,7 @@ write.table(overlappingCNVs, file=paste("C:/Users/4wald/OneDrive - LSUHSC/GELCC/
 
 #  replacing with new familyPhenotypes: prior iteration with old phenoFam: # save(overlappingCNVs, phenoFam, XHMMcnv, GATKcnv, file = "C:/Users/4wald/OneDrive - LSUHSC/GELCC/overlappingCNVsBothAlgsPhenoFam.9.29.21.rda")  
 # save(overlappingCNVs, familyPhenotypes, XHMMcnv, GATKcnv, file = "C:/Users/jwaldr/OneDrive - LSUHSC/GELCC/overlappingCNVsBothAlgsPhenoFam.12.28.21.rda") # from load(file = "C:/Users/jwaldr/OneDrive - LSUHSC/GELCC/overlappingCNVsBothAlgsPhenoFam.9.29.21.rda")
-# load(file = "C:/Users/jwaldr/OneDrive - LSUHSC/GELCC/overlappingCNVsBothAlgsPhenoFam.12.28.21.rda")
+# load(file = "C:/Users/4wald/OneDrive - LSUHSC/GELCC/overlappingCNVsBothAlgsPhenoFam.12.28.21.rda")
 
 ####### characterize differences in GATK and XHMM calls
 # length(which(overlappingCNVs$GATKgene != overlappingCNVs$XHMMgene)) # = 2732 (39% aren't identical)
@@ -358,12 +358,15 @@ for(i in unique(overlappingCNVs$sample)) { # i = unique(overlappingCNVs$sample)[
 overlappingCNVsPostRemoved <- overlappingCNVs[keep,]
 
 # replacing old version of phenoFam saved in this file save(overlappingCNVs, overlappingCNVsPostRemoved, GATKcnv, XHMMcnv, phenoFam, file="C:/Users/4wald/OneDrive - LSUHSC/GELCC/9.30.21.callsPhenoRemovedRedundant.rda")
-# save(overlappingCNVs, overlappingCNVsPostRemoved, GATKcnv, XHMMcnv, familyPhenotypes, file="C:/Users/jwaldr/OneDrive - LSUHSC/GELCC/12.28.21.callsPhenoRemovedRedundant.rda") # saved with new familyPhenotypes and files from: load(file="C:/Users/jwaldr/OneDrive - LSUHSC/GELCC/9.30.21.callsPhenoRemovedRedundant.rda")
+# save(overlappingCNVs, overlappingCNVsPostRemoved, GATKcnv, XHMMcnv, familyPhenotypes, file="C:/Users/4wald/OneDrive - LSUHSC/GELCC/12.28.21.callsPhenoRemovedRedundant.rda") # saved with new familyPhenotypes and files from: load(file="C:/Users/jwaldr/OneDrive - LSUHSC/GELCC/9.30.21.callsPhenoRemovedRedundant.rda")
+# load(file="C:/Users/4wald/OneDrive - LSUHSC/GELCC/12.28.21.callsPhenoRemovedRedundant.rda")
 
 #see what we have here for genes
 genesBothCallersAllDeletions <- unlist(strsplit(overlappingCNVsPostRemoved$XHMMgene, split = ", ")) 
 
 # length(unique(genesBothCallersAllDeletions)) = now 879, first time around (week of 9/21) it was 580
+
+#unique(familyPhenotypes$CID) that need checked for marriedins: "103" "105" "25"  "11"  "127" "135" "26"  "31"  "33" "34" "42"  "44" "59"  "62"  "69" "90"  "94" "New"
 
 marriedInSampleName <- phenoFam[phenoFam$CID == 12 & phenoFam$CIND == 44 | phenoFam$CID == 12 & phenoFam$CIND == 29 |
                        phenoFam$CID == 35 & phenoFam$CIND == 29| 
