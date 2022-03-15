@@ -420,6 +420,7 @@ genesLCfamilyONLY <- delCallsLCfamiliesgeneIDs[-which(delCallsLCfamiliesgeneIDs 
 # save(delCallsLCfamilies, file="C:/Users/jwaldr/OneDrive - LSUHSC/GELCC/10.18.21.delCallsLCfamilies.rda")
 
 save(genesLCfamilyONLY, delCallsLCfamilies, delCallsMarriedIn, familyPhenotypes, overlappingCNVs, overlappingCNVsPostRemoved, pheno, file="C:/Users/4wald/OneDrive - LSUHSC/GELCC/03.14.22.delCallsLCfamilies.rda")
+
 #####################################################################################################################
 # use gnomAD deletions and AF to remove common deletions
 gnomAD <- read.delim(file="C:/Users/4wald/OneDrive - LSUHSC/GELCC/hg19_gnomadSVs.txt")
@@ -505,56 +506,220 @@ G75pctGnomAD <- gnomADoverlap[which(gnomADoverlap$pctOverlap > .75),]
 ####################################################################################################################################################
 
 # created new data table to fill in allele frequencies and pct overlap values for CNV/dels with at least 75% of intersection/union with gnomAD calls 
-x <- c()
-overlappingCNVsWgnomAD <- cbind(myDels, data.frame(gnomADpctOverlap = NA, allele_frequency = NA, gnomADpctOverlap2 = NA, allele_frequency2 = NA))
-   for(i in 1:nrow(overlappingCNVsWgnomAD)){ # i = 10
-        for(j in 1:nrow(G75pctGnomAD)){ # j = 4 # for(j in 1:nrow(gnomADoverlap)){
-            if(overlappingCNVsWgnomAD$sample[i] == G75pctGnomAD$sample[j] &&
-               overlappingCNVsWgnomAD$chr[i] == G75pctGnomAD$chr[j] &&
-               overlappingCNVsWgnomAD$GATKstart[i] == G75pctGnomAD$GATKstart[j] &&
-               overlappingCNVsWgnomAD$GATKend[i] == G75pctGnomAD$GATKend[j]) {
-                    if(is.na(overlappingCNVsWgnomAD$gnomADpctOverlap[i]))overlappingCNVsWgnomAD$gnomADpctOverlap[i] <- G75pctGnomAD$pctOverlap[j] else {
-                        overlappingCNVsWgnomAD$gnomADpctOverlap2[i] <- G75pctGnomAD$pctOverlap[j]
-                        cat("found an overwrite at row", i, "\n")
-                        x <- c(x, i)
-                        } # else (not na)
-                    if(is.na(overlappingCNVsWgnomAD$allele_frequency[i])) overlappingCNVsWgnomAD$allele_frequency[i] <- G75pctGnomAD$allele_frequency[j] else overlappingCNVsWgnomAD$allele_frequency2[i] <- G75pctGnomAD$allele_frequency[j]
+# x <- c()
+#overlappingCNVsWgnomAD <- cbind(myDels, data.frame(gnomADpctOverlap = NA, allele_frequency = NA, gnomADpctOverlap2 = NA, allele_frequency2 = NA))
+#   for(i in 1:nrow(overlappingCNVsWgnomAD)){ # i = 10
+#        for(j in 1:nrow(G75pctGnomAD)){ # j = 4 # for(j in 1:nrow(gnomADoverlap)){
+#            if(overlappingCNVsWgnomAD$sample[i] == G75pctGnomAD$sample[j] &&
+#               overlappingCNVsWgnomAD$chr[i] == G75pctGnomAD$chr[j] &&
+#               overlappingCNVsWgnomAD$GATKstart[i] == G75pctGnomAD$GATKstart[j] &&
+#               overlappingCNVsWgnomAD$GATKend[i] == G75pctGnomAD$GATKend[j]) {
+#                    if(is.na(overlappingCNVsWgnomAD$gnomADpctOverlap[i]))overlappingCNVsWgnomAD$gnomADpctOverlap[i] <- G75pctGnomAD$pctOverlap[j] else {
+#                        overlappingCNVsWgnomAD$gnomADpctOverlap2[i] <- G75pctGnomAD$pctOverlap[j]
+#                        cat("found an overwrite at row", i, "\n")
+#                        x <- c(x, i)
+#                        } # else (not na)
+#                    if(is.na(overlappingCNVsWgnomAD$allele_frequency[i])) overlappingCNVsWgnomAD$allele_frequency[i] <- G75pctGnomAD$allele_frequency[j] else overlappingCNVsWgnomAD$allele_frequency2[i] <- G75pctGnomAD$allele_frequency[j]
                     # cat("G75pctGnomAD row #", j, "\n")
-                    } # if matches [,1:4]
-            } # for j (rows in G75pctGnomAD)
-      } # for i (rows in overlappingCNVsWgnomAD
+#                    } # if matches [,1:4]
+#            } # for j (rows in G75pctGnomAD)
+#      } # for i (rows in overlappingCNVsWgnomAD
               
                        
 removedCommonVariants <- overlappingCNVsWgnomAD[which(overlappingCNVsWgnomAD$AF1 > 0.05),c(1,2)]
 ##############################################################################
-# can only use those variants with > 75% overlap, because there are so many with small amounts of overlap that everything gets overwritten.
-#for(i in 1:nrow(overlappingCNVsWgnomAD)){ # i = 10
- #       for(j in 1:nrow(gnomADoverlap)){ # j = 4 # 
-  #          if(overlappingCNVsWgnomAD$sample[i] == gnomADoverlap$sample[j] &&
-   #            overlappingCNVsWgnomAD$chr[i] == gnomADoverlap$chr[j] &&
-    #           overlappingCNVsWgnomAD$GATKstart[i] == gnomADoverlap$GATKstart[j] &&
-     #          overlappingCNVsWgnomAD$GATKend[i] == gnomADoverlap$GATKend[j]) {
-      #              if(is.na(overlappingCNVsWgnomAD$gnomADpctOverlap[i]))overlappingCNVsWgnomAD$gnomADpctOverlap[i] <- gnomADoverlap$pctOverlap[j] else {
-       #                 overlappingCNVsWgnomAD$gnomADpctOverlap2[i] <- gnomADoverlap$pctOverlap[j]
-        #                cat("found an overwrite at row", i, "\n")
-         #               x <- c(x, i)
-          #              } # else (not na)
-           #         if(is.na(overlappingCNVsWgnomAD$allele_frequency[i])) overlappingCNVsWgnomAD$allele_frequency[i] <- gnomADoverlap$allele_frequency[j] else overlappingCNVsWgnomAD$allele_frequency2[i] <- gnomADoverlap$allele_frequency[j]
-            #        # cat("gnomADoverlap row #", j, "\n")
-             #       } # if matches [,1:4]
-   #         } # for j (rows in G75pctGnomAD)
-    #  } # for i (rows in overlappingCNVsWgnomAD   
-##############################################################################   
+# because there are so many with small amounts of overlap that everything gets overwritten
+# So i need to order the pctoverlap for a given query to lowest to highest, so highest values overwrite all at the end.
 
+x <- c()
+overlappingCNVsWgnomAD <- cbind(myDels, data.frame(gnomADpctOverlap = NA, allele_frequency = NA, gnomADpctOverlap2 = NA, allele_frequency2 = NA))
 
+for(i in 1:nrow(overlappingCNVsWgnomAD)){ # i = 10
+        for(j in 1:nrow(gnomADoverlap)){ # j = 3 # 
+             if(overlappingCNVsWgnomAD$sample[i] == gnomADoverlap$sample[j] &&
+               overlappingCNVsWgnomAD$chr[i] == gnomADoverlap$chr[j] &&
+               overlappingCNVsWgnomAD$GATKstart[i] == gnomADoverlap$GATKstart[j] &&
+               overlappingCNVsWgnomAD$GATKend[i] == gnomADoverlap$GATKend[j]) {   
+                    valByQuery <- gnomADoverlap[which(gnomADoverlap$query==gnomADoverlap$query[j]), c("pctOverlap", "allele_frequency")]
+                    topTwoPct <- valByQuery[order(valByQuery$pctOverlap, decreasing = TRUE),]
+                        overlappingCNVsWgnomAD$gnomADpctOverlap[i] <- topTwoPct$pctOverlap[1] 
+                        overlappingCNVsWgnomAD$gnomADpctOverlap2[i] <- topTwoPct$pctOverlap[2]
+                        overlappingCNVsWgnomAD$allele_frequency[i] <- topTwoPct$allele_frequency[1]
+                        overlappingCNVsWgnomAD$allele_frequency2[i] <- topTwoPct$allele_frequency[2]
+                        
+                        x <- c(x, i)
+                } # if gnomADoverlap row matches everything in overlappingCVNsWgnomAD          
+                   
+            } # for j (rows in gnomADoverlap)
+      } # for i (rows in overlappingCNVsWgnomAD)   
+# percent of CNVs called only in lung cancer families and identified by both algorithms found in gnomAD:
+length(which(!is.na(overlappingCNVsWgnomAD$gnomADpctOverlap)))/length(overlappingCNVsWgnomAD$gnomADpctOverlap)
+
+# 73.4% of deletions called by both algorithms, only found in LC families overalp at least somewhat with gnomAD variants.
+length(which(overlappingCNVsWgnomAD$gnomADpctOverlap >.74))/length(overlappingCNVsWgnomAD$gnomADpctOverlap)
+
+# 10.05% of all deletions called by both algorithms, only found in LC families have > 75% overlap with gnomAD variants
 # save (overlappingCNVsWgnomAD, file = "C:/Users/4wald/OneDrive - LSUHSC/GELCC/overlappingCNVsWgnomAD.10.13.21.rda")
 # load(file = "C:/Users/jwaldr/OneDrive - LSUHSC/GELCC/overlappingCNVsWgnomAD.10.13.21.rda")
+
+save (overlappingCNVsWgnomAD, genesLCfamilyONLY, delCallsLCfamilies, delCallsMarriedIn, 
+familyPhenotypes, overlappingCNVs, overlappingCNVsPostRemoved, pheno, file = "C:/Users/4wald/OneDrive - LSUHSC/GELCC/overlappingCNVsWgnomAD.03.15.22.rda")
+
+# subset to those calls with AF < 0.05
+delBothCallsLCfamiliesUncommon <- overlappingCNVsWgnomAD[-which(overlappingCNVsWgnomAD$allele_frequency > 0.05),]
+################################ delBothCallsLCfamiliesUncommon  <- subset(overlappingCNVsWgnomAD, is.na(overlappingCNVsWgnomAD$allele_frequency) | overlappingCNVsWgnomAD$allele_frequency < 0.05)
+
+
+##############################################################################   
 #####################################################################################################################
 # remove CNVs based on the degree of overlap with married-ins CNVs (rather than just removing by gene identifier) just like was done for CNVs in gnomAD
-load(file="C:/Users/4wald/OneDrive - LSUHSC/GELCC/03.14.22.delCallsLCfamilies.rda")
+load(file = "C:/Users/4wald/OneDrive - LSUHSC/GELCC/overlappingCNVsWgnomAD.03.15.22.rda")
+
+# married in calls: delCallsMarriedIn
+# calls in LC famliies over with noted over lap of CNVs from gnomAD: overlappingCNVsWgnomAD
+
+# need to make chr numbers only
+l <- strsplit(delCallsMarriedIn$chr, "chr") 
+numb <- sapply(l, "[", 2)
+delCallsMarriedIn$chr <- numb
+
+# change column name of XHMMstart and XHMMend to retain them, but not to pass them to GRanges as start and end values
+colnames(delCallsMarriedIn)[5:6] <- c("XHMM.s", "XHMM.e")
+
+A <- makeGRangesFromDataFrame(overlappingCNVsWgnomAD, keep.extra.columns=TRUE) 
+
+B <- makeGRangesFromDataFrame(delCallsMarriedIn, keep.extra.columns=TRUE)
+
+#### percent overlap between A and B defined by the ratio of the intersection of A and B to the union of A and B.
+
+    ABlaps <- findOverlaps(A, B)
+    ABsect <- pintersect(A[queryHits(ABlaps)], B[subjectHits(ABlaps)])
+    ABunion <- punion(A[queryHits(ABlaps)], B[subjectHits(ABlaps)])
+  
+
+##########################################################################
+    marriedInOverlap <- data.frame(
+                sample = A$sample[queryHits(ABlaps)],
+                chr = as.data.frame(A)$seqnames[queryHits(ABlaps)],
+                GATKstart = as.data.frame(A)$start[queryHits(ABlaps)],
+                GATKend = as.data.frame(A)$end[queryHits(ABlaps)],
+                marriedInSample = B$sample[subjectHits(ABlaps)],
+                marriedInStart = as.data.frame(B)$start[subjectHits(ABlaps)],
+                marriedInEnd = as.data.frame(B)$end[subjectHits(ABlaps)],
+                query = queryHits(ABlaps), 
+                subject = subjectHits(ABlaps),
+                intersection_width = width(ABsect), 
+                union_width = width(ABunion),
+                pctOverlap = round(width(ABsect)/width(ABunion), 2)
+                                                )
+#####################################################################################################################
+# add percent overlap with married ins to the data.frame of only LC family members plus gnomAD overlap and Allele frequency
+x <- c()
+overlappingCNVsWgnomADandMMarriedINs <- cbind(overlappingCNVsWgnomAD, data.frame(marriedInpctOverlap = NA, marriedInpctOverlap2 = NA, marriedInpctOverlap3 = NA))
+
+for(i in 1:nrow(overlappingCNVsWgnomADandMMarriedINs)){ # i = 10
+        for(j in 1:nrow(marriedInOverlap)){ # j = 3 # 
+             if(overlappingCNVsWgnomADandMMarriedINs$sample[i] == marriedInOverlap$sample[j] &&
+               overlappingCNVsWgnomADandMMarriedINs$chr[i] == marriedInOverlap$chr[j] &&
+               overlappingCNVsWgnomADandMMarriedINs$GATKstart[i] == marriedInOverlap$GATKstart[j] &&
+               overlappingCNVsWgnomADandMMarriedINs$GATKend[i] == marriedInOverlap$GATKend[j]) {   
+                    valByQuery <- marriedInOverlap[which(marriedInOverlap$query==marriedInOverlap$query[j]), c("pctOverlap")]
+                    topThreePct <- valByQuery[order(valByQuery, decreasing = TRUE)]
+                        overlappingCNVsWgnomADandMMarriedINs$marriedInpctOverlap[i] <- topThreePct[1] 
+                        overlappingCNVsWgnomADandMMarriedINs$marriedInpctOverlap2[i] <- topThreePct[2]
+                        overlappingCNVsWgnomADandMMarriedINs$marriedInpctOverlap3[i] <- topThreePct[3]                                        
+                        x <- c(x, i)
+                } # if marriedInOverlap row matches everything in overlappingCNVsWgnomADandMMarriedINs          
+                   
+            } # for j (rows in gnomADoverlap)
+      } # for i (rows in overlappingCNVsWgnomAD)   
 
 
 #####################################################################################################################
+# carry-out comparison of overlap with calls in married ins and with gnomAD calls to the "overlappingCNVs" prior to 
+# removing multiple GATK calls overlaping with XHMM calls # i am doing this because identifying overlap with gnomad and married ins, etc is likely influenced by which calls remain. 
+#  load(file = "C:/Users/4wald/OneDrive - LSUHSC/GELCC/overlappingCNVsWgnomAD.03.15.22.rda")
+olapCNVs <- overlappingCNVs[which(as.numeric(overlappingCNVs$GATKPhred)>19), c(1:15)]
+# nrow(olapCNVs) vs nrow(overlappingCNVs)
+marriedInSampleName <- familyPhenotypes[familyPhenotypes$CID == 12 & familyPhenotypes$CIND == 44 | familyPhenotypes$CID == 12 & familyPhenotypes$CIND == 29 |
+                       familyPhenotypes$CID == 103 & familyPhenotypes$CIND == 117|
+                       familyPhenotypes$CID == 25 & familyPhenotypes$CIND == 3|
+                       familyPhenotypes$CID == 26 & familyPhenotypes$CIND == 20|
+                       familyPhenotypes$CID == 31 & familyPhenotypes$CIND == 5|
+                       familyPhenotypes$CID == 33 & familyPhenotypes$CIND == 2|
+                       familyPhenotypes$CID == 34 & familyPhenotypes$CIND == 12|
+                       familyPhenotypes$CID == 69 & familyPhenotypes$CIND == 112| familyPhenotypes$CID == 69 & familyPhenotypes$CIND == 102 |
+                       familyPhenotypes$CID == 90 & familyPhenotypes$CIND == 55 |
+                       familyPhenotypes$CID == 135 & familyPhenotypes$CIND == 122 |
+                       familyPhenotypes$CID == 35 & familyPhenotypes$CIND == 29| 
+                       familyPhenotypes$CID == 47 & familyPhenotypes$CIND == 16|
+                       familyPhenotypes$CID == 102 & familyPhenotypes$CIND == 346|
+                       familyPhenotypes$CID == 131 &  familyPhenotypes$CIND == 125 |
+                       familyPhenotypes$CID == 52 & familyPhenotypes$CIND == 4| familyPhenotypes$CID == 52 & familyPhenotypes$CIND == 13|
+                       familyPhenotypes$CID == 88 & familyPhenotypes$CIND == 13| familyPhenotypes$CID == 88 & familyPhenotypes$CIND == 52,1]
+
+delCallsLCfamilies <- olapCNVs[-which(olapCNVs$sample %in% marriedInSampleName),]
+delCallsMarriedIn <- olapCNVs[which(olapCNVs$sample %in% marriedInSampleName),]
+
+# save(delCallsLCfamilies, delCallsMarriedIn, familyPhenotypes, olapCNVs, pheno, file="C:/Users/4wald/OneDrive - LSUHSC/GELCC/03.15.22.allDelCallsLCfamilies.rda")
+####
+##### use gnomAD deletions and AF to remove common deletions
+gnomAD <- read.delim(file="C:/Users/4wald/OneDrive - LSUHSC/GELCC/hg19_gnomadSVs.txt")
+# limit gnomAD input to deletions
+gnomADdels <- gnomAD[grep("DEL", gnomAD$sv_type),] # ### length(grep("DEL", gnomAD$sv_type)) = 169635
+
+myDels <- delCallsLCfamilies
+# need to make chr numbers only
+l <- strsplit(myDels$chr, "chr") 
+numb <- sapply(l, "[", 2)
+myDels$chr <- numb
+
+GATKranges <- makeGRangesFromDataFrame(myDels[,c(1:4,7:15)], keep.extra.columns=TRUE) 
+XHMMranges <- makeGRangesFromDataFrame(myDels[,c(1:2,5:15)], keep.extra.columns=TRUE) 
+
+# need to have seqnames for GRange object 3 GRanges does not recognize "X.chrom"
+colnames(gnomADdels)[1] <- "chr"
+gnomADranges <- makeGRangesFromDataFrame(gnomADdels, keep.extra.columns=TRUE)
+    
+    #overlaps
+    GATKxgnomADlaps <- findOverlaps(GATKranges, gnomADranges)
+    XHMMxgnomADlaps <- findOverlaps(XHMMranges, gnomADranges)
+   #intersection 
+   GATKxgnomADsect <- pintersect(GATKranges[queryHits(GATKxgnomADlaps)], gnomADranges[subjectHits(GATKxgnomADlaps)])
+   XHMMxgnomADsect <- pintersect(XHMMranges[queryHits(XHMMxgnomADlaps)], gnomADranges[subjectHits(XHMMxgnomADlaps)])
+   #union 
+    GATKxgnomADunion <- punion(GATKranges[queryHits(GATKxgnomADlaps)], gnomADranges[subjectHits(GATKxgnomADlaps)])
+    XHMMxgnomADunion <- punion(XHMMranges[queryHits(XHMMxgnomADlaps)], gnomADranges[subjectHits(XHMMxgnomADlaps)])
+
+## I WANT TO GO BACK THROUGH THE QUERY VALUES FROM "myDels OR delCallsLCfamilies" TO ADD THE MAX (ORDER FUNCTION)PCT OVERLAP OF EACH QUERY TO GNOMAD.
+# WILL BE ABLE TO DO THE SAME THING FOR MARRIED-INS. THIS WILL WORK BETTER THAN WHAT IS BELOW
+
+gnomADoverlap <- data.frame(
+                # sample = GATKranges$sample[queryHits(GATKxgnomADlaps)],
+                sampleX = XHMMranges$sample[queryHits(XHMMxgnomADlaps)],
+                #chr = as.data.frame(GATKranges)$seqnames[queryHits(GATKxgnomADlaps)],
+                chrX = as.data.frame(XHMMranges)$seqnames[queryHits(XHMMxgnomADlaps)],
+                #GATKstart = as.data.frame(GATKranges)$start[queryHits(GATKxgnomADlaps)],
+                #GATKend = as.data.frame(GATKranges)$end[queryHits(GATKxgnomADlaps)],
+                XHMMstart = as.data.frame(XHMMranges)$start[queryHits(XHMMxgnomADlaps)],
+                XHMMend = as.data.frame(XHMMranges)$end[queryHits(XHMMxgnomADlaps)],
+                #gnomADstart = as.data.frame(B)$start[subjectHits(ABlaps)],
+                #gnomADend = as.data.frame(B)$end[subjectHits(ABlaps)],
+                #query=queryHits(ABlaps), 
+                #subject=subjectHits(ABlaps),
+                # GATKxgnomAD_sect_width=width(GATKxgnomADsect),
+                XHMMxgnomAD_sect_width=width(XHMMxgnomADsect),
+                # GATKxgnomAD_union_width=width(GATKxgnomADunion),
+                XHMMxgnomAD_union_width=width(XHMMxgnomADunion),
+                # GATKxgnomAD_pctOverlap = round(width(GATKxgnomADsect)/width(GATKxgnomADunion), 2),
+                XHMMxgnomAD_pctOverlap = round(width(XHMMxgnomADsect)/width(XHMMxgnomADunion), 2),
+                # GATK_allele_frequency = as.data.frame(gnomADranges)$allele_frequency[subjectHits(GATKxgnomADlaps)],
+                XHMM_allele_frequency = as.data.frame(gnomADranges)$allele_frequency[subjectHits(XHMMxgnomADlaps)]
+                                )
+range(gnomADoverlap$XHMMxgnomAD_pctOverlap)
+median(gnomADoverlap$XHMMxgnomAD_pctOverlap)
+which(gnomADoverlap$XHMMxgnomAD_pctOverlap > 0.74)
+
 # subset to those calls with AF < 0.05
 delBothCallsLCfamiliesUncommon <- overlappingCNVsWgnomAD[-which(overlappingCNVsWgnomAD$allele_frequency > 0.05),]
 ################################ delBothCallsLCfamiliesUncommon  <- subset(overlappingCNVsWgnomAD, is.na(overlappingCNVsWgnomAD$allele_frequency) | overlappingCNVsWgnomAD$allele_frequency < 0.05)
