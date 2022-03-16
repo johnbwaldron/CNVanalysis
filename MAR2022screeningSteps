@@ -1,0 +1,538 @@
+#Rterm.exe --vanilla
+
+library(Homo.sapiens)
+
+# load(file = "C:/Users/4wald/OneDrive - LSUHSC/GELCC/overlappingCNVsBothAlgsPhenoFam.12.28.21.rda")
+#  load(file = "C:/Users/jwaldr/OneDrive - LSUHSC/GELCC/overlappingCNVsWgnomAD.03.15.22.rda")
+olapCNVs <- overlappingCNVs[which(as.numeric(overlappingCNVs$GATKPhred)>19), c(1:15)]
+
+# carry-out comparison of overlap with calls in married ins and with gnomAD calls to the "overlappingCNVs" prior to 
+# removing multiple GATK calls overlaping with XHMM calls # i am doing this because identifying overlap with gnomad and married ins, etc is likely influenced by which calls remain. 
+# nrow(olapCNVs) vs nrow(overlappingCNVs)
+#####################################################################################################################
+marriedInSampleName <- familyPhenotypes[familyPhenotypes$CID == 12 & familyPhenotypes$CIND == 44 | familyPhenotypes$CID == 12 & familyPhenotypes$CIND == 29 |
+                       familyPhenotypes$CID == 103 & familyPhenotypes$CIND == 117|
+                       familyPhenotypes$CID == 25 & familyPhenotypes$CIND == 3|
+                       familyPhenotypes$CID == 26 & familyPhenotypes$CIND == 20|
+                       familyPhenotypes$CID == 31 & familyPhenotypes$CIND == 5|
+                       familyPhenotypes$CID == 33 & familyPhenotypes$CIND == 2|
+                       familyPhenotypes$CID == 34 & familyPhenotypes$CIND == 12|
+                       familyPhenotypes$CID == 69 & familyPhenotypes$CIND == 112| familyPhenotypes$CID == 69 & familyPhenotypes$CIND == 102 |
+                       familyPhenotypes$CID == 90 & familyPhenotypes$CIND == 55 |
+                       familyPhenotypes$CID == 135 & familyPhenotypes$CIND == 122 |
+                       familyPhenotypes$CID == 35 & familyPhenotypes$CIND == 29| 
+                       familyPhenotypes$CID == 47 & familyPhenotypes$CIND == 16|
+                       familyPhenotypes$CID == 102 & familyPhenotypes$CIND == 346|
+                       familyPhenotypes$CID == 131 &  familyPhenotypes$CIND == 125 |
+                       familyPhenotypes$CID == 52 & familyPhenotypes$CIND == 4| familyPhenotypes$CID == 52 & familyPhenotypes$CIND == 13|
+                       familyPhenotypes$CID == 88 & familyPhenotypes$CIND == 13| familyPhenotypes$CID == 88 & familyPhenotypes$CIND == 52,1]
+
+delCallsLCfamilies <- olapCNVs[-which(olapCNVs$sample %in% marriedInSampleName),]
+delCallsMarriedIn <- olapCNVs[which(olapCNVs$sample %in% marriedInSampleName),]
+
+# save(delCallsLCfamilies, delCallsMarriedIn, familyPhenotypes, olapCNVs, pheno, file="C:/Users/4wald/OneDrive - LSUHSC/GELCC/03.15.22.allDelCallsLCfamilies.rda")
+####
+##### use gnomAD deletions and AF to remove common deletions
+gnomAD <- read.delim(file="C:/Users/4wald/OneDrive - LSUHSC/GELCC/hg19_gnomadSVs.txt")
+# limit gnomAD input to deletions
+gnomADdels <- gnomAD[grep("DEL", gnomAD$sv_type),] # ### length(grep("DEL", gnomAD$sv_type)) = 169635
+
+myDels <- delCallsLCfamilies
+# need to make chr numbers only
+l <- strsplit(myDels$chr, "chr") 
+numb <- sapply(l, "[", 2)
+myDels$chr <- numb
+
+GATKranges <- makeGRangesFromDataFrame(myDels[,c(1:4,7:15)], keep.extra.columns=TRUE) 
+XHMMranges <- makeGRangesFromDataFrame(myDels[,c(1:2,5:15)], keep.extra.columns=TRUE) 
+
+# need to have seqnames for GRange object 3 GRanges does not recognize "X.chrom"
+colnames(gnomADdels)[1] <- "chr"
+gnomADranges <- makeGRangesFromDataFrame(gnomADdels, keep.extra.columns=TRUE)
+    
+    #overlaps
+    GATKxgnomADlaps <- findOverlaps(GATKranges, gnomADranges)
+    XHMMxgnomADlaps <- findOverlaps(XHMMranges, gnomADranges)
+   #intersection 
+   GATKxgnomADsect <- pintersect(GATKranges[queryHits(GATKxgnomADlaps)], gnomADranges[subjectHits(GATKxgnomADlaps)])
+   XHMMxgnomADsect <- pintersect(XHMMranges[queryHits(XHMMxgnomADlaps)], gnomADranges[subjectHits(XHMMxgnomADlaps)])
+   #union 
+    GATKxgnomADunion <- punion(GATKranges[queryHits(GATKxgnomADlaps)], gnomADranges[subjectHits(GATKxgnomADlaps)])
+    XHMMxgnomADunion <- punion(XHMMranges[queryHits(XHMMxgnomADlaps)], gnomADranges[subjectHits(XHMMxgnomADlaps)])
+
+XHMMgnomADoverlap <- data.frame(
+                sample = XHMMranges$sample[queryHits(XHMMxgnomADlaps)],
+                chr = as.data.frame(XHMMranges)$seqnames[queryHits(XHMMxgnomADlaps)],
+                start = as.data.frame(XHMMranges)$start[queryHits(XHMMxgnomADlaps)],
+                end = as.data.frame(XHMMranges)$end[queryHits(XHMMxgnomADlaps)],
+                query=queryHits(XHMMxgnomADlaps), 
+                subject=subjectHits(XHMMxgnomADlaps),
+                XHMMxgnomAD_sect_width=width(XHMMxgnomADsect),
+                XHMMxgnomAD_union_width=width(XHMMxgnomADunion),
+                pctOverlap = round(width(XHMMxgnomADsect)/width(XHMMxgnomADunion), 2),
+                allele_frequency = as.data.frame(gnomADranges)$allele_frequency[subjectHits(XHMMxgnomADlaps)]
+                )
+
+GATKgnomADoverlap <- data.frame(
+                        sample = GATKranges$sample[queryHits(GATKxgnomADlaps)],
+                        chr = as.data.frame(GATKranges)$seqnames[queryHits(GATKxgnomADlaps)],
+                        start = as.data.frame(GATKranges)$start[queryHits(GATKxgnomADlaps)],
+                        end = as.data.frame(GATKranges)$end[queryHits(GATKxgnomADlaps)],
+                        query=queryHits(GATKxgnomADlaps), 
+                        subject=subjectHits(GATKxgnomADlaps),
+                        GATKxgnomAD_sect_width=width(GATKxgnomADsect),
+                        GATKxgnomAD_union_width=width(GATKxgnomADunion),
+                        pctOverlap = round(width(GATKxgnomADsect)/width(GATKxgnomADunion), 2),
+                        allele_frequency = as.data.frame(gnomADranges)$allele_frequency[subjectHits(GATKxgnomADlaps)]
+                         )
+                        
+## I WANT TO GO BACK THROUGH THE QUERY VALUES FROM "myDels OR delCallsLCfamilies" TO ADD THE MAX (ORDER FUNCTION)PCT OVERLAP OF EACH QUERY TO GNOMAD.
+# WILL BE ABLE TO DO THE SAME THING FOR MARRIED-INS. THIS WILL WORK BETTER
+# AS I LOOP THROUGH THE DATAFRAMES, I MUST EXAM ONLY THOSE THAT ARE > .75 UNION/INTERSECTION AND THEN TAKE MAX ALLELE FREQUENCY
+
+# below creates columns to provide allele frequencies for those with > 70% overlap
+delCallsLCfamiliesGnomADolapByAlg <- cbind(delCallsLCfamilies[,c(1:6,11:15)], data.frame(GATKgnomAD70pctOverlapMaxAF = NA, XHMMgnomAD70pctOverlapMaxAF = NA, GATKmarriedInpctOverlapMax = NA, XHMMmarriedInpctOverlapMax = NA))
+
+B <- XHMMgnomADoverlap
+
+        for(j in unique(B$query)){ # j = unique(B$query)[42] # 
+                    pctByQuery <- B[which(B$query==j), c("pctOverlap", "allele_frequency")]
+                    pctByQueryG70 <- pctByQuery[which(pctByQuery$pctOverlap > 0.7),]
+                    topAF <- pctByQueryG70[order(pctByQueryG70$allele_frequency, decreasing = TRUE),2]
+                    delCallsLCfamiliesGnomADolapByAlg$XHMMgnomAD70pctOverlapMaxAF[j] <- as.numeric(topAF[1])
+                    
+            } # for j (rows in gnomADoverlap)
+  
+C <- GATKgnomADoverlap
+        for(j in unique(C$query)){ # j = unique(C$query)[44] # 
+                    pctByQuery <- C[which(C$query==j), c("pctOverlap", "allele_frequency")]
+                    pctByQueryG70 <- pctByQuery[which(pctByQuery$pctOverlap > 0.7),]
+                    topAF <- pctByQueryG70[order(pctByQueryG70$allele_frequency, decreasing = TRUE),2]
+                    delCallsLCfamiliesGnomADolapByAlg$GATKgnomAD70pctOverlapMaxAF[j] <- as.numeric(topAF[1])
+                    
+            } # for j (query in gnomADoverlap)
+ # save(delCallsLCfamiliesGnomADolapByAlg, delCallsLCfamilies, delCallsMarriedIn, familyPhenotypes, olapCNVs, pheno, file="C:/Users/jwaldr/OneDrive - LSUHSC/GELCC/03.15.22.delCallsLCfamiliesGnomADolapByAlg.rda")
+
+# below adds a column of AF from gnomAD for those calls with overlap > 75%
+LCfamiliesGnomADolapByAlg <- cbind(delCallsLCfamiliesGnomADolapByAlg, data.frame(GATKgnomAD_75pctOverlapMaxAF = NA, XHMMgnomAD_75pctOverlapMaxAF = NA))
+
+B <- XHMMgnomADoverlap
+
+        for(j in unique(B$query)){ # j = unique(B$query)[42] # 
+                    pctByQuery <- B[which(B$query==j), c("pctOverlap", "allele_frequency")]
+                    pctByQueryG75 <- pctByQuery[which(pctByQuery$pctOverlap > 0.75),]
+                    topAF <- pctByQueryG75[order(pctByQueryG75$allele_frequency, decreasing = TRUE),2]
+                    LCfamiliesGnomADolapByAlg$XHMMgnomAD_75pctOverlapMaxAF[j] <- as.numeric(topAF[1])
+                    
+            } # for j (rows in gnomADoverlap)
+  
+C <- GATKgnomADoverlap
+        for(j in unique(C$query)){ # j = unique(C$query) #j = 3107 # # C$query[which(C[,c("pctOverlap")]>0.75)]
+                    pctByQuery <- C[which(C$query==j), c("pctOverlap", "allele_frequency")] 
+                    pctByQueryG75 <- pctByQuery[which(pctByQuery$pctOverlap > 0.75),]
+                    topAF <- pctByQueryG75[order(pctByQueryG75$allele_frequency, decreasing = TRUE),2]
+                    LCfamiliesGnomADolapByAlg$GATKgnomAD_75pctOverlapMaxAF[j] <- as.numeric(topAF[1])
+                    
+            } # for j (query in gnomADoverlap)
+
+# save(LCfamiliesGnomADolapByAlg, delCallsLCfamiliesGnomADolapByAlg, delCallsLCfamilies, delCallsMarriedIn, familyPhenotypes, olapCNVs, pheno, file="C:/Users/jwaldr/OneDrive - LSUHSC/GELCC/03.16.22.overLapByAlg.rda")
+
+# below adds a column of AF from gnomAD for those calls with overlap > 80% 
+GnomADolapByAlg <- cbind(LCfamiliesGnomADolapByAlg, data.frame(GATKgnomAD_80pctOverlapMaxAF = NA, XHMMgnomAD_80pctOverlapMaxAF = NA))
+
+B <- XHMMgnomADoverlap
+
+        for(j in unique(B$query)){ # j = unique(B$query)[42] # 
+                    pctByQuery <- B[which(B$query==j), c("pctOverlap", "allele_frequency")]
+                    pctByQueryG80 <- pctByQuery[which(pctByQuery$pctOverlap > 0.79),]
+                    topAF <- pctByQueryG80[order(pctByQueryG80$allele_frequency, decreasing = TRUE),2]
+                    GnomADolapByAlg$XHMMgnomAD_80pctOverlapMaxAF[j] <- as.numeric(topAF[1])
+                    
+            } # for j (rows in gnomADoverlap)
+  
+C <- GATKgnomADoverlap
+        for(j in unique(C$query)){ # j = unique(C$query) #j = 3107 # # C$query[which(C[,c("pctOverlap")]>0.75)]
+                    pctByQuery <- C[which(C$query==j), c("pctOverlap", "allele_frequency")] 
+                    pctByQueryG80 <- pctByQuery[which(pctByQuery$pctOverlap > 0.79),]
+                    topAF <- pctByQueryG80[order(pctByQueryG80$allele_frequency, decreasing = TRUE),2]
+                    GnomADolapByAlg$GATKgnomAD_80pctOverlapMaxAF[j] <- as.numeric(topAF[1])
+                    
+            } # for j (query in gnomADoverlap)
+
+save(GnomADolapByAlg, familyPhenotypes, olapCNVs, pheno, file="C:/Users/4wald/OneDrive - LSUHSC/GELCC/03.16.22.multiPctOverLapByAlg.rda")
+
+############################################ olaps with Married-Ins ############################################
+#already have: GATKranges & XHMMranges
+# now need Married-In Ranges: 
+
+# first need to remove "chr" from seqnames in delCallsMarriedIn
+l <- strsplit(delCallsMarriedIn$chr, "chr") 
+numb <- sapply(l, "[", 2)
+delCallsMarriedIn$chr <- numb
+
+B <- makeGRangesFromDataFrame(delCallsMarriedIn[,-c(5,6)], keep.extra.columns=TRUE)
+
+#overlaps
+    GATKxMarriedInlaps <- findOverlaps(GATKranges, B)
+    XHMMxMarriedInlaps <- findOverlaps(XHMMranges, B)
+   #intersection 
+   GATKxMarriedInsect <- pintersect(GATKranges[queryHits(GATKxMarriedInlaps)], B[subjectHits(GATKxMarriedInlaps)])
+   XHMMxMarriedInsect <- pintersect(XHMMranges[queryHits(XHMMxMarriedInlaps)], B[subjectHits(XHMMxMarriedInlaps)])
+   #union 
+    GATKxMarriedInunion <- punion(GATKranges[queryHits(GATKxMarriedInlaps)], B[subjectHits(GATKxMarriedInlaps)])
+    XHMMxMarriedInunion <- punion(XHMMranges[queryHits(XHMMxMarriedInlaps)], B[subjectHits(XHMMxMarriedInlaps)])
+
+# build data.frame with overlap pct for married ins (GATK calls)
+XHMMmarriedINoverlap <- data.frame(
+                sample = XHMMranges$sample[queryHits(XHMMxMarriedInlaps)],
+                chr = as.data.frame(XHMMranges)$seqnames[queryHits(XHMMxMarriedInlaps)],
+                start = as.data.frame(XHMMranges)$start[queryHits(XHMMxMarriedInlaps)],
+                end = as.data.frame(XHMMranges)$end[queryHits(XHMMxMarriedInlaps)],
+                query=queryHits(XHMMxMarriedInlaps), 
+                subject=subjectHits(XHMMxMarriedInlaps),
+                XHMMxgnomAD_sect_width=width(XHMMxMarriedInsect),
+                XHMMxgnomAD_union_width=width(XHMMxMarriedInunion),
+                pctOverlap = round(width(XHMMxMarriedInsect)/width(XHMMxMarriedInunion), 2)
+                                )
+
+GATKmarriedINoverlap <- data.frame(
+                        sample = GATKranges$sample[queryHits(GATKxMarriedInlaps)],
+                        chr = as.data.frame(GATKranges)$seqnames[queryHits(GATKxMarriedInlaps)],
+                        start = as.data.frame(GATKranges)$start[queryHits(GATKxMarriedInlaps)],
+                        end = as.data.frame(GATKranges)$end[queryHits(GATKxMarriedInlaps)],
+                        query=queryHits(GATKxMarriedInlaps), 
+                        subject=subjectHits(GATKxMarriedInlaps),
+                        GATKxgnomAD_sect_width=width(GATKxMarriedInsect),
+                        GATKxgnomAD_union_width=width(GATKxMarriedInunion),
+                        pctOverlap = round(width(GATKxMarriedInsect)/width(GATKxMarriedInunion), 2)
+                                                 )
+
+# build pct overlap values back into "delCallsLCfamiliesGnomADolapByAlg"
+ 
+B <- XHMMmarriedINoverlap
+
+        for(j in unique(B$query)){ # j = unique(B$query)[42] # 
+                    pctByQuery <- B[which(B$query==j), c("pctOverlap")]
+                    topPct <- pctByQuery[order(pctByQuery, decreasing = TRUE)]
+                    delCallsLCfamiliesGnomADolapByAlg$XHMMmarriedInpctOverlapMax[j] <- as.numeric(topPct[1])
+                    
+            } # for j (rows in gnomADoverlap)
+  
+C <- GATKmarriedINoverlap
+        for(j in unique(C$query)){ # j = unique(C$query)[44] # 
+                   pctByQuery <- C[which(C$query==j), c("pctOverlap")]
+                   topPct <- pctByQuery[order(pctByQuery, decreasing = TRUE)]
+                   delCallsLCfamiliesGnomADolapByAlg$GATKmarriedInpctOverlapMax[j] <- as.numeric(topPct[1])
+                    
+            } # for j (query in gnomADoverlap)
+
+# save(delCallsLCfamiliesGnomADolapByAlg, delCallsLCfamilies, delCallsMarriedIn, familyPhenotypes, olapCNVs, pheno, file="C:/Users/jwaldr/OneDrive - LSUHSC/GELCC/03.15.22.delCallsLCfamiliesGnomADolapANDmarriedINSByAlg.rda")
+################################################################################################################################################################################################
+# file loaded below (GnomADolapByAlg) has identified gnomAD and Married-In overlap (gnomAD overlap pct > 70%, 75%, 80%) with both GATK and XHMM calls (all Phred > 20)
+# load(file="C:/Users/4wald/OneDrive - LSUHSC/GELCC/03.16.22.multiPctOverLapByAlg.rda")
+
+# find overlap with DGV variants
+DGV <- read.delim(file="C:/Users/4wald/OneDrive - LSUHSC/GELCC/DGV_GRCh37_hg19_variants_2020-02-25.txt")
+
+DGVloss <- DGV[grep("loss", DGV$variantsubtype),] # ### length(grep("DEL", gnomAD$sv_type)) = 169635
+# NO need to remove "chr" from seqnames in DGVloss as in other databases
+# remove "chr" from seqnames in delCallsLCfamiliesGnomADolapByAlg
+
+l <- strsplit(delCallsLCfamiliesGnomADolapByAlg$chr, "chr") 
+numb <- sapply(l, "[", 2)
+delCallsLCfamiliesGnomADolapByAlg$chr <- numb
+
+GATKranges <- makeGRangesFromDataFrame(delCallsLCfamiliesGnomADolapByAlg[,-c(5,6)], keep.extra.columns=TRUE) 
+XHMMranges <- makeGRangesFromDataFrame(delCallsLCfamiliesGnomADolapByAlg[,-c(3,4)], keep.extra.columns=TRUE)
+B <- makeGRangesFromDataFrame(DGVloss, keep.extra.columns=TRUE)
+
+#### percent overlap between A and B defined by the ratio of the intersection of A and B to the union of A and B.  
+#overlaps
+    GATKxDGVlaps <- findOverlaps(GATKranges, B)
+    XHMMxDGVlaps <- findOverlaps(XHMMranges, B)
+   #intersection 
+   GATKxDGVsect <- pintersect(GATKranges[queryHits(GATKxDGVlaps)], B[subjectHits(GATKxDGVlaps)])
+   XHMMxDGVsect <- pintersect(XHMMranges[queryHits(XHMMxDGVlaps)], B[subjectHits(XHMMxDGVlaps)])
+   #union 
+    GATKxDGVunion <- punion(GATKranges[queryHits(GATKxDGVlaps)], B[subjectHits(GATKxDGVlaps)])
+    XHMMxDGVunion <- punion(XHMMranges[queryHits(XHMMxDGVlaps)], B[subjectHits(XHMMxDGVlaps)])
+
+# build data.frame with overlap pct with DGV (XHMM and GATK calls)
+XHMMxDGVoverlap <- data.frame(
+                sample = XHMMranges$sample[queryHits(XHMMxDGVlaps)],
+                chr = as.data.frame(XHMMranges)$seqnames[queryHits(XHMMxDGVlaps)],
+                start = as.data.frame(XHMMranges)$start[queryHits(XHMMxDGVlaps)],
+                end = as.data.frame(XHMMranges)$end[queryHits(XHMMxDGVlaps)],
+                query=queryHits(XHMMxDGVlaps), 
+                subject=subjectHits(XHMMxDGVlaps),
+                XHMMxgnomAD_sect_width=width(XHMMxDGVsect),
+                XHMMxgnomAD_union_width=width(XHMMxDGVunion),
+                pctOverlap = round(width(XHMMxDGVsect)/width(XHMMxDGVunion), 2),
+                GELCC_genes = as.data.frame(XHMMranges)$XHMMgene[queryHits(XHMMxDGVlaps)],
+                DGV_genes = as.data.frame(B)$genes[subjectHits(XHMMxDGVlaps)],
+                DGV_variantaccession = as.data.frame(B)$variantaccession[subjectHits(XHMMxDGVlaps)],
+                allele_frequency = as.data.frame(B)$frequency[subjectHits(XHMMxDGVlaps)]
+                                )
+
+GATKxDGVoverlap <- data.frame(
+                        sample = GATKranges$sample[queryHits(GATKxDGVlaps)],
+                        chr = as.data.frame(GATKranges)$seqnames[queryHits(GATKxDGVlaps)],
+                        start = as.data.frame(GATKranges)$start[queryHits(GATKxDGVlaps)],
+                        end = as.data.frame(GATKranges)$end[queryHits(GATKxDGVlaps)],
+                        query=queryHits(GATKxDGVlaps), 
+                        subject=subjectHits(GATKxDGVlaps),
+                        GATKxgnomAD_sect_width=width(GATKxDGVsect),
+                        GATKxgnomAD_union_width=width(GATKxDGVunion),
+                        pctOverlap = round(width(GATKxDGVsect)/width(GATKxDGVunion), 2),
+                        GELCC_genes = as.data.frame(GATKranges)$GATKgene[queryHits(GATKxDGVlaps)],
+                        DGV_genes = as.data.frame(B)$genes[subjectHits(GATKxDGVlaps)],
+                        DGV_variantaccession = as.data.frame(B)$variantaccession[subjectHits(GATKxDGVlaps)],
+                        allele_frequency = as.data.frame(B)$frequency[subjectHits(GATKxDGVlaps)]
+                                 )
+
+# build pct overlap values back into "delCallsLCfamiliesGnomADolapByAlg"
+delsLCfamiliesGnomADandDGVolapByAlg <- cbind(delCallsLCfamiliesGnomADolapByAlg, data.frame(GATKxDGVpctOverlap = NA, XHMMxDGVpctOverlap = NA)) 
+
+B <- XHMMxDGVoverlap
+
+        for(j in unique(B$query)){ # j = unique(B$query)[42] # 
+                    pctByQuery <- B[which(B$query==j), c("pctOverlap")]
+                    topPct <- pctByQuery[order(pctByQuery, decreasing = TRUE)]
+                    delsLCfamiliesGnomADandDGVolapByAlg$XHMMxDGVpctOverlap[j] <- as.numeric(topPct[1])
+                    
+            } # for j (rows in DGV overlap)
+
+# delsLCfamiliesGnomADandDGVolapByAlg$XHMMxDGV70pctOverlapMaxAF[which(!is.na(delsLCfamiliesGnomADandDGVolapByAlg$XHMMxDGV70pctOverlapMaxAF))]
+
+C <- GATKxDGVoverlap
+        for(j in unique(C$query)){ # j = unique(C$query)[44] # 
+                   pctByQuery <- C[which(B$query==j), c("pctOverlap")]
+                   topPct <- pctByQuery[order(pctByQuery, decreasing = TRUE)]
+                   delsLCfamiliesGnomADandDGVolapByAlg$GATKxDGVpctOverlap[j] <- as.numeric(topPct[1])
+                    
+            } # for j (query in gnomADoverlap)
+
+# save(delsLCfamiliesGnomADandDGVolapByAlg, delCallsLCfamilies, delCallsMarriedIn, familyPhenotypes, olapCNVs, pheno, file="C:/Users/4wald/OneDrive - LSUHSC/GELCC/03.16.22.delCallsLCfamiliesGnomADolapANDmarriedINSByAlg.rda")
+
+olapByAlg <- cbind(GnomADolapByAlg, delsLCfamiliesGnomADandDGVolapByAlg[,16:17])
+save(olapByAlg, familyPhenotypes, olapCNVs, pheno, file="C:/Users/4wald/OneDrive - LSUHSC/GELCC/03.16.22.olapsByAlg.rda")
+#####################################################################################################################
+#####################################################################################################################
+# create table grouped by gene that includes deletions in genes that affect at least 3 individuals.
+
+delBothCallsLCfamiliesUncommonGeneIDs <- unlist(strsplit(delBothCallsLCfamiliesUncommon$XHMMgene, split = ", "))  # length(unique(delCallsLCfamiliesgeneIDs)) = now (9/30/21) 813, prior to 9/30/21 it was 566
+
+freq <-table(delBothCallsLCfamiliesUncommonGeneIDs) # freq <-table(delBothCallsLCfamiliesUncommonGeneIDs[delBothCallsLCfamiliesUncommonGeneIDs != "NA"]) 
+genelistG2 <- as.data.frame(freq)[as.data.frame(freq)[,2]>2,]
+colnames(genelistG2) <- c("gene", "Freq")
+
+allGenesInG2CIND <- data.frame() 
+for (j in 1:length(genelistG2$gene)){    #j=1
+      loc <- vector()
+      for(i in 1:length(delBothCallsLCfamiliesUncommon$XHMMgene)){ # i=1
+              if (genelistG2$gene[j] %in% strsplit(delBothCallsLCfamiliesUncommon$XHMMgene, split = ", ")[[i]]){
+              loc <- c(loc, i)}
+                          
+              } # i
+      cat("working on ", as.vector(genelistG2$gene)[j], "\n")
+
+# match sample in delBothCallsLCfamiliesUncommon (cnvs with only dels, minus married-ins, minus AF > 0.05) to sample in phenoFam: CID and CIND, "CF", "CM", "diagnosis.of.lung.throat.pharynx.larynx.cancer", "Age.at.Onset.1o.cancer"
+      family <- delBothCallsLCfamiliesUncommon[loc,c(1:4, 11,16:20)] 
+      for(w in 1:length(family$sample)){    # w = 2
+         family[w,"CID"] <- phenoFam[which(phenoFam$submitted.sample.id == family$sample[w]), "CID"]
+         family[w,"CIND"] <- phenoFam[which(phenoFam$submitted.sample.id == family$sample[w]), "CIND"]
+         family[w,"CF"] <- phenoFam[which(phenoFam$submitted.sample.id == family$sample[w]), "CF"]
+         family[w,"CM"] <- phenoFam[which(phenoFam$submitted.sample.id == family$sample[w]), "CM"]
+         family[w, "SEX"] <- phenoFam[which(phenoFam$submitted.sample.id == family$sample[w]), "SEX"]
+         family[w,"diagnosis.of.lung.throat.pharynx.larynx.cancer"] <- phenoFam[which(phenoFam$submitted.sample.id == family$sample[w]), "diagnosis.of.lung.throat.pharynx.larynx.cancer"]
+         family[w,"Age.at.Onset.1o.cancer"] <- phenoFam[which(phenoFam$submitted.sample.id == family$sample[w]), "Age.at.Onset.1o.cancer"]
+         } # w
+   #label this information with the gene of interest
+   family$gene <- genelistG2$gene[j]
+
+allGenesInG2CIND <- rbind(allGenesInG2CIND, family)
+            } # j 
+
+### running through loops to organize by gene 10/13/21 11:00am - two hours in, still in the genes starting with the letter A.
+### closing the R gui window that had a help article sped up the process. 
+# def want to save this table to avoid running this again if possible.
+write.csv(allGenesInG2CIND, file= "C:/Users/4wald/OneDrive - LSUHSC/GELCC/10.13.21.allGenesInG2CIND.csv")
+# allGenesInG2CIND <- read.csv(file= "C:/Users/jwaldr/OneDrive - LSUHSC/GELCC/10.13.21.allGenesInG2CIND.csv")
+
+# prior to first removing common (AF > 0.05) # save(allGenesInG2CIND, overlappingCNVs, overlappingCNVsPostRemoved, GATKcnv, XHMMcnv, phenoFam, file="C:/Users/4wald/OneDrive - LSUHSC/GELCC/10.3.21.upToAllDataOrganizedByGene.rda")
+# load(file="C:/Users/4wald/OneDrive - LSUHSC/GELCC/9.30.21.upToAllDataOrganizedByGene.rda")
+#### Now time for branch point - all those genes in 3 families at least 2 individuals per family and those in < 3 families but > 4(3?) individuals per family
+# frankly, that (above line) should be easy to subset
+
+############################################################################################################################################################################
+delBothCallsLCfamiliesUncommon[which(delBothCallsLCfamiliesUncommon$sample=="H_NK-12GELCC37-12037"),]
+############################################################################################################################################################################
+# organize to determine how many per family 
+geneSummary <- as.data.frame(matrix(nrow=0, ncol=8))
+colnames(geneSummary) <- c("gene", "numCIDs", "numCIDs.with.>2ind", "numCINDs", "num_affected", "num_unaffected", "mean_width", "num_unique_widths")
+
+for(i in unique(allGenesInG2CIND$gene)){    #i = cumgFamily$gene[1]
+     peeps <- subset(allGenesInG2CIND, allGenesInG2CIND$gene %in% i)
+     k=0
+     for(j in unique(peeps$CID)) {    #j=peeps$CID[1]
+         if(length(which(peeps$CID %in% j))>1){ k=k+1 }
+            } # j
+     geneSummary <- rbind(geneSummary, data.frame(i, length(unique(peeps$CID)), 
+                                         k, length(peeps$CIND), 
+                                         length(which(peeps$diagnosis.of.lung.throat.pharynx.larynx.cancer)),
+                                         length(which(peeps$diagnosis.of.lung.throat.pharynx.larynx.cancer==FALSE)),
+                                         round(mean(as.numeric(peeps$GATKend)-as.numeric(peeps$GATKstart)), 1), 
+                                         length(unique(as.numeric(peeps$GATKend)-as.numeric(peeps$GATKstart)))))
+     # this could be a great place to use a statistical test of association between Dx and cnv width, CID and CNV width, or                         
+     
+     cat(i, " has ",  length(unique(peeps$CID)), " CIDs and ", k, " families with > 2 CINDs with this CNV\n")   
+     } # i
+     colnames(geneSummary) <- c("gene", "numCIDs", "numCIDs.with.>2ind", "numCINDs", "num_affected", "num_unaffected", "mean_width", "num_unique_widths")
+
+write.table(geneSummary, file= "C:/Users/4wald/OneDrive - LSUHSC/GELCC/statsByGene.10.13.21.csv", row.names=FALSE, sep =",")                                         
+
+# write.table(geneSummary, file= "C:/Users/jwaldr/OneDrive - LSUHSC/GELCC/statsByGene.10.1.21.csv", row.names=FALSE, sep =",")                                                                                  
+# geneSummary <- read.csv(file= "C:/Users/jwaldr/OneDrive - LSUHSC/GELCC/statsByGene.10.1.21.csv")                                         
+
+# now screen out all genes where geneSummary[,2] < 3 | geneSummary[,3] < 3
+
+G2FamiliesWithG2per <- subset(geneSummary, geneSummary[,3] > 2)
+G2FamiliesWithG2per <- rbind(G2FamiliesWithG2per, geneSummary[which(geneSummary$gene=="SSX1"),])
+
+write.table(G2FamiliesWithG2per, file= "C:/Users/4wald/OneDrive - LSUHSC/GELCC/G2FamiliesWithG2per.10.13.21.csv", row.names=FALSE, sep =",") 
+# write.table(G2FamiliesWithG2per, file= "C:/Users/4wald/OneDrive - LSUHSC/GELCC/G2FamiliesWithG2per.10.4.21.csv", row.names=FALSE, sep =",")  
+# G2FamiliesWithG2per <- read.csv(file= "C:/Users/jwaldr/OneDrive - LSUHSC/GELCC/G2FamiliesWithG2per.10.13.21.csv")
+
+#####################################################################################################################
+
+#####################################################################################################################
+# plotting density after screening steps
+# load(file="C:/Users/4wald/OneDrive - LSUHSC/GELCC/03.16.22.olapsByAlg.rda")
+# use olapByAlg for all data and pct overlap
+
+# create histograms to illustrate changes in number of genes affected by deletions through filtering by values in "delsLCfamiliesGnomADandDGVolapByAlg"
+*1* genesBothCallersAllDeletions <- unlist(strsplit(overlappingCNVsPostRemoved$XHMMgene, split = ", ")) # length(genesBothCallersAllDeletions) = 8070   
+*2* delCallsLCfamiliesgeneIDs <- unlist(strsplit(delCallsLCfamilies$XHMMgene, split = ", ")) # length(delCallsLCfamiliesgeneIDs) = 7499
+    # load(file = "C:/Users/jwaldr/OneDrive - LSUHSC/GELCC/overlappingCNVsWgnomAD.10.13.21.rda") # overlappingCNVsWgnomAD
+    delBothCallsLCfamiliesUncommon <- overlappingCNVsWgnomAD[-which(overlappingCNVsWgnomAD$allele_frequency > 0.05),] #
+*3* delBothCallsLCfamiliesUncommonGeneIDs <- unlist(strsplit(delBothCallsLCfamiliesUncommon$XHMMgene, split = ", ")) # length(delBothCallsLCfamiliesUncommonGeneIDs) =6578
+    allGenesInG2CIND <- read.csv(file= "C:/Users/jwaldr/OneDrive - LSUHSC/GELCC/10.13.21.allGenesInG2CIND.csv")
+*4* allGenesInG2CIND$gene # length(allGenesInG2CIND$gene) = 5976
+    G2FamiliesWithG2per <- read.csv(file= "C:/Users/jwaldr/OneDrive - LSUHSC/GELCC/G2FamiliesWithG2per.10.13.21.csv")
+*5* G2FamiliesWithG2pergeneFrequency <- data.frame(gene = G2FamiliesWithG2per$gene, Freq = G2FamiliesWithG2per$numCINDs)
+
+# *1* genesBothCallersAllDeletions
+# for each unique sample, list unique gene names
+Dels <- vector("list", length = 181)
+names(Dels) <- unique(olapByAlg$sample)
+
+for(i in unique(olapByAlg$sample)){ # i = olapByAlg$sample[29]
+                g <- unlist(strsplit(olapByAlg$GATKgene[which(delsLCfamiliesGnomADandDGVolapByAlg$sample==i)], split = ", "))
+                x <- unlist(strsplit(olapByAlg$XHMMgene[which(delsLCfamiliesGnomADandDGVolapByAlg$sample==i)], split = ", "))
+                Dels[[i]] <- unique(c(g, x))
+                } # in in unique sample name
+
+freq1 <- table(Reduce(c, Dels))
+freq1.1 <- as.data.frame(freq1)
+freq1.1[,3] <- "Deletions from Both Callers"
+colnames(freq1.1 ) <- c("gene", "Freq", "Group")
+dens1 <- density(freq1.1$Freq,  kernel = c("gaussian", "epanechnikov", "rectangular", "triangular", "biweight", "cosine", "optcosine")[1])
+
+# *2* delCallsLCfamiliesgeneIDs
+
+# lete's make step two only in C
+
+Dels <- vector("list", length = 181)
+names(Dels) <- unique(olapByAlg$sample)
+
+for(i in unique(olapByAlg$sample)){ # i = olapByAlg$sample[29]
+                bySam <- olapByAlg[which(olapByAlg$sample==i),]
+                f <- bySam[-which(bySam$GATKmarriedInpctOverlapMax > .74) ,]                        
+                g <- unlist(strsplit(f$GATKgene, split = ", "))
+                
+                w <- bySam[-which(bySam$XHMMmarriedInpctOverlapMax > .74) ,]  
+                x <- unlist(strsplit(w$XHMMgene, split = ", "))
+                Dels[[i]] <- unique(c(g, x))
+                } # in in unique sample name
+
+freq2 <- table(Reduce(c, Dels)) 
+freq2.1 <- as.data.frame(freq2)
+freq2.1[,3] <- "Exluding Married-Ins"
+colnames(freq2.1 ) <- c("gene", "Freq", "Group")
+dens2 <- density(freq2.1$Freq,  kernel = c("gaussian", "epanechnikov", "rectangular", "triangular", "biweight", "cosine", "optcosine")[1])
+
+# *3* delBothCallsLCfamiliesUncommonGeneIDs
+
+Dels <- vector("list", length = 181)
+names(Dels) <- unique(olapByAlg$sample)
+
+for(i in unique(olapByAlg$sample)){ # i = olapByAlg$sample[29]
+                bySam <- delsLCfamiliesGnomADandDGVolapByAlg[which(delsLCfamiliesGnomADandDGVolapByAlg$sample==i),]                   
+                e <- bySam[-which(bySam$GATKmarriedInpctOverlapMax > .74) ,] # minus married-in CNVs
+                f <- e[-which(e$GATKgnomAD70pctOverlapMaxAF > .05) ,] # minus common CNVs in gnomAD
+                g <- unlist(strsplit(f$GATKgene, split = ", "))
+                
+                v <- bySam[-which(bySam$XHMMmarriedInpctOverlapMax > .74) ,] # minus married-in CNVs
+                w <- v[-which(v$XHMMgnomAD70pctOverlapMaxAF > .05) ,] # minus common CNVs in gnomAD
+                x <- unlist(strsplit(w$XHMMgene, split = ", "))
+                Dels[[i]] <- unique(c(g, x))
+                } # in in unique sample name
+
+freq3 <- table(Reduce(c, Dels))
+freq3.1 <- as.data.frame(freq3)
+freq3.1[,3] <- "gnomAD AF < 0.05"
+colnames(freq3.1) <- c("gene", "Freq", "Group")
+dens3 <- density(freq3.1$Freq,  kernel = c("gaussian", "epanechnikov", "rectangular", "triangular", "biweight", "cosine", "optcosine")[1])
+
+# library(car)
+png(file = "C:/Users/4wald/OneDrive - LSUHSC/GELCC/03.16.22.densityByFilterStep.png")
+    plot(dens1, main = "Fig. 2 density of per gene calls for each filter step", col = 1,
+    xlim = c(1, 60))
+    lines(dens2, col = 2) 
+    lines(dens3, col = 3)
+    legend("topright", legend = c("Deletions from Both Callers", 
+                                 "Exluding Married-Ins",
+                                 "gnomAD AF < 0.05",
+                                 "Greater than 2 Indidivuduals",
+                                 "Greater than 2 Families with 2 per Family"),
+                                  lty = 1, col = 1:5)
+dev.off()
+
+
+freq4 <- table(allGenesInG2CIND$gene[allGenesInG2CIND$gene != "NA"])
+freq4.1 <- as.data.frame(freq4)
+freq4.1[,3] <- "Greater than 2 Indidivuduals"
+colnames(freq4.1) <- c("gene", "Freq", "Group")
+dens4 <- density(freq4.1$Freq,  kernel = c("gaussian", "epanechnikov", "rectangular", "triangular", "biweight", "cosine", "optcosine")[1])
+
+
+freq5 <- G2FamiliesWithG2pergeneFrequency
+freq5[,3] <- "Greater than 2 Families with 2 per Family"
+colnames(freq5) <- c("gene", "Freq", "Group")
+dens5 <- density(freq5$Freq,  kernel = c("gaussian", "epanechnikov", "rectangular", "triangular", "biweight", "cosine", "optcosine")[1])
+
+df <- rbind(freq1.1, freq2.1, freq3.1, freq4.1, freq5)
+
+# install.packages("car")
+library(car)
+
+png(file = "C:/Users/jwaldr/OneDrive - LSUHSC/GELCC/10.19.21.densityByFilterStep.png")
+    plot(dens1, main = "Fig. 2 density of per gene calls for each filter step", col = 1,
+     xlim = c(1, 60))
+    lines(dens2, col = 2) 
+    lines(dens3, col = 3)
+    lines(dens4, col = 4) 
+    lines(dens5, col = 5)
+    legend("topright", legend = c("Deletions from Both Callers", 
+                                 "Exluding Married-Ins",
+                                 "gnomAD AF < 0.05",
+                                 "Greater than 2 Indidivuduals",
+                                 "Greater than 2 Families with 2 per Family"),
+                                  lty = 1, col = 1:5)
+dev.off()
+#####################################################################################################################
+
+
+
+
+
