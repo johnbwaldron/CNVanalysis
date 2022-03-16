@@ -638,7 +638,7 @@ for(i in 1:nrow(overlappingCNVsWgnomADandMMarriedINs)){ # i = 10
 #####################################################################################################################
 # carry-out comparison of overlap with calls in married ins and with gnomAD calls to the "overlappingCNVs" prior to 
 # removing multiple GATK calls overlaping with XHMM calls # i am doing this because identifying overlap with gnomad and married ins, etc is likely influenced by which calls remain. 
-#  load(file = "C:/Users/4wald/OneDrive - LSUHSC/GELCC/overlappingCNVsWgnomAD.03.15.22.rda")
+#  load(file = "C:/Users/jwaldr/OneDrive - LSUHSC/GELCC/overlappingCNVsWgnomAD.03.15.22.rda")
 olapCNVs <- overlappingCNVs[which(as.numeric(overlappingCNVs$GATKPhred)>19), c(1:15)]
 # nrow(olapCNVs) vs nrow(overlappingCNVs)
 marriedInSampleName <- familyPhenotypes[familyPhenotypes$CID == 12 & familyPhenotypes$CIND == 44 | familyPhenotypes$CID == 12 & familyPhenotypes$CIND == 29 |
@@ -664,7 +664,7 @@ delCallsMarriedIn <- olapCNVs[which(olapCNVs$sample %in% marriedInSampleName),]
 # save(delCallsLCfamilies, delCallsMarriedIn, familyPhenotypes, olapCNVs, pheno, file="C:/Users/4wald/OneDrive - LSUHSC/GELCC/03.15.22.allDelCallsLCfamilies.rda")
 ####
 ##### use gnomAD deletions and AF to remove common deletions
-gnomAD <- read.delim(file="C:/Users/4wald/OneDrive - LSUHSC/GELCC/hg19_gnomadSVs.txt")
+gnomAD <- read.delim(file="C:/Users/jwaldr/OneDrive - LSUHSC/GELCC/hg19_gnomadSVs.txt")
 # limit gnomAD input to deletions
 gnomADdels <- gnomAD[grep("DEL", gnomAD$sv_type),] # ### length(grep("DEL", gnomAD$sv_type)) = 169635
 
@@ -691,34 +691,125 @@ gnomADranges <- makeGRangesFromDataFrame(gnomADdels, keep.extra.columns=TRUE)
     GATKxgnomADunion <- punion(GATKranges[queryHits(GATKxgnomADlaps)], gnomADranges[subjectHits(GATKxgnomADlaps)])
     XHMMxgnomADunion <- punion(XHMMranges[queryHits(XHMMxgnomADlaps)], gnomADranges[subjectHits(XHMMxgnomADlaps)])
 
-## I WANT TO GO BACK THROUGH THE QUERY VALUES FROM "myDels OR delCallsLCfamilies" TO ADD THE MAX (ORDER FUNCTION)PCT OVERLAP OF EACH QUERY TO GNOMAD.
-# WILL BE ABLE TO DO THE SAME THING FOR MARRIED-INS. THIS WILL WORK BETTER THAN WHAT IS BELOW
-
-gnomADoverlap <- data.frame(
-                # sample = GATKranges$sample[queryHits(GATKxgnomADlaps)],
-                sampleX = XHMMranges$sample[queryHits(XHMMxgnomADlaps)],
-                #chr = as.data.frame(GATKranges)$seqnames[queryHits(GATKxgnomADlaps)],
-                chrX = as.data.frame(XHMMranges)$seqnames[queryHits(XHMMxgnomADlaps)],
-                #GATKstart = as.data.frame(GATKranges)$start[queryHits(GATKxgnomADlaps)],
-                #GATKend = as.data.frame(GATKranges)$end[queryHits(GATKxgnomADlaps)],
-                XHMMstart = as.data.frame(XHMMranges)$start[queryHits(XHMMxgnomADlaps)],
-                XHMMend = as.data.frame(XHMMranges)$end[queryHits(XHMMxgnomADlaps)],
-                #gnomADstart = as.data.frame(B)$start[subjectHits(ABlaps)],
-                #gnomADend = as.data.frame(B)$end[subjectHits(ABlaps)],
-                #query=queryHits(ABlaps), 
-                #subject=subjectHits(ABlaps),
-                # GATKxgnomAD_sect_width=width(GATKxgnomADsect),
+XHMMgnomADoverlap <- data.frame(
+                sample = XHMMranges$sample[queryHits(XHMMxgnomADlaps)],
+                chr = as.data.frame(XHMMranges)$seqnames[queryHits(XHMMxgnomADlaps)],
+                start = as.data.frame(XHMMranges)$start[queryHits(XHMMxgnomADlaps)],
+                end = as.data.frame(XHMMranges)$end[queryHits(XHMMxgnomADlaps)],
+                query=queryHits(XHMMxgnomADlaps), 
+                subject=subjectHits(XHMMxgnomADlaps),
                 XHMMxgnomAD_sect_width=width(XHMMxgnomADsect),
-                # GATKxgnomAD_union_width=width(GATKxgnomADunion),
                 XHMMxgnomAD_union_width=width(XHMMxgnomADunion),
-                # GATKxgnomAD_pctOverlap = round(width(GATKxgnomADsect)/width(GATKxgnomADunion), 2),
-                XHMMxgnomAD_pctOverlap = round(width(XHMMxgnomADsect)/width(XHMMxgnomADunion), 2),
-                # GATK_allele_frequency = as.data.frame(gnomADranges)$allele_frequency[subjectHits(GATKxgnomADlaps)],
-                XHMM_allele_frequency = as.data.frame(gnomADranges)$allele_frequency[subjectHits(XHMMxgnomADlaps)]
+                pctOverlap = round(width(XHMMxgnomADsect)/width(XHMMxgnomADunion), 2),
+                allele_frequency = as.data.frame(gnomADranges)$allele_frequency[subjectHits(XHMMxgnomADlaps)]
+                )
+
+GATKgnomADoverlap <- data.frame(
+                        sample = GATKranges$sample[queryHits(GATKxgnomADlaps)],
+                        chr = as.data.frame(GATKranges)$seqnames[queryHits(GATKxgnomADlaps)],
+                        start = as.data.frame(GATKranges)$start[queryHits(GATKxgnomADlaps)],
+                        end = as.data.frame(GATKranges)$end[queryHits(GATKxgnomADlaps)],
+                        query=queryHits(GATKxgnomADlaps), 
+                        subject=subjectHits(GATKxgnomADlaps),
+                        GATKxgnomAD_sect_width=width(GATKxgnomADsect),
+                        GATKxgnomAD_union_width=width(GATKxgnomADunion),
+                        pctOverlap = round(width(GATKxgnomADsect)/width(GATKxgnomADunion), 2),
+                        allele_frequency = as.data.frame(gnomADranges)$allele_frequency[subjectHits(GATKxgnomADlaps)]
+                         )
+                        
+## I WANT TO GO BACK THROUGH THE QUERY VALUES FROM "myDels OR delCallsLCfamilies" TO ADD THE MAX (ORDER FUNCTION)PCT OVERLAP OF EACH QUERY TO GNOMAD.
+# WILL BE ABLE TO DO THE SAME THING FOR MARRIED-INS. THIS WILL WORK BETTER
+# AS I LOOP THROUGH THE DATAFRAMES, I MUST EXAM ONLY THOSE THAT ARE > .75 UNION/INTERSECTION AND THEN TAKE MAX ALLELE FREQUENCY
+
+delCallsLCfamiliesGnomADolapByAlg <- cbind(delCallsLCfamilies[,c(1:6,11:15)], data.frame(GATKgnomAD70pctOverlapMaxAF = NA, XHMMgnomAD70pctOverlapMaxAF = NA, GATKmarriedInpctOverlapMax = NA, XHMMmarriedInpctOverlapMax = NA))
+
+B <- XHMMgnomADoverlap
+
+        for(j in unique(B$query)){ # j = unique(B$query)[42] # 
+                    pctByQuery <- B[which(B$query==j), c("pctOverlap", "allele_frequency")]
+                    pctByQueryG70 <- pctByQuery[which(pctByQuery$pctOverlap > 0.7),]
+                    topAF <- pctByQueryG70[order(pctByQueryG70$allele_frequency, decreasing = TRUE),2]
+                    delCallsLCfamiliesGnomADolapByAlg$XHMMgnomAD70pctOverlapMaxAF[j] <- as.numeric(topAF[1])
+                    
+            } # for j (rows in gnomADoverlap)
+  
+C <- GATKgnomADoverlap
+        for(j in unique(C$query)){ # j = unique(C$query)[44] # 
+                    pctByQuery <- C[which(C$query==j), c("pctOverlap", "allele_frequency")]
+                    pctByQueryG70 <- pctByQuery[which(pctByQuery$pctOverlap > 0.7),]
+                    topAF <- pctByQueryG70[order(pctByQueryG70$allele_frequency, decreasing = TRUE),2]
+                    delCallsLCfamiliesGnomADolapByAlg$GATKgnomAD70pctOverlapMaxAF[j] <- as.numeric(topAF[1])
+                    
+            } # for j (query in gnomADoverlap)
+ # save(delCallsLCfamiliesGnomADolapByAlg, delCallsLCfamilies, delCallsMarriedIn, familyPhenotypes, olapCNVs, pheno, file="C:/Users/jwaldr/OneDrive - LSUHSC/GELCC/03.15.22.delCallsLCfamiliesGnomADolapByAlg.rda")
+
+############################################ olaps with Married-Ins ############################################
+#already have: GATKranges & XHMMranges
+# now need Married-In Ranges: 
+
+# first need to remove "chr" from seqnames in delCallsMarriedIn
+l <- strsplit(delCallsMarriedIn$chr, "chr") 
+numb <- sapply(l, "[", 2)
+delCallsMarriedIn$chr <- numb
+
+B <- makeGRangesFromDataFrame(delCallsMarriedIn[,-c(5,6)], keep.extra.columns=TRUE)
+
+#overlaps
+    GATKxMarriedInlaps <- findOverlaps(GATKranges, B)
+    XHMMxMarriedInlaps <- findOverlaps(XHMMranges, B)
+   #intersection 
+   GATKxMarriedInsect <- pintersect(GATKranges[queryHits(GATKxMarriedInlaps)], B[subjectHits(GATKxMarriedInlaps)])
+   XHMMxMarriedInsect <- pintersect(XHMMranges[queryHits(XHMMxMarriedInlaps)], B[subjectHits(XHMMxMarriedInlaps)])
+   #union 
+    GATKxMarriedInunion <- punion(GATKranges[queryHits(GATKxMarriedInlaps)], B[subjectHits(GATKxMarriedInlaps)])
+    XHMMxMarriedInunion <- punion(XHMMranges[queryHits(XHMMxMarriedInlaps)], B[subjectHits(XHMMxMarriedInlaps)])
+
+# build data.frame with overlap pct for married ins (GATK calls)
+XHMMmarriedINoverlap <- data.frame(
+                sample = XHMMranges$sample[queryHits(XHMMxMarriedInlaps)],
+                chr = as.data.frame(XHMMranges)$seqnames[queryHits(XHMMxMarriedInlaps)],
+                start = as.data.frame(XHMMranges)$start[queryHits(XHMMxMarriedInlaps)],
+                end = as.data.frame(XHMMranges)$end[queryHits(XHMMxMarriedInlaps)],
+                query=queryHits(XHMMxMarriedInlaps), 
+                subject=subjectHits(XHMMxMarriedInlaps),
+                XHMMxgnomAD_sect_width=width(XHMMxMarriedInsect),
+                XHMMxgnomAD_union_width=width(XHMMxMarriedInunion),
+                pctOverlap = round(width(XHMMxMarriedInsect)/width(XHMMxMarriedInunion), 2)
                                 )
-range(gnomADoverlap$XHMMxgnomAD_pctOverlap)
-median(gnomADoverlap$XHMMxgnomAD_pctOverlap)
-which(gnomADoverlap$XHMMxgnomAD_pctOverlap > 0.74)
+
+GATKmarriedINoverlap <- data.frame(
+                        sample = GATKranges$sample[queryHits(GATKxMarriedInlaps)],
+                        chr = as.data.frame(GATKranges)$seqnames[queryHits(GATKxMarriedInlaps)],
+                        start = as.data.frame(GATKranges)$start[queryHits(GATKxMarriedInlaps)],
+                        end = as.data.frame(GATKranges)$end[queryHits(GATKxMarriedInlaps)],
+                        query=queryHits(GATKxMarriedInlaps), 
+                        subject=subjectHits(GATKxMarriedInlaps),
+                        GATKxgnomAD_sect_width=width(GATKxMarriedInsect),
+                        GATKxgnomAD_union_width=width(GATKxMarriedInunion),
+                        pctOverlap = round(width(GATKxMarriedInsect)/width(GATKxMarriedInunion), 2)
+                                                 )
+
+# build pct overlap values back into "delCallsLCfamiliesGnomADolapByAlg"
+ 
+B <- XHMMmarriedINoverlap
+
+        for(j in unique(B$query)){ # j = unique(B$query)[42] # 
+                    pctByQuery <- B[which(B$query==j), c("pctOverlap")]
+                    topPct <- pctByQuery[order(pctByQuery, decreasing = TRUE)]
+                    delCallsLCfamiliesGnomADolapByAlg$XHMMmarriedInpctOverlapMax[j] <- as.numeric(topPct[1])
+                    
+            } # for j (rows in gnomADoverlap)
+  
+C <- GATKmarriedINoverlap
+        for(j in unique(C$query)){ # j = unique(C$query)[44] # 
+                   pctByQuery <- C[which(C$query==j), c("pctOverlap")]
+                   topPct <- pctByQuery[order(pctByQuery, decreasing = TRUE)]
+                   delCallsLCfamiliesGnomADolapByAlg$GATKmarriedInpctOverlapMax[j] <- as.numeric(topPct[1])
+                    
+            } # for j (query in gnomADoverlap)
+
+# save(delCallsLCfamiliesGnomADolapByAlg, delCallsLCfamilies, delCallsMarriedIn, familyPhenotypes, olapCNVs, pheno, file="C:/Users/jwaldr/OneDrive - LSUHSC/GELCC/03.15.22.delCallsLCfamiliesGnomADolapANDmarriedINSByAlg.rda")
+################################################################################################################################################################################################
 
 # subset to those calls with AF < 0.05
 delBothCallsLCfamiliesUncommon <- overlappingCNVsWgnomAD[-which(overlappingCNVsWgnomAD$allele_frequency > 0.05),]
