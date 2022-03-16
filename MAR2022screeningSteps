@@ -86,7 +86,7 @@ GATKgnomADoverlap <- data.frame(
                         allele_frequency = as.data.frame(gnomADranges)$allele_frequency[subjectHits(GATKxgnomADlaps)]
                          )
                         
-## I WANT TO GO BACK THROUGH THE QUERY VALUES FROM "myDels OR delCallsLCfamilies" TO ADD THE MAX (ORDER FUNCTION)PCT OVERLAP OF EACH QUERY TO GNOMAD.
+## 3/14/22 I WANT TO GO BACK THROUGH THE QUERY VALUES FROM "myDels OR delCallsLCfamilies" TO ADD THE MAX (ORDER FUNCTION)PCT OVERLAP OF EACH QUERY TO GNOMAD.
 # WILL BE ABLE TO DO THE SAME THING FOR MARRIED-INS. THIS WILL WORK BETTER
 # AS I LOOP THROUGH THE DATAFRAMES, I MUST EXAM ONLY THOSE THAT ARE > .75 UNION/INTERSECTION AND THEN TAKE MAX ALLELE FREQUENCY
 
@@ -320,17 +320,31 @@ save(olapByAlg, familyPhenotypes, olapCNVs, pheno, file="C:/Users/4wald/OneDrive
 #####################################################################################################################
 # create table grouped by gene that includes deletions in genes that affect at least 3 individuals.
 
-delBothCallsLCfamiliesUncommonGeneIDs <- unlist(strsplit(delBothCallsLCfamiliesUncommon$XHMMgene, split = ", "))  # length(unique(delCallsLCfamiliesgeneIDs)) = now (9/30/21) 813, prior to 9/30/21 it was 566
+#load(file="C:/Users/4wald/OneDrive - LSUHSC/GELCC/03.16.22.olapsByAlg.rda") #olapByAlg
 
-freq <-table(delBothCallsLCfamiliesUncommonGeneIDs) # freq <-table(delBothCallsLCfamiliesUncommonGeneIDs[delBothCallsLCfamiliesUncommonGeneIDs != "NA"]) 
-genelistG2 <- as.data.frame(freq)[as.data.frame(freq)[,2]>2,]
-colnames(genelistG2) <- c("gene", "Freq")
+Dels <- vector("list", length = 181)
+names(Dels) <- unique(olapByAlg$sample)
+
+for(i in unique(olapByAlg$sample)){ # i = olapByAlg$sample[29]
+                g <- unlist(strsplit(olapByAlg$GATKgene[which(olapByAlg$sample==i)], split = ", "))
+                x <- unlist(strsplit(olapByAlg$XHMMgene[which(olapByAlg$sample==i)], split = ", "))
+                Dels[[i]] <- unique(c(g, x))
+                } # in in unique sample name
+
+freq <- table(Reduce(c, Dels))
+freqdf <- as.data.frame(freq)
+freqdf[,3] <- "Deletions from Both Callers"
+
+genelistG2 <- freqdf[freqdf[,2]>2,]
+colnames(genelistG2) <- c("gene", "Freq", "step")
 
 allGenesInG2CIND <- data.frame() 
 for (j in 1:length(genelistG2$gene)){    #j=1
       loc <- vector()
-      for(i in 1:length(delBothCallsLCfamiliesUncommon$XHMMgene)){ # i=1
-              if (genelistG2$gene[j] %in% strsplit(delBothCallsLCfamiliesUncommon$XHMMgene, split = ", ")[[i]]){
+      for(i in 1:nrow(olapByAlg)){ # i=1
+              g <- unlist(strsplit(olapByAlg$GATKgene[which(olapByAlg$sample==i)], split = ", "))
+              x <- unlist(strsplit(olapByAlg$XHMMgene[which(olapByAlg$sample==i)], split = ", "))
+              if (genelistG2$gene[j] %in% unique(c(g, x))){
               loc <- c(loc, i)}
                           
               } # i
