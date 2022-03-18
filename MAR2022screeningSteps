@@ -635,3 +635,12 @@ write.csv(geneSummary[geneSummary[,1] %in% freq6.1[,1],c(1:6)], file = "C:/Users
 
 
 geneSummary
+sorva <- read.csv(file= "C:/Users/4wald/OneDrive - LSUHSC/GELCC/SORVA-geneListAfter6Screens.csv - Sheet1.csv")
+colnames(sorva)[7:8] <- c("PctPop", "pVal")
+
+screen7 <- sorva[which(sorva$reaches.genome.wide.significance),]
+this <- screen7[which(as.numeric(screen7$PctPop) > 0),]
+this <- this[order(this$pVal),]
+
+
+
