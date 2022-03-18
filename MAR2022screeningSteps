@@ -457,6 +457,8 @@ write.table(G2FamiliesWithG2per, file= "C:/Users/4wald/OneDrive - LSUHSC/GELCC/G
 # plotting density after screening steps
 # load(file="C:/Users/4wald/OneDrive - LSUHSC/GELCC/03.16.22.olapsByAlg.rda")
 # use olapByAlg, geneSummary, for all data and pct overlap
+# geneSummary <- read.csv(file= "C:/Users/4wald/OneDrive - LSUHSC/GELCC/statsByGeneMinusRedudantCallsPerCIND.03.17.21.csv")                                         
+# allGenesInG2CIND <- read.csv(file= "C:/Users/4wald/OneDrive - LSUHSC/GELCC/03.17.22.noRepeatsallGenesInG2CIND.csv")
 
 # create histograms to illustrate changes in number of genes affected by deletions through filtering by values in "delsLCfamiliesGnomADandDGVolapByAlg"
 
@@ -490,7 +492,7 @@ dens2 <- density(freq2.1$Freq,  kernel = c("gaussian", "epanechnikov", "rectangu
 # allGenesInG2CIND$gene
 # geneSummary
 
-freq3 <- table(as.vector(allGenesInG2CIND$gene[allGenesInG2CIND$gene %in% geneSummary$gene[which(geneSummary[,3]>1)]]))
+freq3 <- table(as.vector(allGenesInG2CIND$gene[allGenesInG2CIND$gene %in% geneSummary$gene[which(geneSummary[,3]>2)]]))
 freq3.1 <- as.data.frame(freq3)
 freq3.1[,3] <- "Greater than 2 Families with 2 per Family"
 colnames(freq3.1) <- c("gene", "Freq", "Group")
@@ -513,7 +515,7 @@ png(file = "C:/Users/4wald/OneDrive - LSUHSC/GELCC/03.17.22.densityByFilterStep.
 dev.off()
 
 # *4* "Exluding CNVs with 95% overlap with Married-Ins CNVs"
-glistG2Fam <- as.vector(allGenesInG2CIND$gene[allGenesInG2CIND$gene %in% geneSummary$gene[which(geneSummary[,3]>1)]])
+glistG2Fam <- as.vector(allGenesInG2CIND$gene[allGenesInG2CIND$gene %in% geneSummary$gene[which(geneSummary[,3]>2)]])
 
 byAlgG2Fam <- allGenesInG2CIND[allGenesInG2CIND$gene %in% glistG2Fam,]
 byAlgG2Fam$GATKmarriedInpctOverlapMax[which(is.na(byAlgG2Fam$GATKmarriedInpctOverlapMax))] <- 0
@@ -578,7 +580,7 @@ colnames(freq5.1) <- c("gene", "Freq", "Group")
 dens5 <- density(freq5.1$Freq,  kernel = c("gaussian", "epanechnikov", "rectangular", "triangular", "biweight", "cosine", "optcosine")[1])
 
 # *6* remove genes with "removed CNVs with DGV overlap > 80%"
-bothAlgG2FamMinusMarriedInCNVsAFL5Pct
+# bothAlgG2FamMinusMarriedInCNVsAFL5Pct
 
 #replace NA (no overlap) with AF of 0
 bothAlgG2FamMinusMarriedInCNVsAFL5Pct$GATKxDGVpctOverlap[which(is.na(bothAlgG2FamMinusMarriedInCNVsAFL5Pct$GATKxDGVpctOverlap))] <- 0
@@ -586,7 +588,7 @@ bothAlgG2FamMinusMarriedInCNVsAFL5Pct$XHMMxDGVpctOverlap[which(is.na(bothAlgG2Fa
 
 selected <- subset(bothAlgG2FamMinusMarriedInCNVsAFL5Pct, bothAlgG2FamMinusMarriedInCNVsAFL5Pct$XHMMxDGVpctOverlap < .80) #  nrow(bothAlgG2FamMinusMarriedInCNVsAFL5Pct) = 1879; nrow(selected) = 736
 dun <- subset(selected, selected$XHMMxDGVpctOverlap < .80) 
-
+# length(unique(dun$gene)) = 115
 
 freq6 <- table(as.vector(dun$gene))
 freq6.1 <- as.data.frame(freq5)
@@ -598,20 +600,20 @@ dens6 <- density(freq5.1$Freq,  kernel = c("gaussian", "epanechnikov", "rectangu
 # install.packages("car")
 library(car)
 
-png(file = "C:/Users/4wald/OneDrive - LSUHSC/GELCC/03.17.22.densityByFilterStep.png")
+png(file = "C:/Users/4wald/OneDrive - LSUHSC/GELCC/03.18.22.densityByFilterStep.png")
     plot(dens1, main = "Fig. 2 density of per gene calls for each filter step", col = 1,
     xlim = c(1, 60))
     lines(dens2, col = 2) 
     lines(dens3, col = 3)
     lines(dens4, col = 4) 
     lines(dens5, col = 7)
-    lines(dens6, col = 8)
+    #lines(dens6, col = 8)
     legend("topright", legend = c("Deletions from Both Callers", 
                                  "Greater than 2 Indidivuduals",
                                  "Greater than 2 Families with 2 per Family",
-                                 "Exluding Married-Ins",
-                                 "80% overlap gnomAD AF > 0.05",
-                                 "removed DGV overlap > 80%"
+                                 "Exluding CNVs overlapping with nonrelative CNVs",
+                                 "Exluding 80% overlap gnomAD AF > 0.05"
+                                 #"Exluding DGV overlap > 80%"
                                                                  ),
                                   lty = 1, col = c(1:4,7:8))
 dev.off()
@@ -629,18 +631,124 @@ geneListwithCoordinates <- read.csv(file= "C:/Users/4wald/OneDrive - LSUHSC/GELC
 #geneListwithCoordinates[,1][geneListwithCoordinates[,1] %in% freq5.1[,1]]
 
 write.csv(geneSummary[geneSummary[,1] %in% freq6.1[,1],c(1:6)], file = "C:/Users/4wald/OneDrive - LSUHSC/GELCC/geneListAfter6Screens.csv", row.names=FALSE)
+# above list used for SORVA 3/17/22
 
 # Need to add  unrelated affecteds for each gene
 # = number affected that are not in the same family
 
+# dun$gene[unique(dun$gene) %in% freq6.1[,1]]
+
+# freq6.1[freq6.1[,1] %in% unique(dun$gene),]
 
 geneSummary
 sorva <- read.csv(file= "C:/Users/4wald/OneDrive - LSUHSC/GELCC/SORVA-geneListAfter6Screens.csv - Sheet1.csv")
 colnames(sorva)[7:8] <- c("PctPop", "pVal")
 
-screen7 <- sorva[which(sorva$reaches.genome.wide.significance),]
-this <- screen7[which(as.numeric(screen7$PctPop) > 0),]
-this <- this[order(this$pVal),]
+screen6 <- sorva[sorva$gene %in% unique(dun$gene),]  
+
+screen7 <- screen6[which(screen6$reaches.genome.wide.significance),]
+# this <- screen7[which(as.numeric(screen7$PctPop) > 0),]
+old9 <- c("KIR2DL1", "ADAM3A", "DMBT1", "GOLGA8B", "PTPN20", "HNRNPCL1", "SIRPB1", "LILRA6", "HLA-DRB5")
+
+# screen7[screen7 %in% old9,] = none- none of the 9 described genes from prior poster are in list of significant genes
+
+this <- screen7[order(as.numeric(screen7$pVal)),]
+# nrow(this) = 45
+this[,c("gene","pVal")]
+
+#save(this, screen7, screen6, geneSummary, sorva, dun, freq1, freq2, freq3, freq4, freq5, freq6, file = "C:/Users/4wald/OneDrive - LSUHSC/GELCC/convenientGeneLists.03.18.22.csv")
+# load(file = "C:/Users/4wald/OneDrive - LSUHSC/GELCC/convenientGeneLists.03.18.22.csv")
+
+# write.csv(this, file = "C:/Users/4wald/OneDrive - LSUHSC/GELCC/geneListForLitSearch.03.18.22.csv", row.names=FALSE)
+
+# geneSummary[which(geneSummary$gene == "SSX1"),]
+
+# 03/18/22 list of genes post screening with genome wide significance without pseudogenes and Olfactory Receptors, created from "this" above (file = "C:/Users/4wald/OneDrive - LSUHSC/GELCC/geneListForLitSearch.03.18.22.csv")
+sum <- read.csv(file = "C:/Users/4wald/OneDrive - LSUHSC/GELCC/geneListForLitSearch.03.18.22.csv - Sheet1.csv")
+###############################################################
+# literature search
+#install.packages("reutils") # see: https://github.com/gschofl/reutils or see: https://www.rdocumentation.org/packages/reutils/versions/0.2.2/topics/reutils
+# > install.packages("devtools")
+#  Rterm.exe --vanilla
+require("devtools")
+install_github("gschofl/reutils")
+library("reutils")
 
 
+# library(Homo.sapiens)
+glist <- sum
+
+#esearch a database to acquire UIDs --> LIST DATABASES: einfo()
+for(i in glist$gene){ # i = glist$gene[22]
+    gid <- esearch(paste(paste(i,"[GENE]", sep=""), "human[ORGN]", sep=" AND "), db = "gene")
+    s <- esummary(uid(gid), db = "gene")
+   
+   ## try this means of parsing rather than all the acrobatics below?
+       ##entrezContent <- content(s, as = "parsed")
+       ##entrezSummary <- lapply(entrezContent, '[', "Summary")
+   
+   if(is.data.frame(content(s, "parsed"))){  
+          entrezGeneSummary <- content(s, "parsed")$Summary 
+          entrezGeneSummary <- paste(entrezGeneSummary, collapse = "--")
+          if("NA" %in% entrezGeneSummary){entrezGeneSummary <- content(s, "parsed")$Description}# doesn't work with formatting for a number of the genes
+     } else if (length(content(s, "parsed"))>0){
+             entrezGeneSummary <- content(s, "parsed")[[1]]$Summary
+             entrezGeneSummary <- paste(entrezGeneSummary, collapse = "--")
+             if("NA" %in% entrezGeneSummary){entrezGeneSummary <- content(s, "parsed")[[1]]$Description}
+    }   else {  entrezGeneSummary <- "gene not found in genbank"}
+        dex = which(glist$gene==i)
+    glist[dex,"Summary"]<- entrezGeneSummary
+    
+    # pubmeds with gene 
+        numb <- esearch(i, db = "pubmed", rettype = "count", field = NULL)
+        glist[dex,"pubmed.gene"] <- content(numb, "parsed")
+    Sys.sleep(5)
+    # pubmeds with gene AND cancer
+        numb <- esearch(paste(i, "cancer", sep=" AND "), db = "pubmed", rettype = "count")   
+        glist[dex,"pubmed.cancerGene"] <- content(numb, "parsed")
+        
+       #keep getting "Warning: HTTP error: Status 429; Too Many Requests" b/c NCBI limits to 3 requests/s (10 with API key, see above)
+       # short cut: have R stop for a second every three requests (esearch)
+        Sys.sleep(5)
+       
+    # pubmeds with gene AND cancer AND prostate
+        numb <- esearch(paste(i, "cancer", "(lung OR airway)", sep=" AND "), db = "pubmed", rettype = "count")
+        glist[dex,"pubmed.lungCancerGene"] <- content(numb, "parsed")
+    
+    # NOW ADD TITLES FROM PUBMED FOR prostateCancerGene or then geneCancer or then gene IF > 0
+        # search query format: (GSTM1) AND cancer AND ("2018"[Date - Publication] : "3000"[Date - Publication]) 
+        #dateRange = paste('(2017[Date - Publication] : 3000[Date - Publication])')
+            dateRange = ""
+        if(glist[dex,"pubmed.lungCancerGene"]>1){   
+           pmid <- esearch(paste(i, "cancer", "(lung OR airway)", dateRange, sep=" AND "), retmax = 5, db = "pubmed", rettype = "uilist")
+            s <- esummary(uid(pmid), db = "pubmed")
+            pmContent <- content(s, as = "parsed")
+            pmTitles <- lapply(pmContent, '[', "Title")
+            # combine into a single string
+            titleString <- paste(unlist(pmTitles), sep = '----', collapse = '___')
+            glist[dex,"Titles"]<- titleString
+            
+        }else if(!is.na(glist[dex,"pubmed.cancerGene"])){   
+            
+            pmid <- esearch(paste(i, "cancer", dateRange, sep=" AND "), retmax = 5, db = "pubmed", rettype = "uilist")
+            s <- esummary(uid(pmid), db = "pubmed")
+            pmContent <- content(s, as = "parsed")
+            pmTitles <- lapply(pmContent, '[', "Title")
+            # combine into a single string
+            titleString <- paste(unlist(pmTitles), sep = '----', collapse = '___')
+            glist[dex,"Titles"]<- titleString
+            
+        }else if(glist[dex,"pubmed.gene"]>0){
+            pmid <- esearch(i, retmax = 5, db = "pubmed", rettype = "uilist")
+            s <- esummary(uid(pmid), db = "pubmed")
+            pmContent <- content(s, as = "parsed")
+            pmTitles <- lapply(pmContent, '[', "Title")
+            # combine into a single string
+            titleString <- paste(unlist(pmTitles), sep = '', collapse = '___')
+            glist[dex,"Titles"]<- titleString
+        }
+        Sys.sleep(5)
+    }
+
+write.csv(glist, file = "C:/Users/4wald/OneDrive - LSUHSC/GELCC/geneListWithLitSearch.03.18.22.csv", row.names=FALSE)
 
