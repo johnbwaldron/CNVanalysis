@@ -750,5 +750,12 @@ for(i in glist$gene){ # i = glist$gene[22]
         Sys.sleep(5)
     }
 
+# found it would be nice to have the mean width and num of different widths
+for(i in 1:nrow(glist)){
+glist$num_unique_widths[i] <- geneSummary$num_unique_widths[which(geneSummary$gene == glist$gene[i])]
+glist$mean_width[i] <- geneSummary$mean_width[which(geneSummary$gene == glist$gene[i])]
+                        }
+glist <- glist[order(glist$pubmed.lungCancerGene, decreasing=TRUE),]
+
 write.csv(glist, file = "C:/Users/4wald/OneDrive - LSUHSC/GELCC/geneListWithLitSearch.03.18.22.csv", row.names=FALSE)
 
