@@ -719,7 +719,7 @@ for(i in glist$gene){ # i = glist$gene[22]
         # search query format: (GSTM1) AND cancer AND ("2018"[Date - Publication] : "3000"[Date - Publication]) 
         #dateRange = paste('(2017[Date - Publication] : 3000[Date - Publication])')
             dateRange = ""
-        if(glist[dex,"pubmed.lungCancerGene"]>1){   
+        if(glist[dex,"pubmed.lungCancerGene"]>5){   
            pmid <- esearch(paste(i, "cancer", "(lung OR airway)", dateRange, sep=" AND "), retmax = 5, db = "pubmed", rettype = "uilist")
             s <- esummary(uid(pmid), db = "pubmed")
             pmContent <- content(s, as = "parsed")
@@ -757,5 +757,5 @@ glist$mean_width[i] <- geneSummary$mean_width[which(geneSummary$gene == glist$ge
                         }
 glist <- glist[order(glist$pubmed.lungCancerGene, decreasing=TRUE),]
 
-write.csv(glist, file = "C:/Users/4wald/OneDrive - LSUHSC/GELCC/geneListWithLitSearch.03.18.22.csv", row.names=FALSE)
+write.csv(glist, file = "C:/Users/4wald/OneDrive - LSUHSC/GELCC/geneListWithLitSearch_moreCancerLit.03.18.22.csv", row.names=FALSE)
 
