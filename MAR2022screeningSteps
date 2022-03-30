@@ -6,6 +6,66 @@ library(Homo.sapiens)
 #  load(file = "C:/Users/jwaldr/OneDrive - LSUHSC/GELCC/overlappingCNVsWgnomAD.03.15.22.rda")
 olapCNVs <- overlappingCNVs[which(as.numeric(overlappingCNVs$GATKPhred)>19), c(1:15)]
 
+##############################
+#### 3/29/22 
+# finding overlaps between GATK and XHMM. I am concerned that all the work done below and that relies on the overalp of the two discovery
+# algorithms is using only a very small number of XHMM segments, maybe even matching any individual to anyother individual
+
+#load all raw CNVs called for GATK and XHMM: load(file="C:/Users/4wald/OneDrive - LSUHSC/GELCC/XHMMcnvAndGATKcnvWithQAandQSwithFamilyPhenotypeUpdate12.28.21.rda")
+head(GATKcnv)
+head(XHMMcnv)
+
+################### characterize the raw calls
+# FIRST subset to deletions!!!
+XHMMcnv <- subset(XHMMcnv, XHMMcnv$del_1.dup_2 == 1) # nrow(XHMMcnv) = 11550 --> 5673
+GATKcnv <- subset(GATKcnv, GATKcnv$del_1.dup_2 == 1) # nrow(GATKcnv) = 89054 --> 29206
+
+# calculate mean, median, mode, SD, range of CNVs and deletions per individual
+XHMMperCIND <- c()
+GATKperCIND <- c()
+
+for(i in familyPhenotypes$submitted.sample.id){
+
+XHMMsize <- XHMMcnv$end -  XHMMcnv$start
+XHMMsizekb <- XHMMsize/1000
+
+GATKsize <- GATKcnv$end - GATKcnv$start
+GATKsizekb <- GATKsize/1000
+
+aG <- length(which(GATKsize < 1000))/length(GATKsize)
+aX <- length(which(XHMMsize < 1000))/length(XHMMsize)
+
+bG <- length(which(GATKsize < 100000 & GATKsize > 1000))/length(GATKsize)
+bX <- length(which(XHMMsize < 100000 & XHMMsize > 1000))/length(XHMMsize)
+
+cG <- length(which(GATKsize > 100000 & GATKsize < 1000000))/length(GATKsize)
+cX <- length(which(XHMMsize > 100000 & XHMMsize < 1000000))/length(XHMMsize)
+
+dG <- length(which(GATKsize > 1000000))/length(GATKsize)
+dX <- length(which(XHMMsize > 1000000))/length(XHMMsize)
+
+
+stars <- matrix(nrow = 2, ncol = 4, data = c(aX, bX, cX, dX, aG, bG, cG, dG), byrow = TRUE,
+          dimnames = list(rows=c("XHMM", "GATK4"), columns = c("< 1kb", "1 - 100kb", "100kb - 1Mb", "> 1Mb")))
+png(file= "C:/Users/4wald/OneDrive - LSUHSC/GELCC/03.29.22.callSizeComparison.png")
+barplot (stars, main = "Fig. 1 size distribution of XHMM and GATK inferred deletions", space = c(0,.1),
+            col = c("light blue", "blue"), beside=TRUE, legend.text = TRUE)
+ dev.off()
+ mean(XHMMsizekb) # = 85.063 kb
+ sd(XHMMsizekb) # = 335.0416 
+ mean(GATKsizekb) # = 8.871 kb 
+ sd(GATKsizekb) # = 34.271         
+ ##############################
+
+
+
+
+# - compare the above loaded file which was used for 
+# analysis below with "10.19.21.compositeOfCNVsCalledByGATKandXHMM.csv" from (https://github.com/johnbwaldron/CNVanalysis/blob/main/characterizeCNVcalls)
+# which is - calls with > 75% overlap ::: #  overlappingCNVs <- read.csv(file = "C:/Users/4wald/OneDrive - LSUHSC/GELCC/10.19.21.compositeOfCNVsCalledByGATKandXHMM.csv")
+# either way, i could just use the coordinates available to calculation intersection/union for GATK and XHMM and eliminate those that don't meet criteria.
+##############################
+
 # carry-out comparison of overlap with calls in married ins and with gnomAD calls to the "overlappingCNVs" prior to 
 # removing multiple GATK calls overlaping with XHMM calls # i am doing this because identifying overlap with gnomad and married ins, etc is likely influenced by which calls remain. 
 # nrow(olapCNVs) vs nrow(overlappingCNVs)
@@ -758,4 +818,53 @@ glist$mean_width[i] <- geneSummary$mean_width[which(geneSummary$gene == glist$ge
 glist <- glist[order(glist$pubmed.lungCancerGene, decreasing=TRUE),]
 
 write.csv(glist, file = "C:/Users/4wald/OneDrive - LSUHSC/GELCC/geneListWithLitSearch_moreCancerLit.03.18.22.csv", row.names=FALSE)
+
+
+#################################################################################################
+# RESULTS: bar chart comparing discovery algorithms. 
+# 10.19.21.compositeOfCNVsCalledByGATKandXHMM.csv - calls with > 75% overlap (which did I use in most recent analysis?)
+
+olapCNVs <- overlappingCNVs[which(as.numeric(overlappingCNVs$GATKPhred)>19), c(1:15)]
+# from: #load(file = "C:/Users/4wald/OneDrive - LSUHSC/GELCC/overlappingCNVsBothAlgsPhenoFam.12.28.21.rda")
+
+
+# since XHMM calls are larger and are repeated for multiple GATK overlapping calls, Im gonig to cyle through unique subject to create a new, nonrepetitive list of XHMM calls
+end <- c()
+start <- c()
+for(i in unique(overlappingCNVs$subject)){ # i = unique(overlappingCNVs$subject)[1]
+    end <- c(end,as.numeric(overlappingCNVs$XHMMend[which(overlappingCNVs$subject==i)][1]))
+    start <- c(start, as.numeric(overlappingCNVs$XHMMstart[which(overlappingCNVs$subject==i)][1]))
+    }
+
+XHMMsize <- end -  start
+XHMMsizekb <- XHMMsize/1000
+
+GATKsize <- as.numeric(overlappingCNVs$GATKend) - as.numeric(overlappingCNVs$GATKstart)
+GATKsizekb <- GATKsize/1000
+
+aG <- length(which(GATKsize < 1000))/length(GATKsize)
+aX <- length(which(XHMMsize < 1000))/length(XHMMsize)
+
+bG <- length(which(GATKsize < 100000 & GATKsize > 1000))/length(GATKsize)
+bX <- length(which(XHMMsize < 100000 & XHMMsize > 1000))/length(XHMMsize)
+
+cG <- length(which(GATKsize > 100000 & GATKsize < 1000000))/length(GATKsize)
+cX <- length(which(XHMMsize > 100000 & XHMMsize < 1000000))/length(XHMMsize)
+
+dG <- length(which(GATKsize > 1000000))/length(GATKsize)
+dX <- length(which(XHMMsize > 1000000))/length(XHMMsize)
+
+
+stars <- matrix(nrow = 2, ncol = 4, data = c(aX, bX, cX, dX, aG, bG, cG, dG), byrow = TRUE,
+          dimnames = list(rows=c("XHMM", "GATK4"), columns = c("< 1kb", "1 - 100kb", "100kb - 1Mb", "> 1Mb")))
+png(file= "C:/Users/jwaldr/OneDrive - LSUHSC/GELCC/10.19.21.callSizeComparison.png")
+barplot (stars, main = "Fig. 1 size distribution of XHMM and GATK inferred deletions", space = c(0,.1),
+            col = c("light blue", "blue"), beside=TRUE, legend.text = TRUE)
+ dev.off()
+ mean(XHMMsizekb) # = 133.91 kb
+ sd(XHMMsizekb) # = 397.08 
+ mean(GATKsizekb) # = 17.69 kb 
+ sd(GATKsizekb) # = 68.59         
+          
+
 
