@@ -3,13 +3,14 @@
 library(Homo.sapiens)
 
 # load(file = "C:/Users/4wald/OneDrive - LSUHSC/GELCC/overlappingCNVsBothAlgsPhenoFam.12.28.21.rda")
-#  load(file = "C:/Users/jwaldr/OneDrive - LSUHSC/GELCC/overlappingCNVsWgnomAD.03.15.22.rda")
+#  load(file = "C:/Users/4wald/OneDrive - LSUHSC/GELCC/overlappingCNVsWgnomAD.03.15.22.rda")
 olapCNVs <- overlappingCNVs[which(as.numeric(overlappingCNVs$GATKPhred)>19), c(1:15)]
 
 ##############################
 #### 3/29/22 
 # finding overlaps between GATK and XHMM. I am concerned that all the work done below and that relies on the overalp of the two discovery
-# algorithms is using only a very small number of XHMM segments, maybe even matching any individual to anyother individual
+# algorithms is using only a very small number of XHMM segments, maybe even matching any individual to any other individual. HOWEVER, after looking to 
+# the code for overlap between algorithms (johnbwaldron/CNVanalysis/blob/main/curateCNVsForLinkageAnalysis line 214) does one sample at a time.
 
 #load all raw CNVs called for GATK and XHMM: load(file="C:/Users/4wald/OneDrive - LSUHSC/GELCC/XHMMcnvAndGATKcnvWithQAandQSwithFamilyPhenotypeUpdate12.28.21.rda")
 head(GATKcnv)
@@ -20,17 +21,77 @@ head(XHMMcnv)
 XHMMcnv <- subset(XHMMcnv, XHMMcnv$del_1.dup_2 == 1) # nrow(XHMMcnv) = 11550 --> 5673
 GATKcnv <- subset(GATKcnv, GATKcnv$del_1.dup_2 == 1) # nrow(GATKcnv) = 89054 --> 29206
 
-# calculate mean, median, mode, SD, range of CNVs and deletions per individual
-XHMMperCIND <- c()
-GATKperCIND <- c()
+# second subset to phred > 19
 
-for(i in familyPhenotypes$submitted.sample.id){
+XHMMpA <- subset(XHMMcnv, XHMMcnv$PhredAllPtsAgree > 19) # nrow(XHMMpA) = 5673 --> 2311
+GATKpA <- subset(GATKcnv, GATKcnv$PhredAllPtsAgree > 19) # nrow(GATKpA) = 29206 --> 21107
 
-XHMMsize <- XHMMcnv$end -  XHMMcnv$start
-XHMMsizekb <- XHMMsize/1000
+# vs. PhredMinOnePtAgrees
 
-GATKsize <- GATKcnv$end - GATKcnv$start
-GATKsizekb <- GATKsize/1000
+XHMMoA <- subset(XHMMcnv, XHMMcnv$PhredMinOnePtAgrees > 19) # nrow(XHMMoA) = 5673 --> 5673
+GATKoA <- subset(GATKcnv, GATKcnv$PhredMinOnePtAgrees > 19) # nrow(GATKoA) = 29206 --> 21457
+
+# screening by PhredMinOnePtAgrees reduces XHMM calls by half, but reduces GATK calls by only 300 out of 21,457
+
+# calculate mean, median, mode, SD, range of CNVs and deletions per individual after screening for deletions and phred one pt agrees >= 20
+XHMMperCIND <- data.frame()
+GATKperCIND <- data.frame()
+
+for(i in familyPhenotypes$submitted.sample.id){ # i = familyPhenotypes$submitted.sample.id [74] # familyPhenotypes$submitted.sample.id %in% XHMMcnv$sample
+                    
+          XHMMsize <- XHMMoA$end[XHMMoA$sample == i] -  XHMMoA$start[XHMMoA$sample == i]
+          XHMMsizekb <- XHMMsize/1000
+
+          GATKsize <- GATKoA$end[GATKoA$sample == i] - GATKoA$start[GATKoA$sample == i]
+          GATKsizekb <- GATKsize/1000
+         
+          
+          XHMMperCIND <- rbind(XHMMperCIND, data.frame(sample = i, numCNVs =  length(XHMMsizekb), meanWidth = round(mean(XHMMsizekb), 2), 
+                              medianWidth = round(median(XHMMsizekb), 2), SDwidth = round(sd(XHMMsizekb), 2), maxWidth = round(max(XHMMsizekb), 2), minWidth = round(min(XHMMsizekb), 2)))
+          
+          GATKperCIND <- rbind(GATKperCIND, data.frame(sample = i, numCNVs =  length(GATKsizekb), meanWidth = round(mean(GATKsizekb), 2), 
+                              medianWidth = round(median(GATKsizekb), 2), SDwidth = round(sd(GATKsizekb), 2), maxWidth = round(max(GATKsizekb), 2), minWidth = round(min(GATKsizekb), 2)))
+                    }
+          
+          mean(XHMMperCIND$numCNVs[which(XHMMperCIND$numCNVs>0)])
+          mean(GATKperCIND$numCNVs[which(GATKperCIND$numCNVs>0)])
+          mean(XHMMoA$end - XHMMoA$start)
+          mean(GATKoA$end - GATKoA$start)
+
+summaryDels <- data.frame(XHMM = c(nrow(XHMMoA), round(mean(XHMMoA$end - XHMMoA$start)/1000, 2), round(sd((XHMMoA$end - XHMMoA$start)/1000), 2), paste(round(max(XHMMoA$end - XHMMoA$start)/1000,2), "kb - ", min(XHMMoA$end - XHMMoA$start), "bp", sep = "") , round(mean(XHMMperCIND$numCNVs[which(XHMMperCIND$numCNVs>0)]), 2), round(sd(XHMMperCIND$numCNVs[which(XHMMperCIND$numCNVs>0)]), 2), paste(max(XHMMperCIND$numCNVs[which(XHMMperCIND$numCNVs>0)]), min(XHMMperCIND$numCNVs[which(XHMMperCIND$numCNVs>0)]), sep=" - ")), 
+                          GATK =  c(nrow(GATKoA), round(mean(GATKoA$end - GATKoA$start)/1000, 2), round(sd((GATKoA$end - GATKoA$start)/1000), 2), paste(round(max(GATKoA$end - GATKoA$start)/1000,2), "kb - ", min(GATKoA$end - GATKoA$start), "bp", sep = ""), round(mean(GATKperCIND$numCNVs[which(GATKperCIND$numCNVs>0)]), 2), round(sd(GATKperCIND$numCNVs[which(GATKperCIND$numCNVs>0)]), 2), paste(max(GATKperCIND$numCNVs[which(GATKperCIND$numCNVs>0)]), min(GATKperCIND$numCNVs[which(GATKperCIND$numCNVs>0)]), sep=" - ")), 
+                          rows = c("Total number of deletions", "Mean width (kb)", "SD (kb)", "Range (kb)", "Mean number of deletions", "SD (deletions)", "Range (deletions)") )
+############ table of CNV stats
+#install.packages("gt") 
+# install.packages("webshot")
+# webshot::install_phantomjs()
+
+library(webshot)
+library(gt)
+# help = https://gt.rstudio.com/articles/intro-creating-gt-tables.html
+
+      gt_tbl <- gt(summaryDels, rowname_col = "rows")
+      gt_tbl <- gt_tbl %>%
+                    tab_header(title = "Table 1. Comparison of deletion calls by algorithm and individual. XHMM demonstrated a tendency to make fewer calls of larger size. GATK tended to make more calls that generally fall within segments identified as deletions by XHMM.",
+                       ) %>%
+                   tab_row_group(
+                              label = "Values for all sampled individuals",
+                              rows = 1:4) %>% 
+                         tab_row_group(
+                              label = "Values per sampled individual",
+                              rows = 5:7     
+                           ) %>% 
+                           cell_borders(sides = "all")
+
+gtsave(gt_tbl,
+    "RawSummaryStatsXHMMandGATK.png", expand = 10,
+    path = "C:/Users/4wald/OneDrive - LSUHSC/GELCC"
+  )
+  
+  #### graph sizes
+  
+  XHMMsize <- XHMMcnv$end -  XHMMcnv$start 
+  GATKsize <- GATKcnv$end - GATKcnv$start
 
 aG <- length(which(GATKsize < 1000))/length(GATKsize)
 aX <- length(which(XHMMsize < 1000))/length(XHMMsize)
