@@ -17,6 +17,65 @@ olapCNVs <- overlappingCNVs[which(as.numeric(overlappingCNVs$GATKPhred)>19), c(1
 head(GATKcnv)
 head(XHMMcnv)
 
+
+##################################
+# limit overlapping CNVs to those with 01% intersection/union
+
+# start by converting values to numeric
+overlappingCNVs$GATKend <- as.numeric(overlappingCNVs$GATKend)
+overlappingCNVs$XHMMend <- as.numeric(overlappingCNVs$XHMMend)
+overlappingCNVs$GATKstart <- as.numeric(overlappingCNVs$GATKstart)
+overlappingCNVs$XHMMstart <- as.numeric(overlappingCNVs$XHMMstart)
+
+
+unions <- vector()
+intersections <- vector()
+
+for(i in 1:nrow(overlappingCNVs)){ # i = 42
+  union = max(overlappingCNVs$XHMMend[i], overlappingCNVs$GATKend[i]) - min(overlappingCNVs$XHMMstart[i], overlappingCNVs$GATKstart[i]) 
+  sect = min(overlappingCNVs$XHMMend[i], overlappingCNVs$GATKend[i]) - max(overlappingCNVs$XHMMstart[i], overlappingCNVs$GATKstart[i])
+  
+  unions <- c(unions, union)
+  intersections <- c(intersections, sect)
+  }
+  
+  # length(which(intersections/unions > .01))
+  
+  #limit "overlapping CNVs" to those with 1% overlap
+  overlappingCNVs <- subset(overlappingCNVs, intersections/unions > .01)
+  
+  mean(intersections/unions, na.rm=TRUE)
+  max(intersections/unions, na.rm=TRUE)
+  min(intersections/unions, na.rm=TRUE) # = .01 by definition
+  ##########################################################################################
+  # graph overlap
+  ################################################################
+  perc <- intersections/unions # length(perc)
+  
+aG <- length(which(perc < .25))/length(perc)
+
+bG <- length(which(perc > .25 & perc < .5))/length(perc)
+
+cG <- length(which(perc > .5 & perc < .75))/length(perc)
+
+dG <- length(which(perc > .75))/length(perc)
+
+library("stringr") 
+
+stars <- matrix(nrow = 1, ncol = 4, data = c(aG, bG, cG, dG), byrow = TRUE,
+          dimnames = list(rows=c("intersection/union"), columns = c("< 25%", "25-50%", "50-75%", "75-100%")))
+png(file= "C:/Users/4wald/OneDrive - LSUHSC/GELCC/04.11.22.overlapSizeComparison.png")
+barplot (stars, main = str_wrap("Fig. 2 depicts the distribution of percent overlap (intersection/union) between 
+        XHMM and GATK inferred deletions. Most deletions overlap by less than 25% due to multiple GATK calls that 
+        fall within a single XHMM call.", width = 60), ylim = c(0, 0.8), space = c(0,.1),
+            col = c("light blue", "blue"), beside=TRUE, legend.text = FALSE)
+ dev.off()
+
+
+ ##########################################################################################
+
+  
+  
 ################### characterize the raw calls
 # FIRST subset to deletions!!!
 XHMMcnv <- subset(XHMMcnv, XHMMcnv$del_1.dup_2 == 1) # nrow(XHMMcnv) = 11550 --> 5673
@@ -40,7 +99,7 @@ GATKperCIND <- data.frame()
 oXHMMuniqueDels <- vector()
 oGATKuniqueDels <- vector()
 
-for(i in familyPhenotypes$submitted.sample.id){ # i = familyPhenotypes$submitted.sample.id [74] # familyPhenotypes$submitted.sample.id %in% XHMMcnv$sample
+for(i in familyPhenotypes$submitted.sample.id){ # i = familyPhenotypes$submitted.sample.id [12] # familyPhenotypes$submitted.sample.id %in% XHMMcnv$sample
                     
           XHMMsize <- XHMMoA$end[XHMMoA$sample == i] -  XHMMoA$start[XHMMoA$sample == i]
           XHMMsizekb <- XHMMsize/1000
@@ -71,32 +130,32 @@ for(i in familyPhenotypes$submitted.sample.id){ # i = familyPhenotypes$submitted
           mean(XHMMoA$end - XHMMoA$start)
           mean(GATKoA$end - GATKoA$start)
 
-summaryDels <- data.frame(XHMM = c(nrow(XHMMoA), round(mean(XHMMoA$end - XHMMoA$start)/1000, 2), round(sd((XHMMoA$end - XHMMoA$start)/1000), 2), 
-                          paste(round(max(XHMMoA$end - XHMMoA$start)/1000,2), "kb - ", min(XHMMoA$end - XHMMoA$start), "bp", sep = "") , 
-                          round(mean(XHMMperCIND$numCNVs[which(XHMMperCIND$numCNVs>0)]), 2), round(sd(XHMMperCIND$numCNVs[which(XHMMperCIND$numCNVs>0)]), 2), 
-                          paste(max(XHMMperCIND$numCNVs[which(XHMMperCIND$numCNVs>0)]), min(XHMMperCIND$numCNVs[which(XHMMperCIND$numCNVs>0)]), sep=" - "),
+#summaryDels <- data.frame(XHMM = c(nrow(XHMMoA), round(mean(XHMMoA$end - XHMMoA$start)/1000, 2), round(sd((XHMMoA$end - XHMMoA$start)/1000), 2), 
+ #                         paste(round(max(XHMMoA$end - XHMMoA$start)/1000,2), "kb - ", min(XHMMoA$end - XHMMoA$start), "bp", sep = "") , 
+  #                        round(mean(XHMMperCIND$numCNVs[which(XHMMperCIND$numCNVs>0)]), 2), round(sd(XHMMperCIND$numCNVs[which(XHMMperCIND$numCNVs>0)]), 2), 
+#                          paste(max(XHMMperCIND$numCNVs[which(XHMMperCIND$numCNVs>0)]), min(XHMMperCIND$numCNVs[which(XHMMperCIND$numCNVs>0)]), sep=" - "),
+#                          
+#                          sum(XHMMperCIND$olap.numCNVs), round(mean(XHMMperCIND$olap.meanWidth, na.rm=TRUE), 2), sd(oXHMMuniqueDels, na.rm = TRUE), 
+#                          paste(round(max(oXHMMuniqueDels),2), "kb - ", min(oXHMMuniqueDels)*1000, "bp", sep = "") , 
+#                          round(mean(XHMMperCIND$olap.numCNVs[which(XHMMperCIND$olap.numCNVs>0)]), 2), round(sd(XHMMperCIND$olap.numCNVs[which(XHMMperCIND$olap.numCNVs>0)]), 2), 
+#                          paste(max(XHMMperCIND$olap.numCNVs[which(XHMMperCIND$olap.numCNVs>0)]), min(XHMMperCIND$olap.numCNVs[which(XHMMperCIND$olap.numCNVs>0)]), sep=" - ")
+#                          ), 
                           
-                          sum(XHMMperCIND$olap.numCNVs), round(mean(XHMMperCIND$olap.meanWidth, na.rm=TRUE), 2), sd(oXHMMuniqueDels, na.rm = TRUE), 
-                          paste(round(max(oXHMMuniqueDels),2), "kb - ", min(oXHMMuniqueDels)*1000, "bb", sep = "") , 
-                          round(mean(XHMMperCIND$olap.numCNVs[which(XHMMperCIND$olap.numCNVs>0)]), 2), round(sd(XHMMperCIND$olap.numCNVs[which(XHMMperCIND$olap.numCNVs>0)]), 2), 
-                          paste(max(XHMMperCIND$olap.numCNVs[which(XHMMperCIND$olap.numCNVs>0)]), min(XHMMperCIND$olap.numCNVs[which(XHMMperCIND$olap.numCNVs>0)]), sep=" - ")
-                          ), 
+#                          GATK =  c(nrow(GATKoA), round(mean(GATKoA$end - GATKoA$start)/1000, 2), round(sd((GATKoA$end - GATKoA$start)/1000), 2), 
+#                          paste(round(max(GATKoA$end - GATKoA$start)/1000,2), "kb - ", min(GATKoA$end - GATKoA$start), "bp", sep = ""), 
+#                          round(mean(GATKperCIND$numCNVs[which(GATKperCIND$numCNVs>0)]), 2), round(sd(GATKperCIND$numCNVs[which(GATKperCIND$numCNVs>0)]), 2), 
+#                          paste(max(GATKperCIND$numCNVs[which(GATKperCIND$numCNVs>0)]), min(GATKperCIND$numCNVs[which(GATKperCIND$numCNVs>0)]), sep=" - "),
+#                          
+#                          sum(GATKperCIND$olap.numCNVs), round(mean(GATKperCIND$olap.meanWidth, na.rm=TRUE), 2), sd(oGATKuniqueDels, na.rm = TRUE), 
+#                          paste(round(max(oGATKuniqueDels)/1000,2), "kb - ", min(oGATKuniqueDels)*1000, "bp", sep = ""), 
+#                          round(mean(GATKperCIND$olap.numCNVs[which(GATKperCIND$olap.numCNVs>0)]), 2), round(sd(GATKperCIND$olap.numCNVs[which(GATKperCIND$olap.numCNVs>0)]), 2), 
+#                          paste(max(GATKperCIND$olap.numCNVs[which(GATKperCIND$olap.numCNVs>0)]), min(GATKperCIND$olap.numCNVs[which(GATKperCIND$olap.numCNVs>0)]), sep=" - ")
+#                          ), 
                           
-                          GATK =  c(nrow(GATKoA), round(mean(GATKoA$end - GATKoA$start)/1000, 2), round(sd((GATKoA$end - GATKoA$start)/1000), 2), 
-                          paste(round(max(GATKoA$end - GATKoA$start)/1000,2), "kb - ", min(GATKoA$end - GATKoA$start), "bp", sep = ""), 
-                          round(mean(GATKperCIND$numCNVs[which(GATKperCIND$numCNVs>0)]), 2), round(sd(GATKperCIND$numCNVs[which(GATKperCIND$numCNVs>0)]), 2), 
-                          paste(max(GATKperCIND$numCNVs[which(GATKperCIND$numCNVs>0)]), min(GATKperCIND$numCNVs[which(GATKperCIND$numCNVs>0)]), sep=" - "),
-                          
-                          sum(GATKperCIND$olap.numCNVs), round(mean(GATKperCIND$olap.meanWidth, na.rm=TRUE), 2), sd(oGATKuniqueDels, na.rm = TRUE), 
-                          paste(round(max(oGATKuniqueDels)/1000,2), "kb - ", min(oGATKuniqueDels)*1000, "bp", sep = ""), 
-                          round(mean(GATKperCIND$olap.numCNVs[which(GATKperCIND$olap.numCNVs>0)]), 2), round(sd(GATKperCIND$olap.numCNVs[which(GATKperCIND$olap.numCNVs>0)]), 2), 
-                          paste(max(GATKperCIND$olap.numCNVs[which(GATKperCIND$olap.numCNVs>0)]), min(GATKperCIND$olap.numCNVs[which(GATKperCIND$olap.numCNVs>0)]), sep=" - ")
-                          ), 
-                          
-                          rows = c("Total number of deletions", "Mean width (kb)", "SD (kb)", "Range (kb)", "Mean number of deletions", 
-                          "SD (deletions)", "Range (deletions)", 
-                          "Total deletions", "Mean width (kb)", "SD (deletions)", "Range (kb)", "Mean number of deletions", 
-                          "SD (deletions)", "Range (deletions)") )
+#                          rows = c("Total number of deletions", "Mean width (kb)", "standard deviation", "Range (kb)", "Mean number of deletions", 
+#                          "standard deviation", "Range (deletions)", 
+#                          "Total deletions", "Mean width (kb)", "standard deviation", "Range", "Mean number of deletions", 
+#                          "standard deviation", "Range (deletions)") )
 
 ### using cbind instead
 XHMM = c(nrow(XHMMoA), round(mean(XHMMoA$end - XHMMoA$start)/1000, 2), round(sd((XHMMoA$end - XHMMoA$start)/1000), 2), 
@@ -105,7 +164,7 @@ XHMM = c(nrow(XHMMoA), round(mean(XHMMoA$end - XHMMoA$start)/1000, 2), round(sd(
                           paste(max(XHMMperCIND$numCNVs[which(XHMMperCIND$numCNVs>0)]), min(XHMMperCIND$numCNVs[which(XHMMperCIND$numCNVs>0)]), sep=" - "),
                           
                           sum(XHMMperCIND$olap.numCNVs), round(mean(XHMMperCIND$olap.meanWidth, na.rm=TRUE), 2), round(sd(oXHMMuniqueDels, na.rm = TRUE), 2), 
-                          paste(round(max(oXHMMuniqueDels),2), "kb - ", min(oXHMMuniqueDels)*1000, "bb", sep = "") , 
+                          paste(round(max(oXHMMuniqueDels, na.rm=TRUE),2), "kb - ", min(oXHMMuniqueDels, na.rm=TRUE)*1000, "bp", sep = "") , 
                           round(mean(XHMMperCIND$olap.numCNVs[which(XHMMperCIND$olap.numCNVs>0)]), 2), round(sd(XHMMperCIND$olap.numCNVs[which(XHMMperCIND$olap.numCNVs>0)]), 2), 
                           paste(max(XHMMperCIND$olap.numCNVs[which(XHMMperCIND$olap.numCNVs>0)]), min(XHMMperCIND$olap.numCNVs[which(XHMMperCIND$olap.numCNVs>0)]), sep=" - ")
                           ) 
@@ -116,17 +175,20 @@ GATK =  c(nrow(GATKoA), round(mean(GATKoA$end - GATKoA$start)/1000, 2), round(sd
                           paste(max(GATKperCIND$numCNVs[which(GATKperCIND$numCNVs>0)]), min(GATKperCIND$numCNVs[which(GATKperCIND$numCNVs>0)]), sep=" - "),
                           
                           sum(GATKperCIND$olap.numCNVs), round(mean(GATKperCIND$olap.meanWidth, na.rm=TRUE), 2), round(sd(oGATKuniqueDels, na.rm = TRUE), 2), 
-                          paste(round(max(oGATKuniqueDels)/1000,2), "kb - ", min(oGATKuniqueDels)*1000, "bp", sep = ""), 
+                          paste(round(max(oGATKuniqueDels, na.rm=TRUE)/1000,2), "kb - ", min(oGATKuniqueDels, na.rm=TRUE)*1000, "bp", sep = ""), 
                           round(mean(GATKperCIND$olap.numCNVs[which(GATKperCIND$olap.numCNVs>0)]), 2), round(sd(GATKperCIND$olap.numCNVs[which(GATKperCIND$olap.numCNVs>0)]), 2), 
                           paste(max(GATKperCIND$olap.numCNVs[which(GATKperCIND$olap.numCNVs>0)]), min(GATKperCIND$olap.numCNVs[which(GATKperCIND$olap.numCNVs>0)]), sep=" - ")
                           )
                           
-rows = c("Total number of deletions", "Mean width (kb)", "SD (kb)", "Range (kb)", "Mean number of deletions", 
-                          "SD (deletions)", "Range (deletions)", 
-                          "Total deletions", "Mean width (kb)", "SD (deletions)", "Range (kb)", "Mean number of deletions", 
-                          "SD (deletions)", "Range (deletions)") 
+ rows = c("Total number of deletions", "Mean width (kb)", "standard deviation", "Range (kb)", "Mean number of deletions", 
+                          "standard deviation", "Range (deletions)", 
+                          "Total deletions", "Mean width (kb)", "standard deviation", "Range", "Mean number of deletions", 
+                          "standard deviation", "Range (deletions)")
 
 summaryDels <- as.data.frame(cbind(rows, XHMM, GATK))
+
+# save (summaryDels, file = "C:/Users/4wald/OneDrive - LSUHSC/GELCC/summaryDels.04.11.22.rda")
+# load(file = "C:/Users/4wald/OneDrive - LSUHSC/GELCC/summaryDels.04.11.22.rda")
 
 ############ table of CNV stats
 #install.packages("gt") 
@@ -158,9 +220,11 @@ tab <- tbl %>% tab_options(heading.title.font.size = 16, container.width = 800, 
  # %>% cell_borders(sides = "all", color = "black", style = "solid", weight = px(1))
 
 gtsave(tab,
-    "4.8.22.RawAndOverlappingSummaryStatsXHMMandGATK.png", expand = 10,
+    "4.11.22.RawAndOverlappingSummaryStatsXHMMandGATK.png", expand = 10,
     path = "C:/Users/4wald/OneDrive - LSUHSC/GELCC"
   )
+  
+  
   
   #### graph sizes
   
