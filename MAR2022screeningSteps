@@ -73,10 +73,15 @@ barplot (stars, main = str_wrap("Fig. 2 depicts the distribution of percent over
 
 
  ##########################################################################################
+#Rterm.exe --vanilla
+
+
 # illustrate overlap ################### save(overlappingCNVs, file = "C:/Users/4wald/OneDrive - LSUHSC/GELCC/overlappingCNVs.04.14.22.rda") # after removing Phred < 20 and only including those with >1% overlap between algorithms
 #  load(file = "C:/Users/4wald/OneDrive - LSUHSC/GELCC/overlappingCNVs.04.14.22.rda")
-
+library(Homo.sapiens)
 library(Gviz)
+library("stringr") 
+
  #######################
 geneRanges <- 
     function(db, column="ENTREZID")
@@ -94,7 +99,7 @@ overlappingCNVs[abs(overlappingCNVs$GATKstart - overlappingCNVs$XHMMstart) < 200
 overlappingCNVs[overlappingCNVs$sample == "H_NK-135GELCC148-135148" & overlappingCNVs$chr == "chr19",]
 
 glist <- c("SULT1A1", "MRC1", "FCGR3B", "KIR2DL1", "CDK11A", "ACOT1", "KLRC2", "NAIP", "RMND5A")
-overlappingCNVs[overlappingCNVs$XHMMgene %in% glist,c(1:6,8:10,13)]
+# overlappingCNVs[overlappingCNVs$XHMMgene %in% glist,c(1:6,8:10,13)]
 
  gen = "hg19"
 
@@ -110,18 +115,19 @@ segs <- data.frame(chr=chr, start = c(ss$GATKstart[ss$subject==subject], ss$XHMM
  
 trns <- as.data.frame(gns)
 trns <- trns[trns$seqnames == chr ,]
-trns <- trns[(trns$start > (min(segs$start)-500) & trns$start < (max(segs$end)+500)) | 
-        (trns$end > (min(segs$start)-500) & trns$end < (max(segs$end)+500)), ]
+trns <- trns[(trns$start > (min(segs$start)-5000) & trns$start < (max(segs$end)+5000)) | 
+            (trns$end > (min(segs$start)-5000) & trns$end < (max(segs$end)+5000)), ]
+trns <- trns[!is.na(trns$SYMBOL),]
 
-
-makeGRangesFromDataFrame(as.date.frame(trnscrpts)
+# makeGRangesFromDataFrame(
  
 t <- AnnotationTrack(segs, name = "deletions", 
         genome="hg19", chromosome=chr, id=segs$caller, showFeatureId=TRUE) # group=segs$caller, ,
  g <- GenomeAxisTrack()
  i <- IdeogramTrack(genome = "hg19", chromosome = chr)
 
-plotTracks(list(t, g, i) )
+plotTracks(list(t, g, i), main = str_wrap("Fig. 3 illustrates the typical overlapping nature of CNVs inferred by the independent CNV discovery algorithms, XHMM and GATK.", width = 60),
+           cex.main=1, fontface.main=2, col.main="black", sizes=c(8,5,2), extend.left = 0.1, extend.right = 0.1) #  
 
 ########################################################################################## 
 # CNV burdern and affected status
