@@ -83,17 +83,17 @@ library(Gviz)
 library("stringr") 
 
  #######################
-geneRanges <- 
+cdsRanges <- 
     function(db, column="ENTREZID")
 {
-    g <- genes(db, columns=column) #, single.strand.genes.only=ss) # No matter what I do, including single.strand.genes.only= FALSE returns: Error in .local(x, ...) : unused argument (single.strand.genes.only = FALSE)
-    col <- mcols(g)[[column]]
-    genes <- granges(g)[rep(seq_along(g), elementNROWS(col))]
-    mcols(genes)[[column]] <- as.character(unlist(col))
-    genes
+    c <- cds(db, columns=column) 
+    col <- mcols(c)[[column]]
+    CDS <- granges(c)[rep(seq_along(c), elementNROWS(col))]
+    mcols(CDS)[[column]] <- as.character(unlist(col))
+    CDS
 }
  #######################
-gns = geneRanges(Homo.sapiens, column="SYMBOL")
+gns = cdsRanges(Homo.sapiens, column="SYMBOL")
 
 overlappingCNVs[abs(overlappingCNVs$GATKstart - overlappingCNVs$XHMMstart) < 200,c(1:6,8)]
 overlappingCNVs[overlappingCNVs$sample == "H_NK-135GELCC148-135148" & overlappingCNVs$chr == "chr19",]
@@ -119,15 +119,23 @@ trns <- trns[(trns$start > (min(segs$start)-5000) & trns$start < (max(segs$end)+
             (trns$end > (min(segs$start)-5000) & trns$end < (max(segs$end)+5000)), ]
 trns <- trns[!is.na(trns$SYMBOL),]
 
-# makeGRangesFromDataFrame(
+genes <- GeneRegionTrack(makeGRangesFromDataFrame(trns), genome = gen, name="MRC1 Exons", showId=FALSE, transcript = trns$SYMBOL, 
+          strand=trns$strand) #  geneSymbol=FALSE, transcript=, , transcriptAnnotation = "symbol"
+
+
  
-t <- AnnotationTrack(segs, name = "deletions", 
+t <- AnnotationTrack(segs, name = "Inferred Deletions", 
         genome="hg19", chromosome=chr, id=segs$caller, showFeatureId=TRUE) # group=segs$caller, ,
  g <- GenomeAxisTrack()
  i <- IdeogramTrack(genome = "hg19", chromosome = chr)
 
-plotTracks(list(t, g, i), main = str_wrap("Fig. 3 illustrates the typical overlapping nature of CNVs inferred by the independent CNV discovery algorithms, XHMM and GATK.", width = 60),
-           cex.main=1, fontface.main=2, col.main="black", sizes=c(8,5,2), extend.left = 0.1, extend.right = 0.1) #  
+png(file= "C:/Users/4wald/OneDrive - LSUHSC/GELCC/04.14.22.IllustrateOverlappingNatureTwoCallers.png", width = 800)
+
+plotTracks(list(t, genes, g, i), main = str_wrap("Fig. 3 illustrates the typical overlapping nature of CNVs inferred by the independent CNV discovery algorithms, within one individual family member.", width = 120),
+           cex.main=1, fontface.main=2, col.main="black", sizes=c(8,5,5,2), extend.left = 0.1, extend.right = 0.1) #  
+ 
+ dev.off()
+
 
 ########################################################################################## 
 # CNV burdern and affected status
