@@ -73,8 +73,25 @@ barplot (stars, main = str_wrap("Fig. 2 depicts the distribution of percent over
 
 
  ##########################################################################################
+# illustrate overlap save(overlappingCNVs, file = "C:/Users/4wald/OneDrive - LSUHSC/GELCC/overlappingCNVs.04.14.22.rda") # after removing Phred < 20 and only including those with >1% overlap between algorithms
+#  load(file = "C:/Users/4wald/OneDrive - LSUHSC/GELCC/overlappingCNVs.04.14.22.rda")
 
-  
+library(Gviz)
+
+overlappingCNVs[abs(overlappingCNVs$GATKstart - overlappingCNVs$XHMMstart) < 200,c(1:6,8)]
+overlappingCNVs[overlappingCNVs$sample == "H_NK-135GELCC148-135148" & overlappingCNVs$chr == "chr19",]
+
+segs <- data.frame(chr="chr19", start = c(40373692, 40377121, 40381991, 40382422, 40368413), 
+        end = c(40377120, 40380957, 40382421, 40383109, 40382859), 
+        caller =  c("GATK", "GATK", "GATK", "GATK", "XHMM"))
+ 
+ #makeGRangesFromDataFrame(
+ 
+ t <- AnnotationTrack(segs, name = "deletions", 
+        genome="hg19", chromosome="chr19", id=segs$caller) # group=segs$caller, ,
+ g <- GenomeAxisTrack()
+ 
+ plotTracks(t, showFeatureId=TRUE)
   
 ################### characterize the raw calls
 # FIRST subset to deletions!!!
