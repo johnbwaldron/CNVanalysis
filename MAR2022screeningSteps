@@ -60,7 +60,7 @@ cG <- length(which(perc > .5 & perc < .75))/length(perc)
 
 dG <- length(which(perc > .75))/length(perc)
 
-library("stringr") 
+library("stringr")
 
 stars <- matrix(nrow = 1, ncol = 4, data = c(aG, bG, cG, dG), byrow = TRUE,
           dimnames = list(rows=c("intersection/union"), columns = c("< 25%", "25-50%", "50-75%", "75-100%")))
@@ -822,11 +822,16 @@ length(which(olapByAlg$XHMMgnomAD_80pctOverlapMaxAF[uXHmmcalls][which(!is.na(ola
 # number of GATK-gnomAD overalps >80% have AF > 0.05
 length(which(olapByAlg$GATKgnomAD_80pctOverlapMaxAF[which(!is.na(olapByAlg$GATKgnomAD_80pctOverlapMaxAF))]>0.05))
 
+# this is not really useful since many are counted twice for both GATK and XHMM: # length(which(AFbothAlgs > 0.05))
 
-length(which(AFbothAlgs > 0.05))
+# 80% overlap with XHMMxDGVpctOverlap
+length(which(olapByAlg$XHMMxDGVpctOverlap[uXHmmcalls] >= 0.2))
+length(which(olapByAlg$XHMMxDGVpctOverlap[uXHmmcalls] >= 0.2)) / length(olapByAlg$XHMMxDGVpctOverlap[uXHmmcalls])
+length(which(olapByAlg$XHMMxDGVpctOverlap[uXHmmcalls] >= 0.8)) / length(olapByAlg$XHMMxDGVpctOverlap[uXHmmcalls])
 
-#    GATKxDGVpctOverlap XHMMxDGVpctOverlap
-
+# 80% overlap with GATKxDGVpctOverlap 
+length(which(olapByAlg$GATKxDGVpctOverlap >= 0.2)) / length(olapByAlg$GATKxDGVpctOverlap)
+length(which(olapByAlg$GATKxDGVpctOverlap >= 0.8)) / length(olapByAlg$GATKxDGVpctOverlap)
 
 # create histograms to illustrate changes in number of genes affected by deletions through filtering by values in "delsLCfamiliesGnomADandDGVolapByAlg"
 
@@ -967,7 +972,7 @@ freq5.1[,3] <- "80% overlap gnomAD AF < 0.05"
 colnames(freq5.1) <- c("gene", "Freq", "Group")
 dens5 <- density(freq5.1$Freq,  kernel = c("gaussian", "epanechnikov", "rectangular", "triangular", "biweight", "cosine", "optcosine")[1])
 
-check<-freq4.1
+check<-freq5.1
 nrow(check)
 mean(check[,2])
 sd(check[,2])
@@ -989,13 +994,19 @@ freq6.1[,3] <- "removed DGV overlap > 80%"
 colnames(freq6.1) <- c("gene", "Freq", "Group")
 dens6 <- density(freq5.1$Freq,  kernel = c("gaussian", "epanechnikov", "rectangular", "triangular", "biweight", "cosine", "optcosine")[1])
 
+check<-freq6.1
+nrow(check)
+mean(check[,2])
+sd(check[,2])
+
 
 # install.packages("car")
 library(car)
+library("stringr") 
 
-png(file = "C:/Users/4wald/OneDrive - LSUHSC/GELCC/03.18.22.densityByFilterStep.png")
-    plot(dens1, main = "Fig. 2 density of per gene calls for each filter step", col = 1,
-    xlim = c(1, 60))
+png(file = "C:/Users/4wald/OneDrive - LSUHSC/GELCC/04.15.22.densityByFilterStep.png")
+    plot(dens1, main = str_wrap("Fig. 4 Changes in density plot of protein coding genes with deletions across filter steps. Filter steps reduce the density of both very low frequency and high frequency deletions.", width = 65), col = 1,
+    xlim = c(1, 60), xlab="") # xlab = removes "N =" and "bandwidth = ", sub = "lorum ipsum"
     lines(dens2, col = 2) 
     lines(dens3, col = 3)
     lines(dens4, col = 4) 
