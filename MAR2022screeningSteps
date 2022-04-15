@@ -1069,6 +1069,9 @@ this[,c("gene","pVal")]
 
 # 03/18/22 list of genes post screening with genome wide significance without pseudogenes and Olfactory Receptors, created from "this" above (file = "C:/Users/4wald/OneDrive - LSUHSC/GELCC/geneListForLitSearch.03.18.22.csv")
 sum <- read.csv(file = "C:/Users/4wald/OneDrive - LSUHSC/GELCC/geneListForLitSearch.03.18.22.csv - Sheet1.csv")
+
+# file created with literature search below:
+# tbl <- read.csv(file = "C:/Users/4wald/OneDrive - LSUHSC/GELCC/geneListWithLitSearch_moreCancerLit.03.18.22.csv")
 ###############################################################
 # literature search
 #install.packages("reutils") # see: https://github.com/gschofl/reutils or see: https://www.rdocumentation.org/packages/reutils/versions/0.2.2/topics/reutils
