@@ -1276,11 +1276,28 @@ for(i in familyPhenotypes$submitted.sample.id){ # i = familyPhenotypes$submitted
             affected = familyPhenotypes$diagnosis.of.lung.throat.pharynx.larynx.cancer[familyPhenotypes$submitted.sample.id == i],
             age.onset = familyPhenotypes$Age.at.Onset.1o.cancer[familyPhenotypes$submitted.sample.id == i]    
             ) # data.frame
-            ) # rbind
-              
-  
-  } # for i
+            ) # rbind        
+   } # for i
+burden$affected <- factor(burden$affected)
+
 #now remove married-ins
+marriedInSampleName <- familyPhenotypes[familyPhenotypes$CID == 12 & familyPhenotypes$CIND == 44 | familyPhenotypes$CID == 12 & familyPhenotypes$CIND == 29 |
+                       familyPhenotypes$CID == 103 & familyPhenotypes$CIND == 117|
+                       familyPhenotypes$CID == 25 & familyPhenotypes$CIND == 3|
+                       familyPhenotypes$CID == 26 & familyPhenotypes$CIND == 20|
+                       familyPhenotypes$CID == 31 & familyPhenotypes$CIND == 5|
+                       familyPhenotypes$CID == 33 & familyPhenotypes$CIND == 2|
+                       familyPhenotypes$CID == 34 & familyPhenotypes$CIND == 12|
+                       familyPhenotypes$CID == 69 & familyPhenotypes$CIND == 112| familyPhenotypes$CID == 69 & familyPhenotypes$CIND == 102 |
+                       familyPhenotypes$CID == 90 & familyPhenotypes$CIND == 55 |
+                       familyPhenotypes$CID == 135 & familyPhenotypes$CIND == 122 |
+                       familyPhenotypes$CID == 35 & familyPhenotypes$CIND == 29| 
+                       familyPhenotypes$CID == 47 & familyPhenotypes$CIND == 16|
+                       familyPhenotypes$CID == 102 & familyPhenotypes$CIND == 346|
+                       familyPhenotypes$CID == 131 &  familyPhenotypes$CIND == 125 |
+                       familyPhenotypes$CID == 52 & familyPhenotypes$CIND == 4| familyPhenotypes$CID == 52 & familyPhenotypes$CIND == 13|
+                       familyPhenotypes$CID == 88 & familyPhenotypes$CIND == 13| familyPhenotypes$CID == 88 & familyPhenotypes$CIND == 52,1]
+burdenFamily <- burden[-which(burden$sample %in% marriedInSampleName),] #nrow 204 --> nrow 184
 
 #summary of burden
 mean(burden$num.GATKdels)
@@ -1293,7 +1310,13 @@ mean(burden$GATKbp.FactorGATKdelPloidy)
 mean(burden$numAffectedGenes.GATK)
 mean(burden$numAffectedGenes.XHMM)
 
+
 #  Mann Whitney U test - test whether two samples are likely to derive from the same population
+wilcox.test(sum.overlapbp ~ affected , data=burden,
+                 alternative = c("two.sided", "less", "greater")[3]) # p-value = 0.9858
+
+wilcox.test(numAffectedGenes.GATK ~ affected , data=burden,
+                 alternative = c("two.sided", "less", "greater")[3]) # p-value = 0.7032
 
 #Mixed effects regression analysis
 
