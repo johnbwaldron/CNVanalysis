@@ -1210,5 +1210,124 @@ barplot (stars, main = "Fig. 1 size distribution of XHMM and GATK inferred delet
  mean(GATKsizekb) # = 17.69 kb 
  sd(GATKsizekb) # = 68.59         
           
+##########################################################################################################
+# CNV burden
+# is there an association between number of CNVs called and 
+# Rterm.exe --vanilla
+library(Homo.sapiens)
+library(Gviz)
+library("stringr") 
+
+load(file="C:/Users/4wald/OneDrive - LSUHSC/GELCC/XHMMcnvAndGATKcnvWithQAandQSwithFamilyPhenotypeUpdate12.28.21.rda")
+load(file = "C:/Users/4wald/OneDrive - LSUHSC/GELCC/overlappingCNVs.04.14.22.rda") # all CNVs with >= 1% overlap
+olapCNVs <- overlappingCNVs[which(as.numeric(overlappingCNVs$GATKPhred)>19), c(1:15)]
+
+# plot number of CNVs vs age at onset; number of CNVs vs affected status
+# plot sum of bp included in CNV (according to GATK and XHMM separately)
+
+# the following data.frames aren't really useful now, but they are available here
+# geneSummary <- read.csv(file= "C:/Users/4wald/OneDrive - LSUHSC/GELCC/statsByGeneMinusRedudantCallsPerCIND.03.17.21.csv")                                         
+# allGenesInG2CIND <- read.csv(file= "C:/Users/4wald/OneDrive - LSUHSC/GELCC/03.17.22.noRepeatsallGenesInG2CIND.csv")
+
+#determine which XHMM calls in olapCNVs are unique
+uXHmmcalls <- vector()
+for(i in unique(olapCNVs$sample)){ # i = unique(olapCNVs$sample)[5]
+  for(c in unique(olapCNVs$chr[olapCNVs$sample == i])){ # c = unique(olapCNVs$chr[olapCNVs$sample == i])[2]
+           for(d in unique(olapCNVs$XHMMstart[olapCNVs$sample == i & olapCNVs$chr == c])){ # d = unique(olapCNVs$XHMMstart[olapCNVs$sample == i & olapCNVs$chr == c])[1]
+              # ind <- rownames(olapCNVs) 
+              uXHmmcalls <- c(uXHmmcalls, which(olapCNVs$sample == i & olapCNVs$chr == c & olapCNVs$XHMMstart == d)[1])
+              } # for d
+   } # for c
+ } # for i 
+# uXHmmcalls provides index values (rows) for all the unique XHMM calls
+
+# make start and end as.numeric()
+olapCNVs$GATKstart <- as.numeric(olapCNVs$GATKstart)
+olapCNVs$GATKend <- as.numeric(olapCNVs$GATKen)
+olapCNVs$XHMMstart <- as.numeric(olapCNVs$XHMMstart)
+olapCNVs$XHMMend <- as.numeric(olapCNVs$XHMMend)
+olapCNVs$olap_width <- as.numeric(olapCNVs$olap_width)
+olapCNVs$GATKcall.copyNum <- as.numeric(olapCNVs$GATKcall.copyNum)
+
+#how many deletions (that meet criteria of 1% overlap between algs and Phred > 20) per CIND
+noReplicateXHMM <-olapCNVs[uXHmmcalls,]
+
+# columns: Number of GATK calls, number of XHMM calls, total bp by GATK, total bp by XHMM, total bp coverd by both (overlap), GATK ploidy, number affected chromosomes
+burden <- data.frame(sample = NA, 
+                    num.GATKdels = NA, num.XHMMdels = NA, sum.GATKbp = NA, sum.XHMMbp = NA, sum.overlapbp = NA, 
+                    GATKbp.FactorGATKdelPloidy = NA, overlapbp.FactorGATKdelPloidy = NA, numAffectedGenes.GATK = NA,
+                    numAffectedGenes.XHMM = NA, numAffectedChrs = NA, sex = NA, packYears = NA, affected = NA, age.onset = NA)[-1,]
+
+for(i in familyPhenotypes$submitted.sample.id){ # i = familyPhenotypes$submitted.sample.id[42]
+    burden <- rbind(burden, data.frame(
+            sample = i,
+            num.GATKdels = nrow(olapCNVs[olapCNVs$sample == i,]),
+            num.XHMMdels = nrow(noReplicateXHMM[noReplicateXHMM$sample == i,]),
+            sum.GATKbp = sum(olapCNVs$GATKend[olapCNVs$sample == i] - olapCNVs$GATKstart[olapCNVs$sample == i]),
+            sum.XHMMbp = sum(noReplicateXHMM$XHMMend[noReplicateXHMM$sample == i] - noReplicateXHMM$XHMMstart[noReplicateXHMM$sample == i]),
+            sum.overlapbp = sum(olapCNVs$olap_width[olapCNVs$sample == i]),
+            GATKbp.FactorGATKdelPloidy = sum(  (olapCNVs$GATKend[olapCNVs$sample == i] - olapCNVs$GATKstart[olapCNVs$sample == i])*(2-olapCNVs$GATKcall.copyNum[olapCNVs$sample == i])),
+            overlapbp.FactorGATKdelPloidy = sum(  (olapCNVs$olap_width[olapCNVs$sample == i])*(2-olapCNVs$GATKcall.copyNum[olapCNVs$sample == i])),
+            numAffectedGenes.GATK =  length(unique(unlist(strsplit(olapCNVs$GATKgene[olapCNVs$sample == i], split = ", ")) ) ),
+            numAffectedGenes.XHMM = length(unique(unlist(strsplit(noReplicateXHMM$XHMMgene[noReplicateXHMM$sample == i], split = ", "))  )),
+            numAffectedChrs = length(unique( olapCNVs$chr[olapCNVs$sample == i]) ),
+            sex = familyPhenotypes$sex[familyPhenotypes$submitted.sample.id == i],
+            packYears = familyPhenotypes$pack.years[familyPhenotypes$submitted.sample.id == i],
+            affected = familyPhenotypes$diagnosis.of.lung.throat.pharynx.larynx.cancer[familyPhenotypes$submitted.sample.id == i],
+            age.onset = familyPhenotypes$Age.at.Onset.1o.cancer[familyPhenotypes$submitted.sample.id == i]    
+            ) # data.frame
+            ) # rbind
+              
+  
+  } # for i
+#now remove married-ins
+
+#summary of burden
+mean(burden$num.GATKdels)
+mean(burden$num.XHMMdels)
+mean(burden$sum.GATKbp)
+mean(burden$sum.XHMMbp)
+mean(burden$sum.overlapbp)
+mean(burden$overlapbp.FactorGATKdelPloidy)
+mean(burden$GATKbp.FactorGATKdelPloidy)
+mean(burden$numAffectedGenes.GATK)
+mean(burden$numAffectedGenes.XHMM)
+
+#  Mann Whitney U test - test whether two samples are likely to derive from the same population
+
+#Mixed effects regression analysis
+
+# to make a table
+
+library(webshot)
+library(gt)
+# help = https://gt.rstudio.com/articles/intro-creating-gt-tables.html
+
+      gt_tbl <- gt(summaryDels, rowname_col = "rows")
+      tbl <- gt_tbl %>%
+                    tab_header(title = "Table 1. Comparison of deletion calls by algorithm and individual. XHMM demonstrated a tendency to make fewer calls of larger size. GATK tended to make more calls that generally fall within segments identified as deletions by XHMM.",
+                       ) %>%
+                       opt_align_table_header(align = "left") %>%
+                   tab_row_group(
+                              label = "Only overlapping calls from both algorithms",
+                              rows = 8:14) %>% 
+                   tab_row_group(
+                              label = "Values per sampled individual",
+                              rows = 5:7) %>%
+                   tab_row_group(
+                              label = "Values for all sampled individuals",
+                              rows = 1:4)                          
+                             
+tab <- tbl %>% tab_options(heading.title.font.size = 16, container.width = 800, data_row.padding.horizontal = 50,
+                      column_labels.padding.horizontal = 50,column_labels.font.weight = "bold", table_body.vlines.width = 2)
+
+ # %>% cell_borders(sides = "all", color = "black", style = "solid", weight = px(1))
+
+gtsave(tab,
+    "4.11.22.RawAndOverlappingSummaryStatsXHMMandGATK.png", expand = 10,
+    path = "C:/Users/4wald/OneDrive - LSUHSC/GELCC"
+  )
+  
+
 
 
