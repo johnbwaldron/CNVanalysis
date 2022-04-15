@@ -1253,7 +1253,7 @@ olapCNVs$GATKcall.copyNum <- as.numeric(olapCNVs$GATKcall.copyNum)
 noReplicateXHMM <-olapCNVs[uXHmmcalls,]
 
 # columns: Number of GATK calls, number of XHMM calls, total bp by GATK, total bp by XHMM, total bp coverd by both (overlap), GATK ploidy, number affected chromosomes
-burden <- data.frame(sample = NA, 
+burden <- data.frame(sample = NA, CID = NA,
                     num.GATKdels = NA, num.XHMMdels = NA, sum.GATKbp = NA, sum.XHMMbp = NA, sum.overlapbp = NA, 
                     GATKbp.FactorGATKdelPloidy = NA, overlapbp.FactorGATKdelPloidy = NA, numAffectedGenes.GATK = NA,
                     numAffectedGenes.XHMM = NA, numAffectedChrs = NA, sex = NA, packYears = NA, affected = NA, age.onset = NA)[-1,]
@@ -1261,6 +1261,7 @@ burden <- data.frame(sample = NA,
 for(i in familyPhenotypes$submitted.sample.id){ # i = familyPhenotypes$submitted.sample.id[42]
     burden <- rbind(burden, data.frame(
             sample = i,
+            CID = familyPhenotypes$CID[familyPhenotypes$submitted.sample.id==i],
             num.GATKdels = nrow(olapCNVs[olapCNVs$sample == i,]),
             num.XHMMdels = nrow(noReplicateXHMM[noReplicateXHMM$sample == i,]),
             sum.GATKbp = sum(olapCNVs$GATKend[olapCNVs$sample == i] - olapCNVs$GATKstart[olapCNVs$sample == i]),
@@ -1279,6 +1280,7 @@ for(i in familyPhenotypes$submitted.sample.id){ # i = familyPhenotypes$submitted
             ) # rbind        
    } # for i
 burden$affected <- factor(burden$affected)
+burden$CID <- factor(burden$CID)
 
 #now remove married-ins
 marriedInSampleName <- familyPhenotypes[familyPhenotypes$CID == 12 & familyPhenotypes$CIND == 44 | familyPhenotypes$CID == 12 & familyPhenotypes$CIND == 29 |
@@ -1299,6 +1301,12 @@ marriedInSampleName <- familyPhenotypes[familyPhenotypes$CID == 12 & familyPheno
                        familyPhenotypes$CID == 88 & familyPhenotypes$CIND == 13| familyPhenotypes$CID == 88 & familyPhenotypes$CIND == 52,1]
 burdenFamily <- burden[-which(burden$sample %in% marriedInSampleName),] #nrow 204 --> nrow 184
 
+#make column identifying sample as married-in
+burden$marriedIn <- FALSE
+burden$marriedIn[which(burden$sample %in% marriedInSampleName)] <- TRUE
+burden$marriedIn <- factor(burden$marriedIn)
+
+
 #summary of burden
 mean(burden$num.GATKdels)
 mean(burden$num.XHMMdels)
@@ -1318,7 +1326,17 @@ wilcox.test(sum.overlapbp ~ affected , data=burden,
 wilcox.test(numAffectedGenes.GATK ~ affected , data=burden,
                  alternative = c("two.sided", "less", "greater")[3]) # p-value = 0.7032
 
-#Mixed effects regression analysis
+#Mixed effects regression analysis # install.packages("lme4")
+library(lme4) 
+
+# adding a column to make "not yet diagnosed" into 150 as age of onset
+burden$age.onset.150ForNotYet <- burden$age.onset
+burden$age.onset.150ForNotYet[burden$age.onset.150ForNotYet == "-"] <- 150
+burden$age.onset.150ForNotYet <- as.numeric(burden$age.onset.150ForNotYet)
+
+lmm <- lmer(sum.overlapbp ~ affected +  marriedIn + (1 | age.onset.150ForNotYet), data = burden,
+    REML = FALSE)
+summary(lmm)
 
 # to make a table
 
