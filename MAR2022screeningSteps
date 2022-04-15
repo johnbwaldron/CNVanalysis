@@ -816,6 +816,15 @@ mean(AFbothAlgs)
 max(AFbothAlgs)  
 min(AFbothAlgs)  
 
+# number of XHMM-gnomAD overalps >80% have AF > 0.05
+length(which(olapByAlg$XHMMgnomAD_80pctOverlapMaxAF[uXHmmcalls][which(!is.na(olapByAlg$XHMMgnomAD_80pctOverlapMaxAF[uXHmmcalls]))] > 0.05))
+
+# number of GATK-gnomAD overalps >80% have AF > 0.05
+length(which(olapByAlg$GATKgnomAD_80pctOverlapMaxAF[which(!is.na(olapByAlg$GATKgnomAD_80pctOverlapMaxAF))]>0.05))
+
+
+length(which(AFbothAlgs > 0.05))
+
 #    GATKxDGVpctOverlap XHMMxDGVpctOverlap
 
 
