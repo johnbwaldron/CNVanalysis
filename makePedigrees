@@ -16,7 +16,7 @@ load(file="C:/Users/4wald/OneDrive - LSUHSC/GELCC/12.28.21.callsPhenoRemovedRedu
 # I need pedigrees for the following CIDs: "103" "105" "25"  "11"  "127" "135" "26"  "31"  "33" "34" "42"  "44" "59"  "62"  "69" "90"  "94" "New"
 
 CIDs <- c("103", "105", "25",  "11",  "127", "135", "26",  "31",  "33", "34", "42",  "44", "59",  "62",  "69", "90", "94", "New")
-
+# OR #  CIDs <- unique(familyPhenotypes$CID)
 
 # use fam variable to choose the family of interest # pheno[grep(fam, pheno$CID), 1:12] # 
     for(fam in unique(CIDs)){ # unique(familyPhenotypes$CID)) { # e.g. fam <- "103"
@@ -42,7 +42,7 @@ CIDs <- c("103", "105", "25",  "11",  "127", "135", "26",  "31",  "33", "34", "4
             aff <- as.matrix(cbind(as.numeric(aff), as.numeric(WES)))
             colnames(aff) <- c("affected", "WES")
          # pdf device is best for resizing. printing plot to divide will be necessary to save images.
-            pdf(file=paste("C:/Users/4wald/OneDrive - LSUHSC/GELCC/pedigree", fam, ".pdf", sep=""), title = paste("Family", fam))
+            pdf(file=paste("C:/Users/4wald/OneDrive - LSUHSC/GELCC/pedigree", fam, ".4.18.22.pdf", sep=""), title = paste("Family", fam))
 
                 plot(p, id = p$id, affected = aff, 
                                  cex = .5, col = c(2), symbolsize = .8, branch =
