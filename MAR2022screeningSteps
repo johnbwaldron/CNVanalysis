@@ -266,7 +266,7 @@ library(gt)
 
       gt_tbl <- gt(summaryDels, rowname_col = "rows")
       tbl <- gt_tbl %>%
-                    tab_header(title = "Table 1. Comparison of deletion calls by algorithm and individual. XHMM demonstrated a tendency to make fewer calls of larger size. GATK tended to make more calls that generally fall within segments identified as deletions by XHMM.",
+                    tab_header(title = "Table 2. Comparison of deletion calls by algorithm and individual. XHMM demonstrated a tendency to make fewer calls of larger size. GATK tended to make more calls that generally fall within segments identified as deletions by XHMM.",
                        ) %>%
                        opt_align_table_header(align = "left") %>%
                    tab_row_group(
@@ -285,7 +285,7 @@ tab <- tbl %>% tab_options(heading.title.font.size = 16, container.width = 800, 
  # %>% cell_borders(sides = "all", color = "black", style = "solid", weight = px(1))
 
 gtsave(tab,
-    "4.11.22.RawAndOverlappingSummaryStatsXHMMandGATK.png", expand = 10,
+    "4.18.22.RawAndOverlappingSummaryStatsXHMMandGATK.png", expand = 10,
     path = "C:/Users/4wald/OneDrive - LSUHSC/GELCC"
   )
   
@@ -1343,24 +1343,34 @@ summary(lmm)
 
 # to make a table
 
+
+####################################
+#study population table
+
 library(webshot)
 library(gt)
 # help = https://gt.rstudio.com/articles/intro-creating-gt-tables.html
+# "Age, No. (%)", # row in table labels, not table values
 
-      gt_tbl <- gt(summaryDels, rowname_col = "rows")
+AoO <- as.numeric(familyPhenotypes$Age.at.Onset.1o.cancer[which(familyPhenotypes$Age.at.Onset.1o.cancer != "-" & familyPhenotypes$Age.at.Onset.1o.cancer!= "-1")])
+PY <-  as.numeric(familyPhenotypes$pack.years[which(familyPhenotypes$pack.years != "-" & familyPhenotypes$pack.years != "-1"  & familyPhenotypes$pack.years != "") ])
+
+summaryPop <- data.frame(Characteristics = c("Total Number", "% female", "Num. of Smokers (mean Pack Years)", "with LC Diagnosis", "Mean Age at Dx (SD)", "Num. Non-Blood Relatives"),
+                         Participants = c(nrow(familyPhenotypes), 
+                                 round(length(which(familyPhenotypes$SEX == 2))/nrow(familyPhenotypes), 4) *100,
+                                 paste(length(PY), " (", round(mean(PY), 2), ")", sep=""),
+                                 length(which(familyPhenotypes$diagnosis.of.lung.throat.pharynx.larynx.cancer)),
+                                 paste(round(mean(AoO), 2)," (", round(sd (AoO), 2), ")", sep=""),
+                                 length(marriedInSampleName)
+                                 ) # c       
+                         ) # data.frame
+
+      gt_tbl <- gt(summaryPop, rowname_col = "Label")
       tbl <- gt_tbl %>%
-                    tab_header(title = "Table 1. Comparison of deletion calls by algorithm and individual. XHMM demonstrated a tendency to make fewer calls of larger size. GATK tended to make more calls that generally fall within segments identified as deletions by XHMM.",
+                    tab_header(title = "Table 1. Selected characteristics of study participants",
                        ) %>%
                        opt_align_table_header(align = "left") %>%
-                   tab_row_group(
-                              label = "Only overlapping calls from both algorithms",
-                              rows = 8:14) %>% 
-                   tab_row_group(
-                              label = "Values per sampled individual",
-                              rows = 5:7) %>%
-                   tab_row_group(
-                              label = "Values for all sampled individuals",
-                              rows = 1:4)                          
+                   
                              
 tab <- tbl %>% tab_options(heading.title.font.size = 16, container.width = 800, data_row.padding.horizontal = 50,
                       column_labels.padding.horizontal = 50,column_labels.font.weight = "bold", table_body.vlines.width = 2)
@@ -1368,7 +1378,7 @@ tab <- tbl %>% tab_options(heading.title.font.size = 16, container.width = 800, 
  # %>% cell_borders(sides = "all", color = "black", style = "solid", weight = px(1))
 
 gtsave(tab,
-    "4.11.22.RawAndOverlappingSummaryStatsXHMMandGATK.png", expand = 10,
+    "4.18.22.participantDemographics.png", expand = 10,
     path = "C:/Users/4wald/OneDrive - LSUHSC/GELCC"
   )
   
