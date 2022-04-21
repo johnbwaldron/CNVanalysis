@@ -1321,6 +1321,9 @@ mean(burden$GATKbp.FactorGATKdelPloidy)
 mean(burden$numAffectedGenes.GATK)
 mean(burden$numAffectedGenes.XHMM)
 
+#save(burden, file="C:/Users/4wald/OneDrive - LSUHSC/GELCC/4.18.22BURDENtable.rda")
+
+load(file="C:/Users/4wald/OneDrive - LSUHSC/GELCC/4.18.22BURDENtable.rda")
 
 #  Mann Whitney U test - test whether two samples are likely to derive from the same population
 wilcox.test(sum.overlapbp ~ affected , data=burden,
@@ -1338,6 +1341,11 @@ burden$age.onset.150ForNotYet[burden$age.onset.150ForNotYet == "-"] <- 150
 burden$age.onset.150ForNotYet <- as.numeric(burden$age.onset.150ForNotYet)
 
 lmm <- lmer(sum.overlapbp ~ affected +  marriedIn + (1 | age.onset.150ForNotYet), data = burden,
+    REML = FALSE)
+summary(lmm)
+
+# adjusting structure
+lmm <- lmer(affected  ~  sum.overlapbp +  sex + BY-2022 , data = burden,
     REML = FALSE)
 summary(lmm)
 
