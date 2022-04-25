@@ -1392,8 +1392,42 @@ gtsave(tab,
   
 #######################
 # write pheno txt for VarSeq
+# load(file = "C:/Users/4wald/OneDrive - LSUHSC/GELCC/overlappingCNVsBothAlgsPhenoFam.12.28.21.rda")
+
 
 familyPhenotypes$file.path <- unlist(strsplit(familyPhenotypes$file.path, split=".bam"))
 
 write.csv(familyPhenotypes[,c(1,2,4,10,11,13,14)], file= "C:/Users/4wald/OneDrive - LSUHSC/GELCC/samplePhenotypes.csv")
 
+
+########################
+# strip vcf of extra sample names
+
+# load(file = "C:/Users/4wald/OneDrive - LSUHSC/GELCC/overlappingCNVsBothAlgsPhenoFam.12.28.21.rda")
+
+for(i in list.files(path = "F:/GELCC.variants", pattern = '\\.vcf$')){ # i = list.files(path = "F:/GELCC.variants", pattern = '\\.vcf$')[6]
+           
+           # read in small variants vcf file
+           df <- read.delim(file= paste("F:/GELCC.variants/", i, sep = ""), 
+           colClasses = "character", skip = 131)
+          
+          #removed columns that are not our sample names
+           clean.df <- df[,c(1:9, which(colnames(df) %in% familyPhenotypes$file.path |  colnames(df) %in% paste("X", familyPhenotypes$file.path, sep="")))]
+           
+           # adjust column names to match original vcf file
+           colnames(clean.df) <- unlist(strsplit(colnames(clean.df), split="X"))[which(unlist(strsplit(colnames(clean.df), split="X"))!="")]
+           colnames(clean.df)[1] <- "#CHROM"
+          
+          # get rows 1:131
+           header <- read.delim(file= paste("F:/GELCC.variants/", i, sep = ""), 
+           colClasses = "character", nrows = 130)
+           colnames(header) <- "##fileformat=VCFv4.2"
+           
+           #write header
+           write.table(header, file= paste("F:/GELCC.variants/cleaned_", i, sep = ""), sep="\t", row.names = FALSE, quote = FALSE)
+           # append table
+           write.table(clean.df, file= paste("F:/GELCC.variants/cleaned_", i, sep = ""), row.names = FALSE, append = TRUE, , sep="\t", quote = FALSE) 
+           
+           #tableBySample <- data.frame(sample="0", chr=df$X.CHROM, ID=df$ID, X=df[,10])
+           #tableBySample[c(1:nrow(df)),1] <- gsub("[.]", "-", colnames(df)[10]) ########paste(strsplit(colnames(df)[10], "[.]")[[1]][1], strsplit(colnames(df)[10], "[.]")[[1]][2], strsplit(colnames(df)[10], "[.]")[[1]][3], sep="-")
+       } # for i
