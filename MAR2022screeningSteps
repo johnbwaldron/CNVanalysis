@@ -1405,7 +1405,7 @@ write.csv(familyPhenotypes[,c(1,2,4,10,11,13,14)], file= "C:/Users/4wald/OneDriv
 
 # load(file = "C:/Users/4wald/OneDrive - LSUHSC/GELCC/overlappingCNVsBothAlgsPhenoFam.12.28.21.rda")
 
-for(i in list.files(path = "F:/GELCC.variants", pattern = '\\.vcf$')){ # i = list.files(path = "F:/GELCC.variants", pattern = '\\.vcf$')[6]
+for(i in list.files(path = "F:/GELCC.variants", pattern = '\\.vcf$')){ # i = list.files(path = "F:/GELCC.variants", pattern = '\\.vcf$')[6] # to add chr18, chr19 which were skipped the first time [c(10,11)]
            
            # read in small variants vcf file
            df <- read.delim(file= paste("F:/GELCC.variants/", i, sep = ""), 
