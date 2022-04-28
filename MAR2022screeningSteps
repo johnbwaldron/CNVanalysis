@@ -1397,7 +1397,7 @@ gtsave(tab,
 
 familyPhenotypes$file.path <- unlist(strsplit(familyPhenotypes$file.path, split=".bam"))
 
-write.csv(familyPhenotypes[,c(1,2,4,10,11,13,14)], file= "C:/Users/4wald/OneDrive - LSUHSC/GELCC/samplePhenotypes.csv")
+write.csv(familyPhenotypes[,c(1,2,4,10,11,13,14,15)], file= "C:/Users/4wald/OneDrive - LSUHSC/GELCC/samplePhenotypes.csv")
 
 
 ########################
